@@ -1,0 +1,37 @@
+\api -> contains router, get/post
+\config -> setup for firebase & sql
+\local\company.py -> Same in CompanyCreate and CompanyGet found in Swagger
+\services\local -> Logic and methods based from class diagram
+---
+SDD Link:
+https://docs.google.com/document/d/1RgsJAL4niSpXHuMKBom0ZQOFqIMGB68KYqasHHquAsc/edit?tab=t.mn7a50jci7g0
+---
+TERMINOLOGIES
+GET: Read
+POST: Create
+PATCH: Update
+DELETE: Delete
+---
+SEQUENCE OF ADDING/EDITING ENTITIES (CLASSES)
+1. Start with \db (if wala pa)
+2. \model\local
+3. \model\service
+4. \api
+5. main.py      #Adjust if you add router (ex: client_router in \api)
+---
+
+---
+THINGS DONE (01/25/2026) - chan
+- Rough sketch ng mga \db\schema.py.
+- Additional Things to do here
+    - FK & constraints
+    - Validate inheritance
+    - Consistent naming convention (class_id vs classId,
+        masprefer ko yung latter if we are going to base it sa class diagram)
+
+- will probably try do proceed doing the \models later
+
+---
+When pulling git,
+VSCODE -> Terminal with command
+    git pull origin initial_dev

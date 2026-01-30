@@ -1,0 +1,43 @@
+===========================
+HOW TO RUN THE PROJECT
+===========================
+
+1. Clone the repository
+-----------------------
+git clone https://github.com/Kyanqueso/admin_fullstack.git
+
+---
+
+2. Switch to web folder
+-------------------------
+cd web
+
+---
+
+3. Install node.js
+------------------------
+npm init -y
+
+---
+
+4. Install node packages (If you haven't already)
+-------------------------------------------------
+npm install electron --save-dev
+npm install dotenv
+
+---
+
+5. Run the program
+------------------
+npm start
+
+---
+
+6. Notes
+--------
+- No need to manually activate the backend (API Folder), it is handled by main.js
+- Be sure to install necessary packages (Refer to no.3).
+- Do not commit the `node_modules/` folder to GitHub; it's in .gitignore.
+- Use the `development` branch for actual feature work. DO NOT MODIFY 'main'.
+
+---

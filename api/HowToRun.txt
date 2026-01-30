@@ -1,0 +1,63 @@
+===========================
+HOW TO RUN THE PROJECT
+===========================
+
+1. Clone the repository
+-----------------------
+git clone https://github.com/Kyanqueso/Theresa_Shoes_Backend.git
+cd <your-project-folder>
+
+---
+
+2. Create and activate a virtual environment
+--------------------------------------------
+
+# Windows (CMD)
+python -m venv venv
+.\venv\Scripts\activate
+
+# Mac/Linux
+python -m venv venv
+source venv/bin/activate
+
+---
+
+3. Install project dependencies (If you haven't already)
+-------------------------------
+pip install -r requirements.txt
+OR
+python -m pip install -r requirements.txt
+
+---
+
+4. Run the FastAPI server
+--------------------------
+# Run with module path (app folder)
+uvicorn app.main:app --reload
+
+You should see output like:
+INFO: Uvicorn running on http://127.0.0.1:8000
+
+---
+
+5. Open API docs (Swagger UI)
+-----------------------------
+Open your browser and go to:
+http://127.0.0.1:8000/docs   -> Swagger UI
+
+Your root endpoint "/" should return:
+{"status": "running"}
+
+---
+
+6. Stop the server
+------------------
+Press CTRL + C in the terminal to stop the FastAPI server.
+
+---
+
+7. Notes
+--------
+- Always activate the virtual environment before running the server.
+- Do not commit the `venv/` folder to GitHub; it's in .gitignore.
+- Use the `development` branch for actual feature work. DO NOT MODIFY 'main'.
