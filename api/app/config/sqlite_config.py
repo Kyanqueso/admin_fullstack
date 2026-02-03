@@ -1,26 +1,32 @@
+# File: database.py (Renamed from sqlite_config.py)
+import os
+from dotenv import load_dotenv # 👈 REQUIRED to read .env
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker
 
-# Path to SQLite database file (Inside app folder)
-SQLITE_DB_URL = "sqlite:///./app/localadmin.db"
+# Load environment variables
+load_dotenv()
 
-# Create the SQLAlchemy engine
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise ValueError("❌ DATABASE_URL is missing from .env file!")
+
+# Create the engine
 engine = create_engine(
-    SQLITE_DB_URL, 
-    connect_args={"check_same_thread": False}
+    DATABASE_URL,
+    pool_pre_ping=True,  # Good for handling dropped connections
+    pool_size=10,        # Optional: Adjust based on your needs
+    max_overflow=20      # Optional: Allow extra connections during spikes
 )
 
-# Create a configured "Session" class
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine,
+)
 
-# Base class for all models
-Base = declarative_base()
-
-# Dependency for FastAPI routes
 def get_db():
-    """
-    Yield a database session to be used in FastAPI endpoints.
-    """
     db = SessionLocal()
     try:
         yield db

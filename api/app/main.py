@@ -1,37 +1,35 @@
 from fastapi import FastAPI
-from app.config.sqlite_config import engine, Base
-from app.auth.admin_auth import seed_admin
+from app.config.sqlite_config import engine
 
-from app.api.local.company import router as company_router
-from app.api.local.client import router as client_router
-from app.api.local.client_order import router as client_order_router
-from app.api.local.payment_summary import router as payment_summary_router
-from app.api.local.payment_transaction import router as payment_transaction_router
-from app.api.local.analytics import router as analytics_router
+from app.db.base import Base
 
-from app.api.firebase.shoe_catalog import router as shoe_catalog_router
-from app.api.firebase.admin import router as admin_router
+from app.api.local.company_router import router as company_router
+from app.api.local.client_router import router as client_router
+from app.api.local.client_order_router import router as client_order_router
+from app.api.local.payment_summary_router import router as payment_summary_router
+from app.api.local.payment_transaction_router import router as payment_transaction_router
+from app.api.local.analytics_router import router as analytics_router
+from app.api.local.shoe_management_router import router as shoe_management_router
 
-app = FastAPI(title="Theresa Shoes FastAPI Backend")
 
-# Create tables AFTER models are imported
-Base.metadata.create_all(bind=engine)
-
-# Create admin user if not exists
-seed_admin()
+app = FastAPI(
+    title="Theresa Shoes API",
+    description="Backend API for Theresa Shoes inventory and payment management",
+    version="2.0.0"
+)
 
 @app.get("/")
 def root():
-    return {"status": "running"}
+    return {"message": "Theresa Shoes API is running"}
 
-# Sqlite
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
+
 app.include_router(company_router)
 app.include_router(client_router)
 app.include_router(client_order_router)
 app.include_router(payment_summary_router)
 app.include_router(payment_transaction_router)
 app.include_router(analytics_router)
-
-# Firebase
-app.include_router(admin_router)
-app.include_router(shoe_catalog_router)
+app.include_router(shoe_management_router)

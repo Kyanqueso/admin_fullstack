@@ -1,197 +1,52 @@
 from sqlalchemy.orm import Session
-from datetime import datetime
-from fastapi import HTTPException, status
-
-from app.db.schema import PaymentTransaction, PaymentSummary 
-from app.model.local.payment_transaction import (
-    PaymentTransactionGet,
-    PaymentTransactionCreate,
-    PaymentTransactionUpdate,
-)
-
-from app.services.local.payment_summary_service import (
-    recalculate_payment_summary,
-)
-
-def get_payment_transaction_by_id(
-    db: Session,
-    payment_transaction_id: int,
-) -> PaymentTransactionGet | None:
-    transaction = (
-        db.query(PaymentTransaction)
-        .filter(
-            PaymentTransaction.payment_transaction_id
-            == payment_transaction_id
-        )
-        .first()
-    )
-    return PaymentTransactionGet.model_validate(transaction) if transaction else None
+from app.db.models import PaymentTransaction
+from app.schemas.local.payment_transaction import PaymentTransactionCreate, PaymentTransactionUpdate
 
 
-def get_payment_transactions_by_summary(
-    db: Session,
-    payment_summary_id: int,
-) -> list[PaymentTransactionGet]:
-    transactions = (
-        db.query(PaymentTransaction)
-        .filter(
-            PaymentTransaction.payment_summary_id
-            == payment_summary_id
-        )
-        .order_by(PaymentTransaction.payment_number.asc())
-        .all()
-    )
-    return [PaymentTransactionGet.model_validate(t) for t in transactions]
+def create_payment_transaction(db: Session, payment_transaction_data: PaymentTransactionCreate):
+    payment_transaction = PaymentTransaction(**payment_transaction_data.model_dump())
+
+    db.add(payment_transaction)
+    db.commit()
+    db.refresh(payment_transaction)
+
+    return payment_transaction
 
 
-def get_next_payment_number(
-    db: Session,
-    payment_summary_id: int,
-) -> int:
-    last_payment = (
-        db.query(PaymentTransaction)
-        .filter(
-            PaymentTransaction.payment_summary_id == payment_summary_id
-        )
-        .order_by(PaymentTransaction.payment_number.desc())
-        .first()
-    )
-
-    return 1 if not last_payment else last_payment.payment_number + 1
+def get_payment_transaction(db: Session, payment_transaction_id: int):
+    return db.query(PaymentTransaction).filter(PaymentTransaction.id == payment_transaction_id).first()
 
 
-def create_payment_transaction(
-    db: Session,
-    data: PaymentTransactionCreate,
-) -> PaymentTransactionGet:
-    try:
-        summary = (
-            db.query(PaymentSummary)
-            .filter(PaymentSummary.payment_summary_id == data.payment_summary_id)
-            .first()
-        )
+def get_payment_transactions(db: Session, skip: int = 0, limit: int | None = 10000):
+    query = db.query(PaymentTransaction).offset(skip)
+    if limit is not None:
+        query = query.limit(limit)
 
-        if not summary:
-            raise HTTPException(404, "Payment summary not found")
-
-        if data.paid_amount <= 0:
-            raise HTTPException(400, "Paid amount must be greater than zero")
-
-        if summary.paid_amount + data.paid_amount > summary.total_amount:
-            raise HTTPException(400, "Payment exceeds remaining balance")
-
-        payment_number = get_next_payment_number(
-            db,
-            data.payment_summary_id,
-        )
-
-        transaction = PaymentTransaction(
-            payment_summary_id=data.payment_summary_id,
-            payment_number=payment_number,
-            paid_amount=data.paid_amount,
-        )
-
-        db.add(transaction)
-
-        # 🔥 make transaction visible to queries
-        db.flush()
-
-        # 🔁 recalc summary
-        recalculate_payment_summary(db, data.payment_summary_id)
-
-        db.commit()
-        db.refresh(transaction)
-
-        return PaymentTransactionGet.model_validate(transaction)
-
-    except Exception:
-        db.rollback()
-        raise
+    return query.all()
 
 
-def update_payment_transaction(
-    db: Session,
-    payment_transaction_id: int,
-    update: PaymentTransactionUpdate,
-) -> PaymentTransactionGet | None:
-    transaction = (
-        db.query(PaymentTransaction)
-        .filter(
-            PaymentTransaction.payment_transaction_id
-            == payment_transaction_id
-        )
-        .first()
-    )
-
-    if not transaction:
+def update_payment_transaction(db: Session, payment_transaction_id: int,
+                               payment_transaction_data: PaymentTransactionUpdate):
+    payment_transaction = get_payment_transaction(db, payment_transaction_id)
+    if not payment_transaction:
         return None
 
-    summary = (
-        db.query(PaymentSummary)
-        .filter(
-            PaymentSummary.payment_summary_id
-            == transaction.payment_summary_id
-        )
-        .first()
-    )
-
-    # Validate BEFORE updating - use current transaction value
-    new_total_paid = (
-        summary.paid_amount
-        - transaction.paid_amount
-        + update.paid_amount
-    )
-
-    if new_total_paid > summary.total_amount:
-        raise HTTPException(
-            status_code=400,
-            detail="Updated payment exceeds total amount",
-        )
-
-    # Update fields AFTER validation passes
-    transaction.paid_amount = update.paid_amount
-    transaction.payment_date = update.payment_date
-
-    db.flush()
-
-    recalculate_payment_summary(
-        db,
-        transaction.payment_summary_id,
-    )
+    payment_transaction_updated_items = payment_transaction_data.model_dump(exclude_unset=True).items()
+    for key, value in payment_transaction_updated_items:
+        setattr(payment_transaction, key, value)
 
     db.commit()
-    db.refresh(transaction)
+    db.refresh(payment_transaction)
 
-    return PaymentTransactionGet.model_validate(transaction)
+    return payment_transaction
 
 
+def delete_payment_transaction(db: Session, payment_transaction_id: int):
+    payment_transaction = get_payment_transaction(db, payment_transaction_id)
+    if not payment_transaction:
+        return None
 
-def delete_payment_transaction(
-    db: Session,
-    payment_transaction_id: int,
-) -> bool:
-
-    transaction = (
-        db.query(PaymentTransaction)
-        .filter(
-            PaymentTransaction.payment_transaction_id
-            == payment_transaction_id
-        )
-        .first()
-    )
-
-    if not transaction:
-        return False
-
-    payment_summary_id = transaction.payment_summary_id
-
-    db.delete(transaction)
-
-    recalculate_payment_summary(
-        db,
-        payment_summary_id,
-    )
-
+    db.delete(payment_transaction)
     db.commit()
 
     return True
