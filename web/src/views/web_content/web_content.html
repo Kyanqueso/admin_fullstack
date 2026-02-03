@@ -34,7 +34,7 @@
         </button>
     </div>
 
-    <!-- Use hardcoded for now since will transfer to supabase -->
+    <!-- Use hardcoded for now since will transfer to supabase 
     <div class="card h-100 box-drop-shadow w-25 mx-5 mb-5">
         <img src="https://placehold.co/400" class="card-img-top" alt="Shoe Name">
         <div class="accent-bg card-body d-flex flex-column">
@@ -52,9 +52,10 @@
             </div>
         </div>
     </div>
-
+    -->
+    
     <div class="container my-4">
-        <div id="shoe-grid" class="row g-4 col-12 col-md-6 col-lg-4">
+        <div id="shoe-grid" class="row g-4">
             <!-- Cards will be injected here -->
         </div>
     </div>
@@ -72,13 +73,13 @@
             <!-- Form for Add/Edit -->
             <form id="overlay-form" class="d-none mt-3">
                 <label class="form-label text-black">Shoe Name</label>
-                <input type="text" id="shoe-name" class="form-control mb-2" placeholder="Shoe Name" required>
+                <input type="text" id="shoe-name" name="shoeName" class="form-control mb-2" placeholder="Shoe Name" required>
 
                 <label class="form-label text-black">Price</label>
-                <input type="text" id="shoe-price" class="form-control mb-2" placeholder="Price" required>
+                <input type="text" id="shoe-price" name="shoePrice" class="form-control mb-2" placeholder="Price" required>
 
                 <label class="form-label text-black">Upload Image</label>
-                <input type="file" id="shoe-image" class="form-control mb-2" accept="image/*" required>
+                <input type="file" id="shoe-image" name="shoeImage" class="form-control mb-2" accept="image/*" required>
             </form>
 
             <!-- Buttons -->

@@ -1,7 +1,7 @@
-/*
+
 async function loadShoes(){
     try{
-        const response = await fetch('http://127.0.0.1:8000/shoe-catalog/items')
+        const response = await fetch('http://127.0.0.1:8000/shoe-management/shoes')
         if (!response.ok){
             throw new Error('Something went wrong while fetching shoe data');
         }
@@ -16,16 +16,16 @@ async function loadShoes(){
             col.className = "col-12 col-md-6 col-lg-4";
             col.innerHTML = `
                 <div class="card h-100 box-drop-shadow">
-                    <img src="${shoe.imageUrl || 'https://placehold.co/400'}" class="card-img-top" alt="${shoe.name}">
+                    <img src="${shoe.image_url || 'https://placehold.co/400'}" class="card-img-top" alt="${shoe.name}">
                     <div class="accent-bg card-body d-flex flex-column">
-                        <h5 class="card-title"><strong>${shoe.name}</strong></h5>
-                        <p class="card-text flex-grow-1">PHP 1,800</p>
+                        <h5 class="card-title"><strong>${shoe.model_name}</strong></h5>
+                        <p class="card-text flex-grow-1">${shoe.price}</p>
                         <div class="d-flex flex-row gap-3">
-                            <a href="#" class="btn w-50 add-edit-shoe">
+                            <a href="#" class="btn w-50 add-edit-shoe" data-shoe-id="${shoe.id}">
                                 <img src="../../assets/icons/pencil.svg" alt="Edit" width="18" height="18">
                                 Edit
                             </a>
-                            <a href="#" class="btn btn-danger w-50">
+                            <a href="#" class="btn btn-danger w-50 delete-shoe" data-shoe-id="${shoe.id}">
                                 <img src="../../assets/icons/trash-can.svg" alt="Delete" width="18" height="18">
                                 Delete
                             </a>
@@ -41,7 +41,7 @@ async function loadShoes(){
 }
 
 window.addEventListener('DOMContentLoaded', loadShoes);
-*/
+
 
 // Overlay elements
 const overlay = document.getElementById('shoe-overlay');
@@ -108,21 +108,37 @@ overlayCancel.addEventListener('click', closeOverlay);
 overlayClose.addEventListener('click', closeOverlay);
 
 // Confirm overlay action
-overlayConfirm.addEventListener('click', () => {
+overlayConfirm.addEventListener('click', async () => {
     const type = overlay.dataset.type;
-    const shoeId = overlay.dataset.shoeId;
 
     const name = overlayForm.shoeName.value;
     const price = overlayForm.shoePrice.value;
     const imageFile = overlayForm.shoeImage.files[0];
 
-    if(type === 'add') {
-        console.log('Adding new shoe:', { name, price, imageFile });
-        // You can now send imageFile to server with FormData
-    } else if(type === 'edit') {
-        console.log('Editing shoe ID', shoeId, { name, price, imageFile });
-    } else if(type === 'delete') {
-        console.log('Deleting shoe ID', shoeId);
+    if (type === 'add') {
+        try {
+            const formData = new FormData();
+            formData.append('model_name', name);
+            formData.append('price', price);
+            if (imageFile) formData.append('image', imageFile);
+
+            const response = await fetch('http://127.0.0.1:8000/shoe-management/shoes', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`Failed to add shoe: ${errText}`);
+            }
+
+            const newShoe = await response.json();
+            console.log('Shoe added:', newShoe);
+
+            loadShoes(); // refresh grid
+        } catch (error) {
+            console.error('Error adding shoe:', error);
+        }
     }
 
     closeOverlay();
