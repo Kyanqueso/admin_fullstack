@@ -1,0 +1,20 @@
+#header{
+    color: var(--color-primary);
+}
+
+#login-form{
+    background-color: var(--color-accent);
+    width: 50%;
+}
+
+#login-btn{
+    background-color: var(--color-primary);
+    border: none;
+}
+
+/*In smaller screens make login width wider*/
+@media (max-width: 576px) {
+  #login-form {
+    width: 75% !important;
+  }
+}

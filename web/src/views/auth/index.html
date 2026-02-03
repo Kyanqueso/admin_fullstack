@@ -11,7 +11,34 @@
     <title>Login Page</title>
 </head>
 <body>
-    <h1 class="text-center">Hello World!</h1>
+    <h1 id="header" class="text-center my-5">Admin Portal</h1>
+    <form id="login-form" class="p-4 border rounded mx-auto box-drop-shadow">
+        <h3 class="mt-2 mb-4 fw-bold text-center">Login</h3>
+        <div class="mb-4">
+            <label for="username" class="form-label text-black">Username</label>
+            <input 
+                type="text" 
+                class="form-control" 
+                id="username" 
+                name="username"
+                placeholder="Enter your username" 
+                required
+            >
+        </div>
+        <div class="mb-4">
+            <label for="password" class="form-label text-black">Password</label>
+            <input 
+                type="password" 
+                class="form-control" 
+                id="password" 
+                name="password"
+                placeholder="Enter your password" 
+                required
+            >
+        </div>
+        <!-- Change to type="submit" when API is integrated-->
+        <button id="login-btn" type="button" class="mt-4 btn btn-primary w-100 fw-bold">Login</button>
+    </form>
 
     <!-- Call index.js and bootstrap bundle.js -->
     <script src="index.js"></script>
