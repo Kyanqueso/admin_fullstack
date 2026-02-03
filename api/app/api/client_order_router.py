@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.config.sqlite_config import get_db
-from app.schemas.local.client_order import ClientOrderCreate, ClientOrderRead, ClientOrderUpdate
-from app.services.local import client_order_service
+from app.config.database import get_db
+from app.schemas.client_order import ClientOrderCreate, ClientOrderRead, ClientOrderUpdate
+from app.services import client_order_service
 
 router = APIRouter(prefix="/client-orders", tags=["Client Orders"])
 

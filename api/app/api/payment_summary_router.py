@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.config.sqlite_config import get_db
-from app.schemas.local.payment_summary import PaymentSummaryCreate, PaymentSummaryRead, PaymentSummaryUpdate
-from app.services.local import payment_summary_service
+from app.config.database import get_db
+from app.schemas.payment_summary import PaymentSummaryCreate, PaymentSummaryRead, PaymentSummaryUpdate
+from app.services import payment_summary_service
 
 router = APIRouter(prefix="/payment-summaries", tags=["Payment Summaries"])
 

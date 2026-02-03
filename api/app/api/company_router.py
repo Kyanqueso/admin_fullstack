@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.config.sqlite_config import get_db
-from app.schemas.local.company import CompanyCreate, CompanyRead, CompanyUpdate
-from app.services.local import company_service
+from app.config.database import get_db
+from app.schemas.company import CompanyCreate, CompanyRead, CompanyUpdate
+from app.services import company_service
 
 router = APIRouter(prefix="/companies", tags=["Companies"])
 

@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func, extract
-from app.schemas.local.analytics import AnalyticsRead, MonthSales, AnnualSalesBreakdownRead
+from app.schemas.analytics import AnalyticsRead, MonthSales, AnnualSalesBreakdownRead
 from app.db.models import ClientOrder, PaymentSummary
 from decimal import Decimal
 from datetime import datetime, timezone

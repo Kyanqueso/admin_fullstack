@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from app.db.models import ClientOrder
-from app.schemas.local.client_order import ClientOrderCreate, ClientOrderUpdate
+from app.schemas.client_order import ClientOrderCreate, ClientOrderUpdate
 
 
 def create_client_order(db: Session, client_order_data: ClientOrderCreate):

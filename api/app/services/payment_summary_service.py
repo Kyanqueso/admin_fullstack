@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from app.db.models import PaymentSummary
-from app.schemas.local.payment_summary import PaymentSummaryCreate, PaymentSummaryUpdate
+from app.schemas.payment_summary import PaymentSummaryCreate, PaymentSummaryUpdate
 
 
 def create_payment_summary(db: Session, payment_summary_data: PaymentSummaryCreate):

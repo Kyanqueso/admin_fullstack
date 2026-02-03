@@ -1,7 +1,6 @@
 from sqlalchemy.orm import Session
-
 from app.db.models import Company
-from app.schemas.local.company import CompanyCreate, CompanyUpdate
+from app.schemas.company import CompanyCreate, CompanyUpdate
 
 
 def create_company(db: Session, company_data: CompanyCreate):

@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from app.db.models import PaymentTransaction
-from app.schemas.local.payment_transaction import PaymentTransactionCreate, PaymentTransactionUpdate
+from app.schemas.payment_transaction import PaymentTransactionCreate, PaymentTransactionUpdate
 
 
 def create_payment_transaction(db: Session, payment_transaction_data: PaymentTransactionCreate):

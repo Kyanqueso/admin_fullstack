@@ -100,6 +100,9 @@ class PaymentTransaction(Base):
 
     payment_summary = relationship("PaymentSummary", back_populates="payment_transactions")
 
-# Relationships
-# Analytics class not needed since it is derived
-# ShoeCatalog is for Firebase later on
+class ShoeCatalog(Base):
+    __tablename__ = "shoe_catalog"
+    id = Column(Integer, primary_key=True, name="shoe_catalog_id")
+    model_name = Column(String(100), nullable=False)
+    price = Column(Numeric(10, 2), nullable=False)
+    image_url = Column(String(500), nullable=True)

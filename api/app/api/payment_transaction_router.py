@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.config.sqlite_config import get_db
-from app.schemas.local.payment_transaction import PaymentTransactionCreate, PaymentTransactionRead, \
+from app.config.database import get_db
+from app.schemas.payment_transaction import PaymentTransactionCreate, PaymentTransactionRead, \
     PaymentTransactionUpdate
-from app.services.local import payment_transaction_service
+from app.services import payment_transaction_service
 
 router = APIRouter(prefix="/payment-transactions", tags=["Payment Transactions"])
 
