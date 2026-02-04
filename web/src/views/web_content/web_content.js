@@ -16,17 +16,19 @@ async function loadShoes(){
             col.className = "col-12 col-md-6 col-lg-4";
             col.innerHTML = `
                 <div class="card h-100 box-drop-shadow">
-                    <img src="${shoe.image_url || 'https://placehold.co/400'}" class="card-img-top" alt="${shoe.name}">
+                    <img src="${shoe.image_url || 'https://placehold.co/400'}" class="card-img-top" alt="${shoe.model_name}">
                     <div class="accent-bg card-body d-flex flex-column">
                         <h5 class="card-title"><strong>${shoe.model_name}</strong></h5>
                         <p class="card-text flex-grow-1">${shoe.price}</p>
+
                         <div class="d-flex flex-row gap-3">
-                            <a href="#" class="btn w-50 add-edit-shoe" data-shoe-id="${shoe.id}">
-                                <img src="../../assets/icons/pencil.svg" alt="Edit" width="18" height="18">
+                            <a class="btn w-50 edit-shoe-btn" data-shoe-id="${shoe.id}">
+                                <img src="../../assets/icons/pencil.svg" width="18" height="18">
                                 Edit
                             </a>
-                            <a href="#" class="btn btn-danger w-50 delete-shoe" data-shoe-id="${shoe.id}">
-                                <img src="../../assets/icons/trash-can.svg" alt="Delete" width="18" height="18">
+
+                            <a class="btn btn-danger w-50 delete-shoe-btn" data-shoe-id="${shoe.id}">
+                                <img src="../../assets/icons/trash-can.svg" width="18" height="18">
                                 Delete
                             </a>
                         </div>
@@ -42,6 +44,11 @@ async function loadShoes(){
 
 window.addEventListener('DOMContentLoaded', loadShoes);
 
+async function fetchShoeById(id){
+    const response = await fetch(`http://127.0.0.1:8000/shoe-management/shoes/${id}`);
+    if(!response.ok) throw new Error('Failed to fetch shoe data');
+    return await response.json();
+}
 
 // Overlay elements
 const overlay = document.getElementById('shoe-overlay');
@@ -78,9 +85,10 @@ function openOverlay(type, shoeData = {}) {
             overlayTitle.innerHTML = '<strong>Edit Shoe</strong>';
             overlayMessage.classList.add('d-none');
             overlayForm.classList.remove('d-none');
-            overlayForm.shoeName.value = '';
-            overlayForm.shoePrice.value = '';
-            overlayForm.shoeImage.value = '';
+
+            overlayForm.shoeName.value = shoeData.model_name || '';
+            overlayForm.shoePrice.value = shoeData.price || '';
+
             overlayConfirm.className = 'btn btn-green';
             overlayConfirm.textContent = 'Save';
             break;
@@ -109,14 +117,21 @@ overlayClose.addEventListener('click', closeOverlay);
 
 // Confirm overlay action
 overlayConfirm.addEventListener('click', async () => {
+
     const type = overlay.dataset.type;
+    const id = overlay.dataset.shoeId;
 
     const name = overlayForm.shoeName.value;
     const price = overlayForm.shoePrice.value;
     const imageFile = overlayForm.shoeImage.files[0];
 
-    if (type === 'add') {
-        try {
+    try {
+
+        // =====================
+        // ADD
+        // =====================
+        if (type === 'add') {
+
             const formData = new FormData();
             formData.append('model_name', name);
             formData.append('price', price);
@@ -127,21 +142,46 @@ overlayConfirm.addEventListener('click', async () => {
                 body: formData
             });
 
-            if (!response.ok) {
-                const errText = await response.text();
-                throw new Error(`Failed to add shoe: ${errText}`);
-            }
-
-            const newShoe = await response.json();
-            console.log('Shoe added:', newShoe);
-
-            loadShoes(); // refresh grid
-        } catch (error) {
-            console.error('Error adding shoe:', error);
+            if (!response.ok) throw new Error(await response.text());
         }
+
+        // =====================
+        // EDIT (PATCH)
+        // =====================
+        if (type === 'edit') {
+
+            const formData = new FormData();
+            formData.append('model_name', name);
+            formData.append('price', price);
+            if (imageFile) formData.append('image', imageFile);
+
+            const response = await fetch(`http://127.0.0.1:8000/shoe-management/shoes/${id}`, {
+                method: 'PATCH',
+                body: formData
+            });
+
+            if (!response.ok) throw new Error(await response.text());
+        }
+
+        // =====================
+        // DELETE
+        // =====================
+        if (type === 'delete') {
+
+            const response = await fetch(`http://127.0.0.1:8000/shoe-management/shoes/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) throw new Error(await response.text());
+        }
+
+        loadShoes();
+        closeOverlay();
+
+    } catch (error) {
+        console.error('Overlay action failed:', error);
     }
 
-    closeOverlay();
 });
 
 // Button event listeners
@@ -150,21 +190,29 @@ document.getElementById('add-shoe-btn').addEventListener('click', (e) => {
     openOverlay('add');
 });
 
-document.addEventListener('click', (e) => {
+document.addEventListener('click', async (e) => {
+
     const editBtn = e.target.closest('.edit-shoe-btn');
     const deleteBtn = e.target.closest('.delete-shoe-btn');
 
     if (editBtn) {
         e.preventDefault();
-        openOverlay('edit', {
-            id: 1,
-            name: 'Shoe Name',
-            price: 'PHP 1,800'
-        });
+
+        const id = editBtn.dataset.shoeId;
+
+        try {
+            const shoe = await fetchShoeById(id);
+            openOverlay('edit', shoe);
+        } catch (err) {
+            console.error(err);
+        }
     }
 
     if (deleteBtn) {
         e.preventDefault();
-        openOverlay('delete', { id: 1 });
+
+        const id = deleteBtn.dataset.shoeId;
+        openOverlay('delete', { id });
     }
+
 });

@@ -6,7 +6,7 @@ class ShoeCatalogCreate(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
     model_name: str
     price: float
-    image_url: Optional[str] = None
+    image_url: str
 
 
 class ShoeCatalogRead(BaseModel):
@@ -14,11 +14,11 @@ class ShoeCatalogRead(BaseModel):
     id: int
     model_name: str
     price: float
-    image_url: Optional[str] = None
+    image_url: str
 
 
 class ShoeCatalogUpdate(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
     model_name: Optional[str] = None
     price: Optional[float] = None
-    image_url: Optional[str] = None
+    image_url: str
