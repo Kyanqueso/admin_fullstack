@@ -1,22 +1,33 @@
-# Environment files
-.env
-.env.local
-.env.*.local
-
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-
 # Virtual environment
 venv/
+.venv/
 
-# Python cache
+# Environment variables
+.env
+
+# Firebase credentials
+serviceAccountKey.json
+*.json
+
+# Python
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
-.pytest_cache/
+.Python
 
-# Firebase service account key
-serviceAccountKey.json
+# Database
+*.db
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Alembic

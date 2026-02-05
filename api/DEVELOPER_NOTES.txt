@@ -1,0 +1,92 @@
+  - ✓ Company → clients (one-to-many)
+  - ✓ Person → Admin/Client (joined table inheritance with polymorphic_on)
+  - ✓ Client → company (many-to-one), client_orders (one-to-many)
+  - ✓ ClientOrder → client (many-to-one), payment_summary (one-to-one)
+  - ✓ PaymentSummary → client_order (one-to-one), payment_transactions (one-to-many)
+  - ✓ PaymentTransaction → payment_summary (many-to-one)
+
+--HOW TO RUN--
+  uvicorn app.main:app --reload
+
+
+--
+snake_case = python code
+camelCase = JSON and class names
+kebab-case = URLs/paths (case insensitive)
+--
+
+  COMPLETED
+  - ✓ SQLAlchemy models
+  - ✓ Pydantic schemas
+
+  THINGS TO DO: sqlite_config.py → services → routes
+
+  ---EXPLANATION FOR SQLITE CONFIG--
+  1. Engine
+
+  What: The engine is SQLAlchemy's core connection to your database. It knows where the database is and how to talk to it.
+
+  Why: Without an engine, your models are just Python classes with no actual database behind them.
+
+  Library: create_engine from sqlalchemy
+
+  You'll need:
+  - A database URL (for SQLite: sqlite:///./your_database.db)
+  - A connect_args parameter with {"check_same_thread": False} - this is SQLite-specific, allows multiple threads to use the same connection (needed for
+  FastAPI)
+
+  ---
+  2. SessionLocal
+
+  What: A session factory - a configured class that creates new database sessions whenever you need one.
+
+  Why: Each API request needs its own session to interact with the database. Sessions track changes, handle transactions, and get closed when done.
+
+  Library: sessionmaker from sqlalchemy.orm
+
+  You'll need:
+  - Bind it to your engine
+  - Set autocommit=False (you control when commits happen)
+  - Set autoflush=False (you control when data syncs to DB)
+
+  ---
+  3. get_db Function
+
+  What: A generator function that FastAPI uses as a dependency. It creates a session, gives it to a route, and ensures it closes afterward.
+
+  Why: Ensures every request gets a fresh session and that it's properly closed even if errors occur. Prevents connection leaks.
+
+  Pattern:
+  - Create session from SessionLocal
+  - yield it (gives it to the route)
+  - finally block closes it (cleanup)
+
+  ---
+  4. Table Creation (Optional here)
+
+  You can call Base.metadata.create_all(bind=engine) to auto-create tables from your models. This uses your Base from db/base.py.
+
+  ---
+  Files to Import From
+  ┌───────────────┬────────────────┐
+  │    Import     │      From      │
+  ├───────────────┼────────────────┤
+  │ create_engine │ sqlalchemy     │
+  ├───────────────┼────────────────┤
+  │ sessionmaker  │ sqlalchemy.orm │
+  ├───────────────┼────────────────┤
+  │ Base          │ app.db.base    │
+  └───────────────┴────────────────┘
+  ---
+  Environment Variable
+
+  Store your database URL in .env rather than hardcoding. You can use python-dotenv or Pydantic's BaseSettings to load it.
+
+  Check your .env.example - you may already have a placeholder for this.
+
+--TODO--
+Routers
+client, client order, payment summary, payment transaction
+
+Connect to FastApi
+main
