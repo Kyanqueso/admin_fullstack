@@ -40,11 +40,36 @@ async def create_shoe(
 
 
 @router.patch("/shoes/{shoe_id}", response_model=ShoeCatalogRead)
-def update_shoe(shoe_id: int, shoe_data: ShoeCatalogUpdate, db: Session = Depends(get_db)):
-    shoe = shoe_catalog_service.update_shoe_catalog(db, shoe_id, shoe_data)
+async def update_shoe(
+    shoe_id: int,
+    model_name: str = Form(...),
+    price: float = Form(...),
+    image: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    shoe = shoe_catalog_service.get_shoe_catalog(db, shoe_id)
+
     if not shoe:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shoe not found")
-    return shoe
+        raise HTTPException(status_code=404, detail="Shoe not found")
+
+    old_image_url = shoe.image_url
+
+    # Upload new image
+    new_image_url = await shoe_catalog_service.upload_shoe_image(image)
+
+    # Delete old image
+    if old_image_url:
+        shoe_catalog_service.delete_shoe_image(old_image_url)
+
+    update_data = ShoeCatalogUpdate(
+        model_name=model_name,
+        price=price,
+        image_url=new_image_url
+    )
+
+    updated_shoe = shoe_catalog_service.update_shoe_catalog(db, shoe_id, update_data)
+
+    return updated_shoe
 
 
 @router.delete("/shoes/{shoe_id}", status_code=status.HTTP_204_NO_CONTENT)
