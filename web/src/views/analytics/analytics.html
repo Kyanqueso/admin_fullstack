@@ -27,6 +27,123 @@
 
     <hr class="w-75 mx-auto">
 
+    <!-- Chanzu cook here -->
+
+    <!-- Main container: w-88 same as global.css-->
+    <div class="w-88 mx-auto mb-5">
+
+        <!-- Analytics Overview title -->
+        <h1 id="analytics-title" class="mb-3">Analytics Overview</h1>
+
+        <!-- Row gap = 4 -->
+        <div class="row g-4">
+
+            <!-- Column 1 (Left) -->
+            <div class="col-12 col-lg-7"> <!-- 7`/12 col size on big screen -->
+
+                <!-- Chart Card (Total Sales Header and Line Chart-->
+                <div class="analytics-card chart-card box-drop-shadow p-5 h-100 rounded">
+
+                    <!-- Header row: title left, total value right -->
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <!--Total Sales Label -->
+                        <h5 id="total-sales-label" class="fw-bold mb-2">Total Sales</h5>
+                        <!-- Total Sales Value -->
+                        <h5 id="total-sales-value" class="total-sales-amount fw-bold">₱99999.00</h5>
+                    </div>
+
+                    <!-- Line Chart-->
+                    <div class="sales-chart-container">
+                        <!-- Chart.js element -->
+                        <canvas id="sales-chart"></canvas>
+                    </div>
+
+                </div>
+            </div>
+            <!-- End of Column 1 (Left) -->
+
+            <!-- Column 2 (Right) -->
+            <div class="col-12 col-lg-5"><!-- 5/12 col size on big screen -->
+
+                <!-- Flex Column to stack -->
+                <div class="d-flex flex-column gap-3">
+
+                    <!-- Analytics Card 1: Uncollected Balance -->
+                    <div class="analytics-card summary-card box-drop-shadow p-3">
+
+                        <!-- Card Header label -->
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="trend-icon">⭧</span>
+                            <span class="card-label fw-bold">Uncollected Balance</span>
+                        </div>
+
+                        <!-- Card Subheading: time period -->
+                        <span class="card-subtitle">Last 12 months</span>
+
+                        <!-- Card Value: JS Api -->
+                        <div id="uncollected-balance" class="card-value">₱10000</div>
+                    </div>
+
+                    <!-- Analytics Card 2: Annual Sales -->
+                    <div class="analytics-card summary-card box-drop-shadow p-3">
+
+                        <!-- Card Header: label -->
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="trend-icon">⭧</span>
+                            <span class="card-label fw-bold">Annual Sales</span>
+                        </div>
+
+                        <!-- Card Subheading: year period -->
+                        <span id="annual-sales-year" class="card-subtitle">Year 2025</span>
+
+                        <!-- Card Value: JS Api -->
+                        <div id="annual-sales" class="card-value">₱45870</div>
+                    </div>
+
+                    <!-- Analytics Card 3: Total Orders -->
+                    <div class="analytics-card summary-card box-drop-shadow p-3">
+
+                        <!-- Card Header label -->
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="trend-icon">⭧</span>
+                            <span class="card-label fw-bold">Total Orders</span>
+                        </div>
+
+                        <!-- Card Subheading: time period -->
+                        <span class="card-subtitle">Last 30 days</span>
+
+                        <!-- Card Value: JS Api -->
+                        <div id="total-orders" class="card-value">40</div>
+                    </div>
+
+                    <!-- Analytics Card 4: Pending Orders -->
+                    <div class="analytics-card summary-card box-drop-shadow p-3">
+
+                        <!-- Card Header label -->
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="trend-icon">⭧</span>
+                            <span class="card-label fw-bold">Pending Orders</span>
+                        </div>
+
+                        <!-- Card Subheading: time period -->
+                        <span class="card-subtitle">Last 30 days</span>
+
+                        <!-- Card Value: JS Api -->
+                        <div id="pending-orders" class="card-value">24</div>
+                    </div>
+
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Chart.js library: must be loaded BEFORE analytics.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- UNTIL HERE -->
+
 
     <!-- Call analytics.js and bootstrap bundle.js -->
     <script src="analytics.js"></script>

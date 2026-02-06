@@ -1,0 +1,74 @@
+
+    /* Medium screens (tablets) */
+    @media (max-width: 768px) {
+        #scm{
+            font-size: 1.55rem;
+        }
+        .add-edit-shoe {
+            font-size: 1rem;
+        }
+    }
+
+    /* Small screens (phones) */
+    @media (max-width: 480px) {
+        #scm{
+            font-size: 1.25rem;
+            text-align: center;
+        }
+        .add-edit-shoe {
+            font-size: 0.88rem;
+            text-align: center;
+        }
+    }
+    #analytics-title {
+        font-weight: 700;
+        color:var(--color-black);
+    }
+
+    .analytics-card {
+        border-radius: 8px;
+        background-color: var(--color-accent);
+    }
+
+    .chart-card {
+        background-color: var(--color-white);
+    }
+
+    .total-sales-amount {
+        font-size: 1.5rem;
+        color: var(--color-black);
+    }
+
+    .sales-chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+
+    .summary-card {
+        min-height: 110px;
+    }
+
+    .trend-icon {
+        font-size: 1rem;
+        color: var(--color-btn-green);
+    }
+
+    .card-label {
+        font-size: 1rem;
+        color: var(--color-black);
+    }
+
+    .card-subtitle {
+        font-size: 0.8rem;
+        color: var(--color-grey);
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .card-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--color-black);
+    }
+

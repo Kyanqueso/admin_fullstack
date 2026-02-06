@@ -1,9 +1,10 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func, extract
 from app.schemas.analytics import AnalyticsRead, MonthSales, AnnualSalesBreakdownRead
-from app.db.models import ClientOrder, PaymentSummary
+from app.db.models import PaymentSummary, PaymentTransaction
 from decimal import Decimal
 from datetime import datetime, timezone
+
 
 def get_analytics(db: Session):
     current_date = datetime.now(timezone.utc)
@@ -18,13 +19,13 @@ def get_analytics(db: Session):
     total_pending_order = db.query(func.count(PaymentSummary.id)).filter(
         PaymentSummary.remaining_balance > 0).scalar() or 0
 
-    monthly_sales = db.query(func.sum(ClientOrder.price)).filter(
-        extract("month", ClientOrder.order_date) == current_month,
-        extract("year", ClientOrder.order_date) == current_year
+    monthly_sales = db.query(func.sum(PaymentTransaction.paid_amount)).filter(
+        extract("month", PaymentTransaction.payment_date) == current_month,
+        extract("year", PaymentTransaction.payment_date) == current_year
     ).scalar() or Decimal(0)
 
-    annual_sales = db.query(func.sum(ClientOrder.price)).filter(
-        extract("year", ClientOrder.order_date) == current_year
+    annual_sales = db.query(func.sum(PaymentTransaction.paid_amount)).filter(
+        extract("year", PaymentTransaction.payment_date) == current_year
     ).scalar() or Decimal(0)
 
     return AnalyticsRead(
@@ -34,6 +35,7 @@ def get_analytics(db: Session):
         monthly_sales=monthly_sales,
         annual_sales=annual_sales
     )
+
 
 def get_annual_sales_breakdown(db: Session, year_number: int = None):
     if year_number is None:
@@ -46,9 +48,9 @@ def get_annual_sales_breakdown(db: Session, year_number: int = None):
     monthly_data = []
 
     for month_number in range(1, 13):
-        month_sales = db.query(func.sum(ClientOrder.price)).filter(
-            extract("month", ClientOrder.order_date) == month_number,
-            extract("year", ClientOrder.order_date) == year_number,
+        month_sales = db.query(func.sum(PaymentTransaction.paid_amount)).filter(
+            extract("month", PaymentTransaction.payment_date) == month_number,
+            extract("year", PaymentTransaction.payment_date) == year_number,
         ).scalar() or Decimal(0)
 
         monthly_data.append(MonthSales(

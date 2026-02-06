@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
-from app.db.models import PaymentSummary
+from sqlalchemy import func
+from app.db.models import PaymentSummary, PaymentTransaction
 from app.schemas.payment_summary import PaymentSummaryCreate, PaymentSummaryUpdate
+from decimal import Decimal
 
 
 def create_payment_summary(db: Session, payment_summary_data: PaymentSummaryCreate):
@@ -49,3 +51,35 @@ def delete_payment_summary(db: Session, payment_summary_id: int):
     db.commit()
 
     return True
+
+
+def create_payment_summary_for_order(db: Session, client_order_id: int, order_price: Decimal):
+    payment_summary = PaymentSummary(
+        client_order_id=client_order_id,
+        paid_amount=Decimal(0),
+        remaining_balance=order_price
+    )
+    db.add(payment_summary)
+    return payment_summary
+
+
+def get_payment_summary_by_order(db: Session, client_order_id: int):
+    return db.query(PaymentSummary).filter(PaymentSummary.client_order_id == client_order_id).first()
+
+
+def recalculate_payment_summary(db: Session, payment_summary_id: int):
+    payment_summary = get_payment_summary(db, payment_summary_id)
+    if not payment_summary:
+        return None
+
+    total_paid = db.query(func.sum(PaymentTransaction.paid_amount)).filter(
+        PaymentTransaction.payment_summary_id == payment_summary_id
+    ).scalar() or Decimal(0)
+
+    order = payment_summary.client_order
+    order_total = order.price * order.quantity
+
+    payment_summary.paid_amount = total_paid
+    payment_summary.remaining_balance = order_total - total_paid
+
+    return payment_summary

@@ -1,12 +1,18 @@
 from sqlalchemy.orm import Session
 from app.db.models import PaymentTransaction
 from app.schemas.payment_transaction import PaymentTransactionCreate, PaymentTransactionUpdate
+from app.services import payment_summary_service
 
 
 def create_payment_transaction(db: Session, payment_transaction_data: PaymentTransactionCreate):
     payment_transaction = PaymentTransaction(**payment_transaction_data.model_dump())
 
     db.add(payment_transaction)
+    db.flush()
+
+    # Auto-recalculate PaymentSummary totals
+    payment_summary_service.recalculate_payment_summary(db, payment_transaction.payment_summary_id)
+
     db.commit()
     db.refresh(payment_transaction)
 
@@ -35,6 +41,11 @@ def update_payment_transaction(db: Session, payment_transaction_id: int,
     for key, value in payment_transaction_updated_items:
         setattr(payment_transaction, key, value)
 
+    db.flush()
+
+    # Auto-recalculate PaymentSummary totals
+    payment_summary_service.recalculate_payment_summary(db, payment_transaction.payment_summary_id)
+
     db.commit()
     db.refresh(payment_transaction)
 
@@ -46,7 +57,15 @@ def delete_payment_transaction(db: Session, payment_transaction_id: int):
     if not payment_transaction:
         return None
 
+    # Store the summary_id before deleting
+    summary_id = payment_transaction.payment_summary_id
+
     db.delete(payment_transaction)
+    db.flush()
+
+    # Auto-recalculate PaymentSummary totals
+    payment_summary_service.recalculate_payment_summary(db, summary_id)
+
     db.commit()
 
     return True
