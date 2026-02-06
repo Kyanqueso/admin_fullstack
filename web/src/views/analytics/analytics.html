@@ -27,16 +27,21 @@
 
     <hr class="w-75 mx-auto">
 
-    <!-- Chanzu cook here -->
-
     <!-- Main container: w-88 same as global.css-->
     <div class="w-88 mx-auto mb-5">
 
         <!-- Analytics Overview title -->
-        <h1 id="analytics-title" class="mb-3">Analytics Overview</h1>
+        <h1 class="mb-3 fw-bold">Analytics Overview</h1>
 
+        <!-- Loading -->
+        <div id="dashboard-loader" class="text-center my-5 w-100">
+            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted fw-bold">Loading Analytics...</p>
+        </div>
         <!-- Row gap = 4 -->
-        <div class="row g-4">
+        <div id="dashboard-content" class="row g-4 d-none">
 
             <!-- Column 1 (Left) -->
             <div class="col-12 col-lg-7"> <!-- 7`/12 col size on big screen -->
@@ -49,7 +54,7 @@
                         <!--Total Sales Label -->
                         <h5 id="total-sales-label" class="fw-bold mb-2">Total Sales</h5>
                         <!-- Total Sales Value -->
-                        <h5 id="total-sales-value" class="total-sales-amount fw-bold">₱99999.00</h5>
+                        <h5 id="total-sales-value" class="total-sales-amount fw-bold">---</h5>
                     </div>
 
                     <!-- Line Chart-->
@@ -81,7 +86,7 @@
                         <span class="card-subtitle">Last 12 months</span>
 
                         <!-- Card Value: JS Api -->
-                        <div id="uncollected-balance" class="card-value">₱10000</div>
+                        <div id="uncollected-balance" class="card-value">---</div>
                     </div>
 
                     <!-- Analytics Card 2: Annual Sales -->
@@ -97,7 +102,7 @@
                         <span id="annual-sales-year" class="card-subtitle">Year 2025</span>
 
                         <!-- Card Value: JS Api -->
-                        <div id="annual-sales" class="card-value">₱45870</div>
+                        <div id="annual-sales" class="card-value">---</div>
                     </div>
 
                     <!-- Analytics Card 3: Total Orders -->
@@ -113,7 +118,7 @@
                         <span class="card-subtitle">Last 30 days</span>
 
                         <!-- Card Value: JS Api -->
-                        <div id="total-orders" class="card-value">40</div>
+                        <div id="total-orders" class="card-value">---</div>
                     </div>
 
                     <!-- Analytics Card 4: Pending Orders -->
@@ -129,7 +134,7 @@
                         <span class="card-subtitle">Last 30 days</span>
 
                         <!-- Card Value: JS Api -->
-                        <div id="pending-orders" class="card-value">24</div>
+                        <div id="pending-orders" class="card-value">---</div>
                     </div>
 
 

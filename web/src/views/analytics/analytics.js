@@ -193,22 +193,48 @@ function createSalesChart(breakdownData) {
 
 
 // Main function - runs when page loads
+// analytics.js
+
 async function initAnalytics() {
-    // Fetch both API endpoints in parallel for better performance
-    // Promise.all waits for both to complete
-    const [analyticsData, breakdownData] = await Promise.all([
-        fetchAnalytics(),
-        fetchAnnualBreakdown()
-    ]);
+    // Get loader and the content
+    const loader = document.getElementById('dashboard-loader');
+    const content = document.getElementById('dashboard-content');
 
-    // Update the 4 summary cards
-    updateSummaryCards(analyticsData);
+    try {
+        // Fetch data 
+        const [analyticsData, breakdownData] = await Promise.all([
+            fetchAnalytics(),
+            fetchAnnualBreakdown()
+        ]);
 
-    // Small delay to ensure container dimensions are calculated
-    // Fixes Chart.js not rendering until window resize
-    setTimeout(() => {
-        createSalesChart(breakdownData);
-    }, 50);
+        // SWAP VISIBILITY
+        // Hide the loader
+        if (loader) loader.classList.add('d-none');
+        
+        // Show the content
+        if (content) content.classList.remove('d-none');
+
+        // Update the text data
+        updateSummaryCards(analyticsData);
+
+        // Draw the Chart
+        // We use a small timeout to let the browser recognize the div is now visible
+        // before Chart.js tries to calculate the width/height.
+        setTimeout(() => {
+            createSalesChart(breakdownData);
+        }, 50);
+
+    } catch (error) {
+        console.error("Error loading dashboard:", error);
+        
+        // Error message if fetch fails
+        if (loader) {
+            loader.innerHTML = `
+                <div class="text-danger fw-bold">
+                    <p>Failed to load data: ${error.message}</p>
+                </div>`;
+        }
+    }
 }
 
 // Logout button handler

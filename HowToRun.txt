@@ -41,3 +41,10 @@ npm start
 - Use the `development` branch for actual feature work. DO NOT MODIFY 'main'.
 
 ---
+
+6.1 If Error on start due to missing uvicorn files and python libraries:
+------------------------------------------------------------------------
+cd api
+python -m venv venv
+.\venv\Scripts\Activate
+pip install --upgrade --force-reinstall -r requirements.txt
