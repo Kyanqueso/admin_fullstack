@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Import CSS Files and Local Bootstrap-->
+    <link rel="stylesheet" href="../../../assets/bootstrap/bootstrap.min.css">
+    <link rel="stylesheet" href="../../../css/global.css">
+    <link rel="stylesheet" href="complete_orders.css">
+
+
+    <title>Client Page</title>
+</head>
+
+<body class="px-4">
+
+    <!-- Back Button -->
+    <div class="my-3">
+        <a href="../companies.html" class="text-decoration-none">
+            <img src="../../../assets/icons/back-btn.svg" alt="Back" width="20" height="20">
+        </a>
+    </div>
+
+    <!-- Tabs -->
+
+    <div class="row g-3 mb-4 client-tabs">
+
+        <div class="col-12 col-sm-6 col-md-3">
+            <a href="../clients/clients.html" class="text-decoration-none d-block">
+                <button class="btn tab-btn  w-100 p-3">
+                    Customer List
+                </button>
+            </a>
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-3">
+            <a href="../orders/orders.html" class="text-decoration-none d-block">
+                <button class="btn tab-btn w-100 p-3">
+                    Orders
+                </button>
+            </a>
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-3">
+            <a href="../payments/payments.html" class="text-decoration-none d-block">
+                <button class="btn tab-btn w-100 p-3">
+                    Payment
+                </button>
+            </a>
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-3">
+            <a href="../complete_orders/complete_orders.html" class="text-decoration-none d-block">
+                <button class="btn tab-btn w-100 p-3 active">
+                    Completed Order
+                </button>
+            </a>
+        </div>
+
+    </div>
+
+    <!-- Page Title -->
+    <h2 class="mb-2 mt-2">Completed Orders</h2>
+
+    <!-- Search / Sort / Add -->
+    <div class="row align-items-end mb-4">
+
+        <!-- Search -->
+        <div class="col-12 col-md-4 mb-2">
+            <label class="form-label invisible">Search</label>
+            <div class="input-group">
+                <span class="input-group-text"><img src="../../../assets/icons/search.svg" alt="search" width="20"
+                        height="20"></span>
+                <input type="text" class="form-control" placeholder="Search name">
+            </div>
+        </div>
+
+        <!-- Sort -->
+        <div class="col-12 col-md-2 mb-2">
+            <label class="form-label"></label>
+            <select class="form-select mt-2">
+                <option value="" selected disabled hidden>Sort by</option>
+                <option value="name">Name</option>
+                <option value="recent">Recently Added</option>
+                <option value="alpha">Alphabetical</option>
+            </select>
+        </div>
+
+       
+
+    </div>
+
+    <!-- Table -->
+    <div class="table-responsive">
+        <table class="table align-middle">
+
+            <!-- Table Head -->
+            <thead class="table-header">
+                <tr>
+                    <th>Order ID</th>
+                    <th>Customer Name</th>
+                    <th>Style</th>
+                    <th>Size</th>
+                    <th>Material</th>
+                    <th>Color</th>
+                    <th>Heel Type</th>
+                    <th>Heel Size</th>
+                    <th>Mold Type</th>
+                    <th>Buckle</th>
+                    <th>Slingback</th>
+                    <th>Platform</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Total Amount</th>
+                </tr>
+            </thead>
+
+            <!-- Table Body -->
+            <tbody>
+
+                <tr>
+                    <td>4</td>
+                    <td>Kyan Charles So</td>
+                    <td>S2H5</td>
+                    <td>8</td>
+                    <td>Helga</td>
+                    <td>S1</td>
+                    <td>Square</td>
+                    <td>H5</td>
+                    <td>Liz</td>
+                    <td>No</td>
+                    <td>No</td>
+                    <td>Yes</td>
+                    <td>1</td>
+                    <td>₱1,800</td>
+                    <td>₱1,800</td>
+                </tr>
+
+                <tr>
+                    <td>5</td>
+                    <td>Jonah Levi</td>
+                    <td>T2H3</td>
+                    <td>8</td>
+                    <td>Helga</td>
+                    <td>T5</td>
+                    <td>Square</td>
+                    <td>H3</td>
+                    <td>Milani</td>
+                    <td>Yes</td>
+                    <td>No</td>
+                    <td>Yes</td>
+                    <td>1</td>
+                    <td>₱1,800</td>
+                    <td>₱1,800</td>
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+
+
+    <!-- Scripts -->
+    <script src="analytics.js"></script>
+    <script src="../../../assets/bootstrap/bootstrap.bundle.min.js"></script>
+
+</body>

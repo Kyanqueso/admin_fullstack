@@ -1,0 +1,109 @@
+/* ======================
+   TABLE
+====================== */
+.table-header th {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+/* ======================
+   TABS
+====================== */
+.client-tabs .tab-btn {
+  background-color: var(--color-accent);
+  color: #000;
+  border: 1px solid #ccc;
+}
+
+.client-tabs .tab-btn.active {
+  background-color: var(--color-primary);
+  color: beige;
+  border-color: var(--color-primary);
+}
+
+/* ======================
+   BUTTONS
+====================== */
+.view-notes {
+  background-color: var(--color-accent);
+}
+
+/* ======================
+   OVERLAY / MODAL
+====================== */
+.overlay {
+  position: fixed;
+  inset: 0;
+  backdrop-filter: blur(6px);
+  background-color: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+
+.overlay-content {
+  background-color: var(--color-accent);
+  border-radius: 8px;
+  max-width: 700px;
+  width: 90%;
+  position: relative;
+}
+
+.overlay-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+/* ======================
+   FORMS
+====================== */
+#overlay-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.overlay-content h5 {
+  text-align: left;
+}
+
+.overlay-content textarea {
+  width: 100%;
+  resize: none;
+  border-radius: 6px;
+  text-align: justify;
+}
+
+.overlay-content .form-label {
+  text-align: left;
+  width: 100%;
+  display: block;
+}
+
+/* Smaller delete confirmation modal */
+#deleteClientOverlay .overlay-content {
+  max-width: 350px;   /* try 350–400px */
+  padding: 20px;
+}
+
+#deleteClientOverlay h5 {
+  text-align: center;
+}
+
+#deleteClientOverlay .btn {
+  padding: 10px 28px;  
+  min-width: 130px;    
+}
+
+
+/* ======================
+   UTILITIES
+====================== */
+.d-none {
+  display: none !important;
+}

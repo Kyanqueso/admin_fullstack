@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,11 +11,11 @@
 
     <title>Clients Page</title>
 </head>
+
 <body>
     <!-- Logout button -->
     <div class="d-flex justify-content-end">
-        <button id="logout-btn"
-                class="btn btn-danger my-3 me-2 me-md-5 fw-bold">
+        <button id="logout-btn" class="btn btn-danger my-3 me-2 me-md-5 fw-bold">
             Logout
         </button>
     </div>
@@ -26,6 +27,118 @@
     </nav>
 
     <hr class="w-75 mx-auto">
+    <main class="container py-4">
+
+        <!-- Page Title -->
+        <h1 class="text-center mb-4">Client List</h1>
+
+        <!-- Search + Sort -->
+        <div class="row justify-content-center mb-5">
+
+            <div class="col-12 col-md-4 small-width">
+                <label class="form-label invisible">Search</label>
+
+                <div class="input-group">
+                    <span class="input-group-text"><img src="../../assets/icons/search.svg" alt="search" width="20"
+                        height="20"></span>
+                    <input id="searchInput" type="text" class="form-control" placeholder="Search">
+                </div>
+            </div>
+            <div class="col-12 col-md-2 small-width">
+                <label class="form-label"></label>
+                <select class="form-select mt-2">
+                    <option value="" selected disabled hidden>Sort by</option>
+                    <option value="name">Name</option>
+                    <option value="recent">Recently Added</option>
+                    <option value="alpha">Alphabetical</option>
+                </select>
+
+            </div>
+
+        </div>
+
+        <!-- Client Cards Grid -->
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-3 ">
+
+            <a href="clients/clients.html" class="text-decoration-none">
+                <!-- Client Card -->
+                <div class=" col">
+                    <div class="client-card card h-100  position-relative py-4">
+
+                        <!-- Action buttons -->
+                        <div class="position-absolute top-0 end-0 p-1 d-flex gap-2">
+                            <button class="btn btn-sm btn-success ">✎</button>
+
+                            <button class="btn btn-sm btn-danger">🗑</button>
+                        </div>
+
+                        <!-- Card content -->
+                        <div class="card-body d-flex justify-content-center align-items-center">
+                            <strong class="fs-3">BDO</strong>
+                        </div>
+
+
+                    </div>
+
+                </div>
+            </a>
+            <a href="clients/clients.html" class="text-decoration-none">
+                <div class="col">
+                    <div class="client-card card h-100  position-relative py-4">
+
+                        <div class="position-absolute top-0 end-0 p-1 d-flex gap-2">
+                            <button class="btn btn-sm btn-success">✎</button>
+                            <button class="btn btn-sm btn-danger">🗑</button>
+                        </div>
+
+                        <div class="card-body d-flex justify-content-center align-items-center">
+                            <strong class="fs-3">SM</strong>
+                        </div>
+
+                    </div>
+                </div>
+            </a>
+            <div class="col">
+                <div class="client-card card h-100  position-relative py-4">
+
+                    <div class="position-absolute top-0 end-0 p-1 d-flex gap-2">
+                        <button class="btn btn-sm btn-success">✎</button>
+                        <button class="btn btn-sm btn-danger">🗑</button>
+                    </div>
+
+                    <div class="card-body d-flex justify-content-center align-items-center">
+                        <strong class="fs-3">BPI</strong>
+                    </div>
+
+                </div>
+            </div>
+            <a href="clients/clients.html" class="text-decoration-none">
+                <div class="col">
+                    <div class="client-card card h-100  position-relative py-4">
+
+                        <div class="position-absolute top-0 end-0 p-1 d-flex gap-2">
+                            <button class="btn btn-sm btn-success ">✎</button>
+                            <button class="btn btn-sm btn-danger">🗑</button>
+                        </div>
+
+                        <div class="card-body d-flex justify-content-center align-items-center">
+                            <strong class="fs-3">UNIBANK</strong>
+                        </div>
+
+                    </div>
+                </div>
+            </a>
+            <!-- Add Client Card -->
+            <div class="col">
+                <div class="card h-100 border border-2 d-flex justify-content-center align-items-center py-4">
+                    <span class="fs-1 fw-bold">+</span>
+                </div>
+            </div>
+
+        </div>
+
+
+    </main>
 
 
     <!-- Call companies.js and bootstrap bundle.js -->

@@ -1,0 +1,29 @@
+Common tags
+<div></div>        <!-- container -->
+<span></span>      <!-- inline text -->
+<h1>–<h6>          <!-- headings -->
+<p>                <!-- paragraph -->
+<strong>           <!-- bold -->
+<img src="">        <!-- image -->
+<a href="">         <!-- link -->
+
+html
+<!DOCTYPE html>
+<html>
+<head></head>
+<body></body>
+</html>
+
+forms
+<input type="text">
+<input type="password">
+<select></select>
+<button></button>
+<label></label>
+
+attributes
+class=""   <!-- styling (Bootstrap/CSS) -->
+id=""      <!-- JS / unique -->
+src=""     <!-- image/file -->
+href=""    <!-- link -->
+

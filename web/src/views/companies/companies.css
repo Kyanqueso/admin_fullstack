@@ -1,0 +1,9 @@
+@media(max-width: 468px){
+    .small-width{
+        width: 70%;
+    }
+}
+
+.client-card{
+    background-color: var(--color-accent) !important;
+}

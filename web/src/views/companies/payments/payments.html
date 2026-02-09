@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Import CSS Files and Local Bootstrap-->
+    <link rel="stylesheet" href="../../../assets/bootstrap/bootstrap.min.css">
+    <link rel="stylesheet" href="../../../css/global.css">
+    <link rel="stylesheet" href="payments.css">
+
+
+    <title>Client Page</title>
+</head>
+
+<body class="px-4">
+
+    <!-- Back Button -->
+    <div class="my-3">
+        <a href="../companies.html" class="text-decoration-none">
+            <img src="../../../assets/icons/back-btn.svg" alt="Back" width="20" height="20">
+        </a>
+    </div>
+
+    <!-- Tabs -->
+    <div class="row g-3 mb-4 client-tabs">
+
+        <div class="col-12 col-sm-6 col-md-3">
+            <a href="../clients/clients.html" class="text-decoration-none d-block">
+                <button class="btn tab-btn  w-100 p-3">
+                    Customer List
+                </button>
+            </a>
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-3">
+            <a href="../orders/orders.html" class="text-decoration-none d-block">
+                <button class="btn tab-btn w-100 p-3 ">
+                    Orders
+                </button>
+            </a>
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-3">
+            <a href="../payments/payments.html" class="text-decoration-none d-block">
+                <button class="btn tab-btn w-100 p-3 active">
+                    Payment
+                </button>
+            </a>
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-3">
+            <a href="../complete_orders/complete_orders.html" class="text-decoration-none d-block">
+                <button class="btn tab-btn w-100 p-3 ">
+                    Completed Order
+                </button>
+            </a>
+        </div>
+
+    </div>
+
+
+    <!-- Page Title -->
+    <h2 class="mb-2 mt-2">Client Payment List</h2>
+
+    <!-- Search / Sort / Add -->
+    <div class="row align-items-end mb-4">
+
+        <!-- Search -->
+        <div class="col-12 col-md-4 mb-2">
+            <label class="form-label invisible">Search</label>
+            <div class="input-group">
+                <span class="input-group-text"><img src="../../../assets/icons/search.svg" alt="search" width="20"
+                        height="20"></span>
+                <input type="text" class="form-control" placeholder="Search name">
+            </div>
+        </div>
+
+        <!-- Sort -->
+        <div class="col-12 col-md-2 mb-2">
+            <label class="form-label"></label>
+            <select class="form-select mt-2">
+                <option value="" selected disabled hidden>Sort by</option>
+                <option value="name">Name</option>
+                <option value="recent">Recently Added</option>
+                <option value="alpha">Alphabetical</option>
+            </select>
+        </div>
+
+
+
+    </div>
+
+    <!-- Table -->
+    <div class="table-responsive">
+        <table class="table align-middle">
+
+            <!-- Table Head -->
+            <thead class="table-header">
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Total Amount</th>
+                    <th>Date of Order</th>
+                    <th>Balance</th>
+                    <th>Balance Cleared Date</th>
+                    <th>Transaction History</th>
+                    <th>Edit</th>
+                </tr>
+            </thead>
+
+            <!-- Table Body -->
+            <tbody>
+
+                <tr>
+                    <td>1</td>
+                    <td>Eishiea Mae Espinoza</td>
+                    <td>₱1,800.00</td>
+                    <td>Nov 8, 2025</td>
+                    <td class="text-danger">₱1,000.00</td>
+                    <td>-</td>
+                    <td>
+                        <button class="btn btn-sm text-white view-transaction-btn"
+                            style="background-color: var(--color-primary);">
+                            👁 View Transaction History
+                        </button>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm edit-payment-btn"><img src="../../../assets/icons/pencil.svg" alt="search" width="20"
+                                height="20">
+                        </button>
+                    </td>
+                </tr>
+
+
+
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Transaction History Overlay -->
+    <div class="overlay d-none" id="transactionHistoryOverlay">
+        <div class="overlay-content p-4">
+
+            <button class="overlay-close" id="closeTransactionOverlay">✕</button>
+
+            <h5 class="mb-3">Transaction History</h5>
+
+            <!-- Customer summary -->
+            <div class="transaction-summary">
+                <div><strong>Customer:</strong> Pedro Garcia</div>
+                <div><strong>Total Price:</strong> ₱2,500.00</div>
+                <div class="balance"><strong>Balance:</strong> ₱0.00</div>
+            </div>
+
+            <!-- Table -->
+            <table class="table transaction-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Payment Amount</th>
+                        <th>Payment Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>₱1,000.00</td>
+                        <td>Oct. 15, 2025</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>₱800.00</td>
+                        <td>Nov. 10, 2025</td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>₱700.00</td>
+                        <td>Dec. 1, 2025</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <button class="btn transaction-close-btn mt-3" id="closeTransactionBtn">
+                Close
+            </button>
+
+        </div>
+    </div>
+
+    <!-- Edit Transaction History Overlay -->
+    <div class="overlay d-none" id="editTransactionOverlay">
+        <div class="overlay-content p-4">
+
+            <button class="overlay-close" id="closeEditTransaction">✕</button>
+
+            <h5 class="mb-3">Edit Transaction History</h5>
+
+            <!-- Summary -->
+            <div class="transaction-summary mb-3">
+                <div><strong>Customer:</strong> Pedro Garcia</div>
+                <div><strong>Total Price:</strong> ₱1,800</div>
+                <div class="balance"><strong>Current Balance:</strong> ₱700.00</div>
+            </div>
+
+            <!-- Header row -->
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <strong>Transactions</strong>
+                <button class="btn btn-green btn-sm" id="addTransactionBtn">
+                    + Add Transaction
+                </button>
+            </div>
+
+            <!-- Transactions container -->
+            <div id="transactionsContainer">
+
+                <!-- Transaction Row -->
+                <div class="transaction-row">
+                    <div>
+                        <label class="form-label">Amount (₱)</label>
+                        <input type="number" class="form-control" value="1000">
+                    </div>
+
+                    <div>
+                        <label class="form-label">Date</label>
+                        <input type="text" class="form-control" value="Oct. 15, 2025">
+                    </div>
+
+                    <button class="delete-transaction-btn">🗑</button>
+                </div>
+
+                <div class="transaction-row">
+                    <div>
+                        <label class="form-label">Amount (₱)</label>
+                        <input type="number" class="form-control" value="800">
+                    </div>
+
+                    <div>
+                        <label class="form-label">Date</label>
+                        <input type="text" class="form-control" value="Nov. 10, 2025">
+                    </div>
+
+                    <button class="delete-transaction-btn">🗑</button>
+                </div>
+
+                <div class="transaction-row">
+                    <div>
+                        <label class="form-label">Amount (₱)</label>
+                        <input type="number" class="form-control" value="700">
+                    </div>
+
+                    <div>
+                        <label class="form-label">Date</label>
+                        <input type="text" class="form-control" value="Dec. 1, 2025">
+                    </div>
+
+                    <button class="delete-transaction-btn">🗑</button>
+                </div>
+
+            </div>
+
+            <!-- Buttons -->
+            <div class="d-flex gap-3 mt-4">
+                <button class="btn btn-danger w-50" id="cancelEditTransaction">
+                    Cancel
+                </button>
+                <button class="btn btn-green w-50">
+                    Save Changes
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="payments.js"></script>
+    <script src="../../../assets/bootstrap/bootstrap.bundle.min.js"></script>
+
+</body>
