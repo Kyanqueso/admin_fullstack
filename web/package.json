@@ -11,10 +11,10 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "electron": "^40.1.0"
+    "electron": "^40.2.1"
   },
   "dependencies": {
-    "dotenv": "^17.2.3"
+    "dotenv": "^17.2.4"
   },
   "type": "commonjs"
 }
