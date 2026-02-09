@@ -1,12 +1,21 @@
 from sqlalchemy.orm import Session
 from app.db.models import ClientOrder
 from app.schemas.client_order import ClientOrderCreate, ClientOrderUpdate
+from app.services import payment_summary_service
 
 
 def create_client_order(db: Session, client_order_data: ClientOrderCreate):
     client_order = ClientOrder(**client_order_data.model_dump())
 
     db.add(client_order)
+    db.flush()
+
+    payment_summary_service.create_payment_summary_for_order(
+        db=db,
+        client_order_id=client_order.id,
+        order_price=client_order.price * client_order.quantity
+    )
+
     db.commit()
     db.refresh(client_order)
 
@@ -32,9 +41,18 @@ def update_client_order(db: Session, client_order_id: int, client_order_data: Cl
     if not client_order:
         return None
 
-    client_order_updated_items = client_order_data.model_dump(exclude_unset=True).items()
-    for key, value in client_order_updated_items:
+    # Check if price or quantity is being updated
+    update_data = client_order_data.model_dump(exclude_unset=True)
+    price_or_quantity_changed = "price" in update_data or "quantity" in update_data
+
+    for key, value in update_data.items():
         setattr(client_order, key, value)
+
+    db.flush()
+
+    # Recalculate PaymentSummary if price or quantity changed
+    if price_or_quantity_changed and client_order.payment_summary:
+        payment_summary_service.recalculate_payment_summary(db, client_order.payment_summary.id)
 
     db.commit()
     db.refresh(client_order)

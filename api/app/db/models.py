@@ -46,7 +46,7 @@ class Client(Person):
     }
 
     company = relationship("Company", back_populates="clients")
-    client_orders = relationship("ClientOrder", back_populates="client")
+    client_orders = relationship("ClientOrder", back_populates="client", cascade="all, delete-orphan")
 
 
 class ClientOrder(Base):
@@ -68,7 +68,8 @@ class ClientOrder(Base):
     price = Column(Numeric(10, 2), nullable=False)
 
     client = relationship("Client", back_populates="client_orders")
-    payment_summary = relationship("PaymentSummary", back_populates="client_order", uselist=False)
+    payment_summary = relationship("PaymentSummary", back_populates="client_order", uselist=False,
+                                   cascade="all, delete-orphan")
 
 
 class PaymentSummary(Base):
@@ -79,7 +80,8 @@ class PaymentSummary(Base):
     remaining_balance = Column(Numeric(10, 2), nullable=False)
 
     client_order = relationship("ClientOrder", back_populates="payment_summary")
-    payment_transactions = relationship("PaymentTransaction", back_populates="payment_summary")
+    payment_transactions = relationship("PaymentTransaction", back_populates="payment_summary",
+                                        cascade="all, delete-orphan")
 
 
 class PaymentTransaction(Base):
@@ -99,6 +101,7 @@ class PaymentTransaction(Base):
     )
 
     payment_summary = relationship("PaymentSummary", back_populates="payment_transactions")
+
 
 class ShoeCatalog(Base):
     __tablename__ = "shoe_catalog"
