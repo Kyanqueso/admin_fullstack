@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from app.config.database import engine
 
 from app.db.base import Base
@@ -11,11 +12,29 @@ from app.api.payment_transaction_router import router as payment_transaction_rou
 from app.api.analytics_router import router as analytics_router
 from app.api.shoe_management_router import router as shoe_management_router
 
+from app.api.test_routes import router as test_router
+
 
 app = FastAPI(
     title="Theresa Shoes API",
     description="Backend API for Theresa Shoes inventory and payment management",
     version="2.0.0"
+)
+
+# ADD THIS BLOCK IMMEDIATELY AFTER app = FastAPI()
+origins = [
+    "http://localhost",
+    "http://localhost:5173", # Standard Vite port
+    "http://localhost:3000",
+    "*" # For development/Electron, allow all (or specify your electron scheme)
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.get("/")
@@ -26,6 +45,14 @@ def root():
 def health_check():
     return {"status": "healthy"}
 
+@app.get("/debug-headers", tags=["Debug"])
+def debug_headers(request: Request):
+    # This will return ALL headers the server receives
+    return {
+        "headers": dict(request.headers),
+        "auth_header": request.headers.get("authorization")
+    }
+
 app.include_router(company_router)
 app.include_router(client_router)
 app.include_router(client_order_router)
@@ -33,3 +60,5 @@ app.include_router(payment_summary_router)
 app.include_router(payment_transaction_router)
 app.include_router(analytics_router)
 app.include_router(shoe_management_router)
+
+app.include_router(test_router)

@@ -1,46 +1,29 @@
 <!DOCTYPE html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- Import CSS Files and Local Bootstrap-->
-    <link rel="stylesheet" href="../../css/global.css">
-    <link rel="stylesheet" href="index.css">
-    <link rel="stylesheet" href="../../assets/bootstrap/bootstrap.min.css">
-
-    <title>Login Page</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../../css/global.css">
+  <link rel="stylesheet" href="index.css">
+  <link rel="stylesheet" href="../../assets/bootstrap/bootstrap.min.css">
+  <title>Login Page</title>
 </head>
 <body>
-    <h1 id="header" class="text-center my-5">Admin Portal</h1>
-    <form id="login-form" class="p-4 border rounded mx-auto box-drop-shadow">
-        <h3 class="mt-2 mb-4 fw-bold text-center">Login</h3>
-        <div class="mb-4">
-            <label for="username" class="form-label text-black">Username</label>
-            <input 
-                type="text" 
-                class="form-control" 
-                id="username" 
-                name="username"
-                placeholder="Enter your username" 
-                required
-            >
-        </div>
-        <div class="mb-4">
-            <label for="password" class="form-label text-black">Password</label>
-            <input 
-                type="password" 
-                class="form-control" 
-                id="password" 
-                name="password"
-                placeholder="Enter your password" 
-                required
-            >
-        </div>
-        <!-- Change to type="submit" when API is integrated-->
-        <button id="login-btn" type="button" class="mt-4 btn btn-primary w-100 fw-bold">Login</button>
-    </form>
+  <h1 class="text-center my-5">Admin Portal</h1>
+  <form id="login-form" class="p-4 border rounded mx-auto box-drop-shadow">
+    <h3 class="mt-2 mb-4 fw-bold text-center">Login</h3>
+    <div class="mb-4">
+      <label for="email" class="form-label">Email</label>
+      <input type="email" class="form-control" id="email" placeholder="Enter email" required>
+    </div>
+    <div class="mb-4">
+      <label for="password" class="form-label">Password</label>
+      <input type="password" class="form-control" id="password" placeholder="Enter password" required>
+    </div>
+    <button id="login-btn" type="button" class="btn btn-primary w-100 fw-bold">Login</button>
+  </form>
 
-    <!-- Call index.js and bootstrap bundle.js -->
-    <script src="index.js"></script>
-    <script src="../../assets/bootstrap/bootstrap.bundle.min.js"></script>
+  <script type="module" src="index.js"></script>
+  <script src="../../assets/bootstrap/bootstrap.bundle.min.js"></script>
 </body>
+</html>

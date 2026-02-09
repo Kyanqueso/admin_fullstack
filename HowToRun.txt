@@ -24,6 +24,8 @@ npm init -y
 -------------------------------------------------
 npm install electron --save-dev
 npm install dotenv
+npm install @supabase/supabase-js
+npm install vite --save-dev
 
 ---
 
@@ -48,5 +50,3 @@ cd api
 python -m venv venv
 .\venv\Scripts\Activate
 pip install --upgrade --force-reinstall -r requirements.txt
-
-Pogi ni Austin
