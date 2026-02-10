@@ -91,6 +91,16 @@ document.addEventListener("DOMContentLoaded", () => {
   let rowToDelete = null;
   let allClients = []; // cached clients for search/sort
 
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   if (!COMPANY_ID) {
     alert("No company selected.");
     window.location.href = "../companies.html";
@@ -164,11 +174,11 @@ document.addEventListener("DOMContentLoaded", () => {
     tr.dataset.id = client.id;
 
     tr.innerHTML = `
-      <td>${client.first_name}</td>
-      <td>${client.last_name}</td>
-      <td>${client.address}</td>
-      <td>${client.viber_number || "-"}</td>
-      <td>${client.updated_at || "-"}</td>
+      <td>${escapeHtml(client.first_name)}</td>
+      <td>${escapeHtml(client.last_name)}</td>
+      <td>${escapeHtml(client.address)}</td>
+      <td>${escapeHtml(client.viber_number) || "-"}</td>
+      <td>${escapeHtml(client.updated_at) || "-"}</td>
       <td>
         <button class="btn btn-sm btn-outline-dark view-notes">
           View Notes

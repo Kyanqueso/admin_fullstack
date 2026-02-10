@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from app.config.database import engine
 from app.config.auth import get_current_user
@@ -22,12 +22,12 @@ app = FastAPI(
     version="2.0.0"
 )
 
-# ADD THIS BLOCK IMMEDIATELY AFTER app = FastAPI()
 origins = [
     "http://localhost",
-    "http://localhost:5173", # Standard Vite port
+    "http://localhost:5173",
     "http://localhost:3000",
-    "*" # For development/Electron, allow all (or specify your electron scheme)
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:3000",
 ]
 
 app.add_middleware(
@@ -47,21 +47,12 @@ def health_check():
     return {"status": "healthy"}
 
 # Requires authentication
-"""
 app.include_router(company_router, dependencies=[Depends(get_current_user)])
 app.include_router(client_router, dependencies=[Depends(get_current_user)])
 app.include_router(client_order_router, dependencies=[Depends(get_current_user)])
 app.include_router(payment_summary_router, dependencies=[Depends(get_current_user)])
 app.include_router(payment_transaction_router, dependencies=[Depends(get_current_user)])
 app.include_router(analytics_router, dependencies=[Depends(get_current_user)])
-"""
-
-app.include_router(company_router)
-app.include_router(client_router)
-app.include_router(client_order_router)
-app.include_router(payment_summary_router)
-app.include_router(payment_transaction_router)
-app.include_router(analytics_router)
 
 # Does not require authentication
 app.include_router(shoe_management_router)

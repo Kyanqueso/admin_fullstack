@@ -1,7 +1,7 @@
-import { createClient } from '@supabase/supabase-js' 
+import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = "https://dohhnithtdwtwkfwccag.supabase.co"
-const supabaseKey = "sb_publishable_Tn2EFv2bbXbD9E6OxEwiLQ_VECvXrPr" // Make sure this is your ANON key
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 // DOM Elements
@@ -45,8 +45,8 @@ async function login(email, password) {
 async function callBackend() {
     const token = localStorage.getItem('access_token');
     
-    // CHANGE THIS BACK TO /protected or your user-data route
-    const res = await fetch(`http://127.0.0.1:8000/protected`, { 
+    const backendUrl = import.meta.env.VITE_BACKEND_URL;
+    const res = await fetch(`${backendUrl}/protected`, {
         headers: { 
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'

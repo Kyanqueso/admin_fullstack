@@ -28,10 +28,39 @@ let allShoes = [];
 let selectedShoeId = null;
 
 /* ===============================
+   HTML ESCAPING
+=============================== */
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+/* ===============================
    API HELPERS
 =============================== */
+function getAuthHeaders() {
+    const token = localStorage.getItem('access_token');
+    if (!token || token === 'null' || token === 'undefined') {
+        localStorage.removeItem('access_token');
+        window.location.href = "../auth/index.html";
+        throw new Error("Missing access token");
+    }
+    return { 'Authorization': `Bearer ${token}` };
+}
+
 async function apiFetch(url, options = {}) {
-    const response = await fetch(url, options);
+    const headers = { ...getAuthHeaders(), ...(options.headers || {}) };
+    const response = await fetch(url, { ...options, headers });
+    if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('access_token');
+        window.location.href = "../auth/index.html";
+        throw new Error("Unauthorized");
+    }
     if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
     return await response.json();
 }
@@ -56,7 +85,7 @@ async function loadShoes() {
         allShoes = shoes;
         renderShoes(allShoes);
     } catch (err) {
-        grid.innerHTML = `<p class="text-danger text-center">Failed to load shoes: ${err.message}</p>`;
+        grid.innerHTML = `<p class="text-danger text-center">Failed to load shoes: ${escapeHtml(err.message)}</p>`;
         console.error(err);
     }
 }
@@ -77,10 +106,10 @@ function renderShoes(shoesArray) {
         col.className = 'col-12 col-md-6 col-lg-4';
         col.innerHTML = `
             <div class="card h-100 box-drop-shadow">
-                <img src="${shoe.image_url || 'https://placehold.co/400'}" class="card-img-top" alt="${shoe.model_name}">
+                <img src="${escapeHtml(shoe.image_url) || 'https://placehold.co/400'}" class="card-img-top" alt="${escapeHtml(shoe.model_name)}">
                 <div class="accent-bg card-body d-flex flex-column">
                     <h5 class="card-title"><strong>${highlightQuery(shoe.model_name)}</strong></h5>
-                    <p class="card-text flex-grow-1">${shoe.price}</p>
+                    <p class="card-text flex-grow-1">${escapeHtml(String(shoe.price))}</p>
 
                     <div class="d-flex flex-row gap-3">
                         <a class="btn w-50 edit-shoe-btn" data-shoe-id="${shoe.id}">
@@ -101,10 +130,12 @@ function renderShoes(shoesArray) {
    SEARCH & SORT
 =============================== */
 function highlightQuery(text) {
+    const escaped = escapeHtml(text);
     const query = searchInput.value.trim();
-    if (!query) return text;
-    const regex = new RegExp(`(${query})`, 'gi');
-    return text.replace(regex, '<mark>$1</mark>');
+    if (!query) return escaped;
+    const escapedQuery = escapeHtml(query).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedQuery})`, 'gi');
+    return escaped.replace(regex, '<mark>$1</mark>');
 }
 
 function sortShoes(shoesArray, sortValue) {
@@ -251,19 +282,24 @@ overlayConfirm.addEventListener('click', async () => {
         if (price) formData.append('price', price);
         if (imageFile) formData.append('image', imageFile);
 
+        const authHeaders = getAuthHeaders();
+
         if (type === 'add') {
             response = await fetch(`${FAST_API_URL}/shoe-management/shoes`, {
                 method: 'POST',
+                headers: authHeaders,
                 body: formData
             });
         } else if (type === 'edit') {
             response = await fetch(`${FAST_API_URL}/shoe-management/shoes/${id}`, {
                 method: 'PATCH',
+                headers: authHeaders,
                 body: formData
             });
         } else if (type === 'delete') {
             response = await fetch(`${FAST_API_URL}/shoe-management/shoes/${id}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: authHeaders
             });
         }
 

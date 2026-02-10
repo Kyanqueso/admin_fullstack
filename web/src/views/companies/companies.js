@@ -47,6 +47,16 @@ const editBranchInput = document.getElementById("editCompanyBranch");
 let selectedCompanyId = null;
 let allCompanies = []; // cached for search + sort
 
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 /* ===============================
    API HELPERS
 =============================== */
@@ -132,7 +142,7 @@ function renderCompanyCard(company) {
       </div>
 
       <div class="card-body d-flex justify-content-center align-items-center">
-        <strong class="fs-3">${company.name}</strong>
+        <strong class="fs-3">${escapeHtml(company.name)}</strong>
       </div>
     </div>
   `;
