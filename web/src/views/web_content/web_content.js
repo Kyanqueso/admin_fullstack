@@ -1,3 +1,6 @@
+import pencilIcon from '../../assets/icons/pencil.svg';
+import trashIcon from '../../assets/icons/trash-can.svg';
+
 // Will make this better when API is integrated
 document.getElementById('logout-btn').onclick = function() {
     // Clear any session data if necessary
@@ -29,12 +32,12 @@ async function loadShoes() {
 
                         <div class="d-flex flex-row gap-3">
                             <a class="btn w-50 edit-shoe-btn" data-shoe-id="${shoe.id}">
-                                <img src="../../assets/icons/pencil.svg" width="18" height="18">
+                                <img src="${pencilIcon}" width="18" height="18">
                                 Edit
                             </a>
 
                             <a class="btn btn-danger w-50 delete-shoe-btn" data-shoe-id="${shoe.id}">
-                                <img src="../../assets/icons/trash-can.svg" width="18" height="18">
+                                <img src="${trashIcon}" width="18" height="18">
                                 Delete
                             </a>
                         </div>

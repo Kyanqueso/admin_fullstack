@@ -31,11 +31,17 @@ npm install vite --save-dev
 
 5. Run the program
 ------------------
-npm start
+npm run dev
 
 ---
 
-6. Notes
+6. Create new terminal then execute these commands
+--------------------------------------------------
+npm run build
+npm start
+
+
+7. Notes
 --------
 - No need to manually activate the backend (API Folder), it is handled by main.js
 - Be sure to install necessary packages (Refer to no.3).
@@ -44,7 +50,7 @@ npm start
 
 ---
 
-6.1 If Error on start due to missing uvicorn files and python libraries:
+7.1 If Error on start due to missing uvicorn files and python libraries:
 ------------------------------------------------------------------------
 cd api
 python -m venv venv

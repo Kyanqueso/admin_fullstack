@@ -1,6 +1,7 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from app.config.database import engine
+from app.config.auth import get_current_user
 
 from app.db.base import Base
 
@@ -45,20 +46,14 @@ def root():
 def health_check():
     return {"status": "healthy"}
 
-@app.get("/debug-headers", tags=["Debug"])
-def debug_headers(request: Request):
-    # This will return ALL headers the server receives
-    return {
-        "headers": dict(request.headers),
-        "auth_header": request.headers.get("authorization")
-    }
+# Requires authentication
+app.include_router(company_router, dependencies=[Depends(get_current_user)])
+app.include_router(client_router, dependencies=[Depends(get_current_user)])
+app.include_router(client_order_router, dependencies=[Depends(get_current_user)])
+app.include_router(payment_summary_router, dependencies=[Depends(get_current_user)])
+app.include_router(payment_transaction_router, dependencies=[Depends(get_current_user)])
+app.include_router(analytics_router, dependencies=[Depends(get_current_user)])
 
-app.include_router(company_router)
-app.include_router(client_router)
-app.include_router(client_order_router)
-app.include_router(payment_summary_router)
-app.include_router(payment_transaction_router)
-app.include_router(analytics_router)
+# Does not require authentication
 app.include_router(shoe_management_router)
-
 app.include_router(test_router)

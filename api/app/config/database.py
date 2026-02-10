@@ -24,8 +24,8 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,  # Good for handling dropped connections
-    pool_size=10,  # Optional: Adjust based on your needs
-    max_overflow=20  # Optional: Allow extra connections during spikes
+    pool_size=10,  
+    max_overflow=20
 )
 
 SessionLocal = sessionmaker(

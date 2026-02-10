@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Import CSS Files and Local Bootstrap-->
+
+
+    <title>Client Page</title>
+  <script type="module" crossorigin src="../../../../assets/bootstrap.min-BB4Wbeoi.js"></script>
+  <link rel="stylesheet" crossorigin href="../../../../assets/bootstrap-B9K7SMpr.css">
+  <link rel="stylesheet" crossorigin href="../../../../assets/complete_orders-Bb3fUsXw.css">
+</head>
+
+<body class="px-4">
+
+    <!-- Back Button -->
+    <div class="my-3">
+        <a href="../companies.html" class="text-decoration-none">
+            <img src="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20640%20640'%3e%3c!--!Font%20Awesome%20Free%207.1.0%20by%20@fontawesome%20-%20https://fontawesome.com%20License%20-%20https://fontawesome.com/license/free%20Copyright%202026%20Fonticons,%20Inc.--%3e%3cpath%20d='M73.4%20297.4C60.9%20309.9%2060.9%20330.2%2073.4%20342.7L233.4%20502.7C245.9%20515.2%20266.2%20515.2%20278.7%20502.7C291.2%20490.2%20291.2%20469.9%20278.7%20457.4L173.3%20352L544%20352C561.7%20352%20576%20337.7%20576%20320C576%20302.3%20561.7%20288%20544%20288L173.3%20288L278.7%20182.6C291.2%20170.1%20291.2%20149.8%20278.7%20137.3C266.2%20124.8%20245.9%20124.8%20233.4%20137.3L73.4%20297.3z'/%3e%3c/svg%3e" alt="Back" width="20" height="20">
+        </a>
+    </div>
+
+    <!-- Tabs -->
+
+    <div class="row g-3 mb-4 client-tabs">
+
+        <div class="col-12 col-sm-6 col-md-3">
+            <a href="../clients/clients.html" class="text-decoration-none d-block">
+                <button class="btn tab-btn  w-100 p-3">
+                    Customer List
+                </button>
+            </a>
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-3">
+            <a href="../orders/orders.html" class="text-decoration-none d-block">
+                <button class="btn tab-btn w-100 p-3">
+                    Orders
+                </button>
+            </a>
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-3">
+            <a href="../payments/payments.html" class="text-decoration-none d-block">
+                <button class="btn tab-btn w-100 p-3">
+                    Payment
+                </button>
+            </a>
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-3">
+            <a href="../complete_orders/complete_orders.html" class="text-decoration-none d-block">
+                <button class="btn tab-btn w-100 p-3 active">
+                    Completed Order
+                </button>
+            </a>
+        </div>
+
+    </div>
+
+    <!-- Page Title -->
+    <h2 class="mb-2 mt-2">Completed Orders</h2>
+
+    <!-- Search / Sort / Add -->
+    <div class="row align-items-end mb-4">
+
+        <!-- Search -->
+        <div class="col-12 col-md-4 mb-2">
+            <label class="form-label invisible">Search</label>
+            <div class="input-group">
+                <span class="input-group-text"><img src="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20640%20640'%3e%3c!--!Font%20Awesome%20Free%207.1.0%20by%20@fontawesome%20-%20https://fontawesome.com%20License%20-%20https://fontawesome.com/license/free%20Copyright%202026%20Fonticons,%20Inc.--%3e%3cpath%20d='M480%20272C480%20317.9%20465.1%20360.3%20440%20394.7L566.6%20521.4C579.1%20533.9%20579.1%20554.2%20566.6%20566.7C554.1%20579.2%20533.8%20579.2%20521.3%20566.7L394.7%20440C360.3%20465.1%20317.9%20480%20272%20480C157.1%20480%2064%20386.9%2064%20272C64%20157.1%20157.1%2064%20272%2064C386.9%2064%20480%20157.1%20480%20272zM272%20416C351.5%20416%20416%20351.5%20416%20272C416%20192.5%20351.5%20128%20272%20128C192.5%20128%20128%20192.5%20128%20272C128%20351.5%20192.5%20416%20272%20416z'/%3e%3c/svg%3e" alt="search" width="20"
+                        height="20"></span>
+                <input type="text" class="form-control" placeholder="Search name">
+            </div>
+        </div>
+
+        <!-- Sort -->
+        <div class="col-12 col-md-2 mb-2">
+            <label class="form-label"></label>
+            <select class="form-select mt-2">
+                <option value="" selected disabled hidden>Sort by</option>
+                <option value="name">Name</option>
+                <option value="recent">Recently Added</option>
+                <option value="alpha">Alphabetical</option>
+            </select>
+        </div>
+
+       
+
+    </div>
+
+    <!-- Table -->
+    <div class="table-responsive">
+        <table class="table align-middle">
+
+            <!-- Table Head -->
+            <thead class="table-header">
+                <tr>
+                    <th>Order ID</th>
+                    <th>Customer Name</th>
+                    <th>Style</th>
+                    <th>Size</th>
+                    <th>Material</th>
+                    <th>Color</th>
+                    <th>Heel Type</th>
+                    <th>Heel Size</th>
+                    <th>Mold Type</th>
+                    <th>Buckle</th>
+                    <th>Slingback</th>
+                    <th>Platform</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Total Amount</th>
+                </tr>
+            </thead>
+
+            <!-- Table Body -->
+            <tbody>
+
+                <tr>
+                    <td>4</td>
+                    <td>Kyan Charles So</td>
+                    <td>S2H5</td>
+                    <td>8</td>
+                    <td>Helga</td>
+                    <td>S1</td>
+                    <td>Square</td>
+                    <td>H5</td>
+                    <td>Liz</td>
+                    <td>No</td>
+                    <td>No</td>
+                    <td>Yes</td>
+                    <td>1</td>
+                    <td>₱1,800</td>
+                    <td>₱1,800</td>
+                </tr>
+
+                <tr>
+                    <td>5</td>
+                    <td>Jonah Levi</td>
+                    <td>T2H3</td>
+                    <td>8</td>
+                    <td>Helga</td>
+                    <td>T5</td>
+                    <td>Square</td>
+                    <td>H3</td>
+                    <td>Milani</td>
+                    <td>Yes</td>
+                    <td>No</td>
+                    <td>Yes</td>
+                    <td>1</td>
+                    <td>₱1,800</td>
+                    <td>₱1,800</td>
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+
+
+    <!-- Scripts -->
+    <script src="../../../assets/bootstrap/bootstrap.bundle.min.js"></script>
+
+</body>

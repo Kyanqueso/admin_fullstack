@@ -20,16 +20,26 @@ function formatCurrencyToThousandPhp(amount) {
 
 async function fetchAnalytics() {
     try {
-        const response = await fetch(`${FAST_API_URL}/analytics/`);
+        // Get the token from storage
+        const token = localStorage.getItem('access_token'); 
 
-        // Check if request was successful
-        if (!response.ok) {
-            throw new Error('Failed to fetch analytics data');
+        const response = await fetch(`${FAST_API_URL}/analytics/`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`, // Send the credentials
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.status === 401 || response.status === 403) {
+             // Redirect to login if token is missing or expired
+             window.location.href = "../auth/index.html";
+             return;
         }
 
-        // Parse JSON response and return
-        return await response.json();
+        if (!response.ok) throw new Error('Failed to fetch analytics data');
 
+        return await response.json();
     } catch (error) {
         console.error('Error fetching analytics:', error);
         return null;
@@ -39,15 +49,26 @@ async function fetchAnalytics() {
 // Returns: { year_number, monthly_data: [{ month_number, month_name, sales }, ...] }
 async function fetchAnnualBreakdown(year = null) {
     try {
-        // Build URL - add year parameter if provided
+        const token = localStorage.getItem('access_token'); // Get the token
+        
         let url = `${FAST_API_URL}/analytics/annual-breakdown`;
         if (year) {
             url += `?year_number=${year}`;
         }
 
-        const response = await fetch(url);
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`, // Added this
+                'Content-Type': 'application/json'
+            }
+        });
 
         if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                console.error("Auth failed for annual breakdown");
+                window.location.href = "../auth/index.html";
+            }
             throw new Error('Failed to fetch annual breakdown data');
         }
 

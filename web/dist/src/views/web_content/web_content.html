@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Import CSS Files and Local Bootstrap-->
+
+    <title>Website Content Management Page</title>
+  <script type="module" crossorigin src="../../../assets/web_content-Sw4RFEL5.js"></script>
+  <link rel="modulepreload" crossorigin href="../../../assets/bootstrap.min-BB4Wbeoi.js">
+  <link rel="stylesheet" crossorigin href="../../../assets/bootstrap-B9K7SMpr.css">
+  <link rel="stylesheet" crossorigin href="../../../assets/web_content-cuiLgiez.css">
+</head>
+<body>
+    <!-- Logout button -->
+    <div class="d-flex justify-content-end">
+        <button id="logout-btn" class="btn btn-danger my-3 me-2 me-md-5 fw-bold">
+            Logout
+        </button>
+    </div>
+
+    <nav id="navigation" class="w-75 d-flex flex-wrap mt-1 mb-4 mx-auto justify-content-center gap-4 text-center">
+        <a class="nav-link fs-4 p-3 p-lg-4 inactive" href="../analytics/analytics.html">Analytics</a>
+        <a class="nav-link fs-4 p-3 p-lg-4 inactive" href="../companies/companies.html">Clients</a>
+        <a class="nav-link fs-4 p-3 p-lg-4 active">Website Content</a>
+    </nav>
+
+    <hr class="w-75 mx-auto">
+
+    <div class="d-flex flex-column flex-sm-row align-items-center justify-content-between w-88 mx-auto mb-4 gap-3">
+        <h1 id="scm" class="mb-0 fw-bold">Shoe Collection Management</h1>
+        <button id="add-shoe-btn" class="btn px-lg-4 py-2 add-edit-shoe">
+            <img src="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20640%20640'%3e%3c!--!Font%20Awesome%20Free%207.1.0%20by%20@fontawesome%20-%20https://fontawesome.com%20License%20-%20https://fontawesome.com/license/free%20Copyright%202026%20Fonticons,%20Inc.--%3e%3cpath%20d='M352%20128C352%20110.3%20337.7%2096%20320%2096C302.3%2096%20288%20110.3%20288%20128L288%20288L128%20288C110.3%20288%2096%20302.3%2096%20320C96%20337.7%20110.3%20352%20128%20352L288%20352L288%20512C288%20529.7%20302.3%20544%20320%20544C337.7%20544%20352%20529.7%20352%20512L352%20352L512%20352C529.7%20352%20544%20337.7%20544%20320C544%20302.3%20529.7%20288%20512%20288L352%20288L352%20128z'/%3e%3c/svg%3e" alt="Add" width="20" height="20">
+            Add New Shoe
+        </button>
+    </div>
+
+    <!-- Use hardcoded for now since will transfer to supabase 
+    <div class="card h-100 box-drop-shadow w-25 mx-5 mb-5">
+        <img src="https://placehold.co/400" class="card-img-top" alt="Shoe Name">
+        <div class="accent-bg card-body d-flex flex-column">
+            <h5 class="card-title"><strong>Shoe Name</strong></h5>
+            <p class="card-text flex-grow-1">PHP 1,800</p>
+            <div class="d-flex flex-row gap-3">
+                <a href="#" class="btn w-50 add-edit-shoe edit-shoe-btn">
+                    <img src="../../assets/icons/pencil.svg" alt="Edit" width="18" height="18">
+                    Edit
+                </a>
+                <a href="#" class="btn btn-red w-50 delete-shoe-btn">
+                    <img src="../../assets/icons/trash-can.svg" alt="Delete" width="18" height="18">
+                    Delete
+                </a>
+            </div>
+        </div>
+    </div>
+    -->
+    
+    <div class="container my-4">
+        <div id="shoe-grid" class="row g-4">
+            <!-- Cards will be injected here -->
+        </div>
+    </div>
+
+    <!--Overlay Section-->
+    <div id="shoe-overlay" class="overlay d-none">
+        <div class="overlay-content p-4 position-relative">
+            <button id="overlay-close" class="overlay-close btn p-3 mb-4 position-absolute top-0 end-0">
+                <img src="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20640%20640'%3e%3c!--!Font%20Awesome%20Free%207.1.0%20by%20@fontawesome%20-%20https://fontawesome.com%20License%20-%20https://fontawesome.com/license/free%20Copyright%202026%20Fonticons,%20Inc.--%3e%3cpath%20d='M504.6%20148.5C515.9%20134.9%20514.1%20114.7%20500.5%20103.4C486.9%2092.1%20466.7%2093.9%20455.4%20107.5L320%20270L184.6%20107.5C173.3%2093.9%20153.1%2092.1%20139.5%20103.4C125.9%20114.7%20124.1%20134.9%20135.4%20148.5L278.3%20320L135.4%20491.5C124.1%20505.1%20125.9%20525.3%20139.5%20536.6C153.1%20547.9%20173.3%20546.1%20184.6%20532.5L320%20370L455.4%20532.5C466.7%20546.1%20486.9%20547.9%20500.5%20536.6C514.1%20525.3%20515.9%20505.1%20504.6%20491.5L361.7%20320L504.6%20148.5z'/%3e%3c/svg%3e" alt="Close" width="24" height="24">
+            </button>
+
+            <h2 id="overlay-title" class="text-start">Title</h2>
+            <p id="overlay-message" class="text-start">Message goes here...</p>
+
+            <!-- Loading Spinner -->
+            <div id="overlay-loading" class="d-none text-center my-3">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Processing...</p>
+            </div>
+
+            <!-- Success / Error Message -->
+            <div id="overlay-status" class="d-none my-2 p-2 rounded"></div>
+
+            <!-- Form for Add/Edit -->
+            <form id="overlay-form" class="d-none mt-3">
+                <label class="form-label text-black">Shoe Name</label>
+                <input type="text" id="shoe-name" name="shoeName" class="form-control mb-2" placeholder="Shoe Name" required>
+
+                <label class="form-label text-black">Price</label>
+                <input type="text" id="shoe-price" name="shoePrice" class="form-control mb-2" placeholder="Price" required>
+
+                <label class="form-label text-black">Upload Image</label>
+                <input type="file" id="shoe-image" name="shoeImage" class="form-control mb-2" accept="image/*" required>
+            </form>
+
+            <!-- Buttons -->
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <button id="overlay-cancel" class="btn btn-secondary">Cancel</button>
+                <button id="overlay-confirm" class="btn btn-green">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call web_content.js and bootstrap bundle.js -->
+    <script src="../../assets/bootstrap/bootstrap.bundle.min.js"></script>
+</body>

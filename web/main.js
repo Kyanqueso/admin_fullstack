@@ -21,7 +21,7 @@ function createWindow() {
     mainWindow.webContents.openDevTools();
   } else {
     // Production build
-    mainWindow.loadFile(path.join(__dirname, 'dist', 'views/auth/index.html'));
+    mainWindow.loadFile(path.join(__dirname, 'dist', 'src/views/auth/index.html'));
   }
 }
 
