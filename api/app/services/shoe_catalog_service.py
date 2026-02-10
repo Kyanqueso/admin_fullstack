@@ -1,4 +1,6 @@
 import uuid
+import io
+from PIL import Image
 from sqlalchemy.orm import Session
 from fastapi import UploadFile
 from app.db.models import ShoeCatalog
@@ -59,20 +61,67 @@ def delete_shoe_catalog(db: Session, shoe_id: int):
 
 
 async def upload_shoe_image(image: UploadFile) -> str:
-    """Uploads an image to Supabase storage and returns the public URL."""
+    """
+    Compresses image to WebP, uploads to Supabase, and logs compression stats.
+    """
+    # Validate extension
     file_ext = image.filename.split(".")[-1].lower()
     allowed_ext = ["jpg", "jpeg", "png", "webp"]
 
     if file_ext not in allowed_ext:
         raise ValueError("Unsupported file type")
 
-    file_name = f"{uuid.uuid4()}.{file_ext}"
+    # Read file content
     file_content = await image.read()
+    original_size = len(file_content)  # Size in bytes
 
+    # Compress and Resize Logic
+    try:
+        # Open image from bytes
+        img = Image.open(io.BytesIO(file_content))
+        
+        # Resize: Restrict max dimension to 1024px (preserves aspect ratio)
+        img.thumbnail((1024, 1024))
+
+        # Save compressed image to a memory buffer
+        output_buffer = io.BytesIO()
+        
+        # Save as WebP with quality=70
+        img.save(output_buffer, format="WEBP", quality=70, optimize=True)
+        
+        # Get the compressed bytes
+        compressed_data = output_buffer.getvalue()
+        compressed_size = len(compressed_data)  # New size in bytes
+        
+        # --- MONITORING LOGS ---
+        reduction = (1 - (compressed_size / original_size)) * 100
+        print("-" * 30)
+        print(f"📸 Image Compression Stats:")
+        print(f"   Original Size:   {original_size / 1024:.2f} KB")
+        print(f"   Compressed Size: {compressed_size / 1024:.2f} KB")
+        print(f"   Space Saved:     {reduction:.2f}% 📉")
+        print("-" * 30)
+        # -----------------------
+
+        # Prepare for upload
+        file_name = f"{uuid.uuid4()}.webp"
+        content_type = "image/webp"
+        data_to_upload = compressed_data
+
+    except Exception as e:
+        print(f"⚠️ Compression failed: {e}")
+        print("   Uploading original file instead.")
+        
+        # Fallback to original if compression fails
+        data_to_upload = file_content
+        file_name = f"{uuid.uuid4()}.{file_ext}"
+        content_type = image.content_type
+
+    # Upload to Supabase
     supabase.storage.from_("shoe_images").upload(
         path=file_name,
-        file=file_content,
-        file_options={"content-type": image.content_type}
+        file=data_to_upload,
+        file_options={"content-type": content_type}
     )
 
     return supabase.storage.from_("shoe_images").get_public_url(file_name)
