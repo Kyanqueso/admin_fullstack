@@ -1,4 +1,9 @@
-const FAST_API_URL = 'http://127.0.0.1:8000';
+const FAST_API_URL = import.meta.env.VITE_BACKEND_URL;
+
+console.log("Checking API URL:", FAST_API_URL);
+if (!FAST_API_URL) {
+    console.error("VITE_BACKEND_URL is not defined!");
+}
 
 function formatCurrencyToPhp(amount) {
     const num = parseFloat(amount) || 0;
@@ -239,7 +244,7 @@ async function initAnalytics() {
         updateSummaryCards(analyticsData);
 
         // Draw the Chart
-        // We use a small timeout to let the browser recognize the div is now visible
+        // Used a small timeout to let the browser recognize the div is now visible
         // before Chart.js tries to calculate the width/height.
         setTimeout(() => {
             createSalesChart(breakdownData);

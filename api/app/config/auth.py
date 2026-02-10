@@ -1,37 +1,68 @@
-# app/config/auth.py
-import jwt  # Make sure you installed pyjwt
+import os
 import sys
-import traceback
+import json
+import jwt
+from jwt import PyJWKClient
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# Get Supabase URL
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+if not SUPABASE_URL:
+    print("FATAL: SUPABASE_URL is missing from .env", file=sys.stderr)
+    raise ValueError("FATAL: SUPABASE_URL is missing from .env file!")
+
+# Construct JWKS URL
+# Remove trailing slash from SUPABASE_URL if present to avoid double slash
+base_url = SUPABASE_URL.rstrip("/")
+JWKS_URL = f"{base_url}/auth/v1/.well-known/jwks.json"
+
+print(f"DEBUG: Using JWKS URL: {JWKS_URL}", file=sys.stderr)
 
 security = HTTPBearer()
 
-def get_current_user(auth=Depends(security)):
+def get_current_user(auth: HTTPBearer = Depends(security)):
     token = auth.credentials
     
-    # 1. DEBUG LOGGING: Print the token snippet to terminal
-    print(f"DEBUG: Received token starting with: {token[:10]}...", file=sys.stderr)
+    print(f"\n--- NEW AUTH REQUEST ---", file=sys.stderr)
 
     try:
-        # 2. DECODE: We disable verification temporarily to see if we can just READ it.
-        #    This proves if the library is working.
+        header = jwt.get_unverified_header(token)
+        
+        jwks_client = PyJWKClient(JWKS_URL)
+        
+        # Fetch the correct key
+        # This connects to Supabase to find the Public Key matching the 'kid' in the header
+        signing_key = jwks_client.get_signing_key_from_jwt(token)
+
+        # Verify
         payload = jwt.decode(
-            token, 
-            options={"verify_signature": False, "verify_aud": False}
+            token,
+            key=signing_key.key,
+            algorithms=["ES256", "RS256", "HS256"], # Try all common algs
+            audience="authenticated",
+            leeway=60,
+            options={"verify_exp": True}
         )
         
-        print(f"DEBUG: Successfully decoded payload: {payload.keys()}", file=sys.stderr)
-
-        # 3. MANUAL CHECK:
-        # Check audience manually if you want, or skip for now to just get it working
-        # if payload.get("aud") != "authenticated":
-        #    raise HTTPException(401, "Invalid audience")
-
+        print("Success! Payload decoded.")
         return payload
 
+    except jwt.PyJWKClientError as e:
+        print(f"CRITICAL: JWKS Client Error (Could not fetch keys): {e}", file=sys.stderr)
+        raise HTTPException(status_code=500, detail="Could not verify token source.")
+    except jwt.ExpiredSignatureError:
+        print("ERROR: Token Expired", file=sys.stderr)
+        raise HTTPException(status_code=401, detail="Token has expired.")
+    except jwt.InvalidAudienceError:
+        print("ERROR: Invalid Audience", file=sys.stderr)
+        raise HTTPException(status_code=401, detail="Invalid audience.")
     except Exception as e:
-        # This is the money shot: It will print the EXACT python error to your terminal
-        print("CRITICAL JWT ERROR:", file=sys.stderr)
+        print(f"CRITICAL UNKNOWN ERROR: {type(e).__name__}: {e}", file=sys.stderr)
+        # print stack trace to see line number
+        import traceback
         traceback.print_exc(file=sys.stderr)
-        raise HTTPException(401, f"Server Error: {str(e)}")
+        raise HTTPException(status_code=401, detail="Authentication failed")

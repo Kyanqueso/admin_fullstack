@@ -1,6 +1,8 @@
 import pencilIcon from '../../assets/icons/pencil.svg';
 import trashIcon from '../../assets/icons/trash-can.svg';
 
+const FAST_API_URL = import.meta.env.VITE_BACKEND_URL;
+
 // Will make this better when API is integrated
 document.getElementById('logout-btn').onclick = function() {
     // Clear any session data if necessary
@@ -14,7 +16,7 @@ async function loadShoes() {
                           <p>Loading shoes...</p>
                       </div>`;
     try {
-        const response = await fetch('http://127.0.0.1:8000/shoe-management/shoes');
+        const response = await fetch(`${FAST_API_URL}/shoe-management/shoes`);
         if (!response.ok) throw new Error('Something went wrong while fetching shoe data');
 
         const shoes = await response.json();
@@ -56,7 +58,7 @@ async function loadShoes() {
 window.addEventListener('DOMContentLoaded', loadShoes);
 
 async function fetchShoeById(id){
-    const response = await fetch(`http://127.0.0.1:8000/shoe-management/shoes/${id}`);
+    const response = await fetch(`${FAST_API_URL}/shoe-management/shoes/${id}`);
     if(!response.ok) throw new Error('Failed to fetch shoe data');
     return await response.json();
 }
@@ -158,6 +160,14 @@ function closeOverlay() {
     overlay.classList.add('d-none');
 }
 
+function lockOverlayAfterSuccess() {
+    overlayConfirm.disabled = true;
+    overlayCancel.disabled = true;
+    overlayClose.disabled = true;
+
+    overlayConfirm.textContent = "Done";
+}
+
 // Event listeners
 overlayCancel.addEventListener('click', closeOverlay);
 overlayClose.addEventListener('click', closeOverlay);
@@ -189,6 +199,7 @@ overlayConfirm.addEventListener('click', async () => {
 
             if (!response.ok) throw new Error(await response.text());
             showStatus("Shoe added successfully!", "success");
+            lockOverlayAfterSuccess();
         }
 
         // =====================
@@ -207,6 +218,7 @@ overlayConfirm.addEventListener('click', async () => {
 
             if (!response.ok) throw new Error(await response.text());
             showStatus("Shoe updated successfully!", "success");
+            lockOverlayAfterSuccess();
         }
 
         // =====================
@@ -219,6 +231,7 @@ overlayConfirm.addEventListener('click', async () => {
 
             if (!response.ok) throw new Error(await response.text());
             showStatus("Shoe deleted successfully!", "success");
+            lockOverlayAfterSuccess();
         }
 
         await loadShoes();
@@ -230,7 +243,10 @@ overlayConfirm.addEventListener('click', async () => {
         console.error(error);
         showStatus(error.message || "An error occurred", "error");
     } finally {
-        hideLoadingOverlay();
+        if (overlayStatus.classList.contains('bg-danger')) {
+            // Only re-enable buttons if error occurred
+            hideLoadingOverlay();
+        }
     }
 });
 
