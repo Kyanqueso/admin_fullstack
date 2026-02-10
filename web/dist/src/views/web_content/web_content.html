@@ -6,8 +6,9 @@
     <!-- Import CSS Files and Local Bootstrap-->
 
     <title>Website Content Management Page</title>
-  <script type="module" crossorigin src="../../../assets/web_content-BDHYU7E0.js"></script>
+  <script type="module" crossorigin src="../../../assets/web_content-DwiWlZ20.js"></script>
   <link rel="modulepreload" crossorigin href="../../../assets/bootstrap.min-BB4Wbeoi.js">
+  <link rel="modulepreload" crossorigin href="../../../assets/pencil-DOk75lq2.js">
   <link rel="stylesheet" crossorigin href="../../../assets/bootstrap-B9K7SMpr.css">
   <link rel="stylesheet" crossorigin href="../../../assets/web_content-cuiLgiez.css">
 </head>
@@ -34,27 +35,27 @@
             Add New Shoe
         </button>
     </div>
-
-    <!-- Use hardcoded for now since will transfer to supabase 
-    <div class="card h-100 box-drop-shadow w-25 mx-5 mb-5">
-        <img src="https://placehold.co/400" class="card-img-top" alt="Shoe Name">
-        <div class="accent-bg card-body d-flex flex-column">
-            <h5 class="card-title"><strong>Shoe Name</strong></h5>
-            <p class="card-text flex-grow-1">PHP 1,800</p>
-            <div class="d-flex flex-row gap-3">
-                <a href="#" class="btn w-50 add-edit-shoe edit-shoe-btn">
-                    <img src="../../assets/icons/pencil.svg" alt="Edit" width="18" height="18">
-                    Edit
-                </a>
-                <a href="#" class="btn btn-red w-50 delete-shoe-btn">
-                    <img src="../../assets/icons/trash-can.svg" alt="Delete" width="18" height="18">
-                    Delete
-                </a>
+    
+    <div class="mx-5 row align-items-end mb-4">
+        <div class="col-12 col-md-4 mb-2">
+            <label class="form-label invisible">Search</label>
+            <div class="input-group">
+                <span class="input-group-text">
+                    <img src="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20640%20640'%3e%3c!--!Font%20Awesome%20Free%207.1.0%20by%20@fontawesome%20-%20https://fontawesome.com%20License%20-%20https://fontawesome.com/license/free%20Copyright%202026%20Fonticons,%20Inc.--%3e%3cpath%20d='M480%20272C480%20317.9%20465.1%20360.3%20440%20394.7L566.6%20521.4C579.1%20533.9%20579.1%20554.2%20566.6%20566.7C554.1%20579.2%20533.8%20579.2%20521.3%20566.7L394.7%20440C360.3%20465.1%20317.9%20480%20272%20480C157.1%20480%2064%20386.9%2064%20272C64%20157.1%20157.1%2064%20272%2064C386.9%2064%20480%20157.1%20480%20272zM272%20416C351.5%20416%20416%20351.5%20416%20272C416%20192.5%20351.5%20128%20272%20128C192.5%20128%20128%20192.5%20128%20272C128%20351.5%20192.5%20416%20272%20416z'/%3e%3c/svg%3e" width="20">
+                </span>
+                <input type="text" class="form-control" placeholder="Search name">
             </div>
         </div>
+
+        <div class="col-12 col-md-2 mb-2">
+            <select class="form-select mt-2">
+                <option value="" selected disabled hidden>Sort by</option>
+                <option value="recent">Recently Added</option>
+                <option value="alpha">Alphabetical</option>
+            </select>
+        </div>
     </div>
-    -->
-    
+
     <div class="container my-4">
         <div id="shoe-grid" class="row g-4">
             <!-- Cards will be injected here -->

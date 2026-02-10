@@ -47,12 +47,21 @@ def health_check():
     return {"status": "healthy"}
 
 # Requires authentication
+"""
 app.include_router(company_router, dependencies=[Depends(get_current_user)])
 app.include_router(client_router, dependencies=[Depends(get_current_user)])
 app.include_router(client_order_router, dependencies=[Depends(get_current_user)])
 app.include_router(payment_summary_router, dependencies=[Depends(get_current_user)])
 app.include_router(payment_transaction_router, dependencies=[Depends(get_current_user)])
 app.include_router(analytics_router, dependencies=[Depends(get_current_user)])
+"""
+
+app.include_router(company_router)
+app.include_router(client_router)
+app.include_router(client_order_router)
+app.include_router(payment_summary_router)
+app.include_router(payment_transaction_router)
+app.include_router(analytics_router)
 
 # Does not require authentication
 app.include_router(shoe_management_router)

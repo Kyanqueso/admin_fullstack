@@ -1,21 +1,75 @@
-const API_URL = "http://127.0.0.1:8000/companies/";
-const grid = document.getElementById("companyGrid");
+/* ===============================
+   CONFIG
+=============================== */
+const FAST_API_URL = import.meta.env.VITE_BACKEND_URL;
 
-/* OVERLAYS */
+console.log("Companies API URL:", FAST_API_URL);
+if (!FAST_API_URL) {
+  console.error("VITE_BACKEND_URL is not defined!");
+}
+
+/* ===============================
+   AUTH HELPERS
+=============================== */
+function getAccessToken() {
+  const token = localStorage.getItem("access_token");
+
+  if (!token || token === "null" || token === "undefined") {
+    localStorage.removeItem("access_token");
+    window.location.href = "../auth/index.html";
+    throw new Error("Missing access token");
+  }
+
+  return token;
+}
+
+/* ===============================
+   DOM ELEMENTS
+=============================== */
+const grid = document.getElementById("companyGrid");
+const searchInput = document.querySelector('input[placeholder="Search companies"]');
+const sortSelect = document.querySelector(".form-select");
+
+/* Overlays */
 const addOverlay = document.getElementById("addCompanyOverlay");
 const editOverlay = document.getElementById("editCompanyOverlay");
 const deleteOverlay = document.getElementById("deleteCompanyOverlay");
 
-/* FORMS */
+/* Forms */
 const addForm = document.getElementById("addCompanyForm");
 const editForm = document.getElementById("editCompanyForm");
 
-/* INPUTS */
+/* Inputs */
 const addNameInput = document.getElementById("addCompanyName");
 const editNameInput = document.getElementById("editCompanyName");
 const editBranchInput = document.getElementById("editCompanyBranch");
 
 let selectedCompanyId = null;
+let allCompanies = []; // cached for search + sort
+
+/* ===============================
+   API HELPERS
+=============================== */
+async function apiFetch(url, options = {}) {
+  const token = getAccessToken();
+
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json",
+      ...(options.headers || {})
+    }
+  });
+
+  if (response.status === 401 || response.status === 403) {
+    localStorage.removeItem("access_token");
+    window.location.href = "../auth/index.html";
+    throw new Error("Unauthorized");
+  }
+
+  return response;
+}
 
 /* ===============================
    LOAD COMPANIES
@@ -28,47 +82,14 @@ async function loadCompanies() {
   `;
 
   try {
-    const res = await fetch(API_URL);
-    const companies = await res.json();
+    const response = await apiFetch(`${FAST_API_URL}/companies/`);
+    const companies = await response.json();
 
-    grid.innerHTML = "";
+    allCompanies = companies; // cache for search/sort
+    renderCompanies(allCompanies);
 
-    companies.forEach(company => {
-      const col = document.createElement("div");
-      col.className = "col";
-
-      col.innerHTML = `
-        <div class="company-card card h-100 position-relative py-4"
-             data-company-id="${company.id}"
-             style="cursor:pointer;">
-
-          <div class="position-absolute top-0 end-0 p-1 d-flex gap-2">
-            <button class="btn btn-sm btn-success edit-company" data-id="${company.id}">✎</button>
-            <button class="btn btn-sm btn-danger delete-company" data-id="${company.id}">🗑</button>
-          </div>
-
-          <div class="card-body d-flex justify-content-center align-items-center">
-            <strong class="fs-3">${company.name}</strong>
-          </div>
-        </div>
-      `;
-
-      grid.appendChild(col);
-    });
-
-    /* ADD COMPANY CARD */
-    const addCol = document.createElement("div");
-    addCol.className = "col";
-    addCol.innerHTML = `
-      <div id="addCompanyCard"
-           class="card h-100 border border-2 d-flex justify-content-center align-items-center py-4"
-           style="cursor:pointer;">
-        <span class="fs-1 fw-bold">+</span>
-      </div>
-    `;
-    grid.appendChild(addCol);
-
-  } catch (err) {
+  } catch (error) {
+    console.error("Failed to load companies:", error);
     grid.innerHTML = `
       <div class="col text-danger text-center">
         Failed to load companies
@@ -77,13 +98,67 @@ async function loadCompanies() {
   }
 }
 
-loadCompanies();
+/* ===============================
+   RENDER COMPANIES
+=============================== */
+function renderCompanies(companiesArray) {
+  grid.innerHTML = "";
+
+  if (companiesArray.length === 0) {
+    grid.innerHTML = `
+      <div class="col text-center text-muted">
+        No companies found
+      </div>
+    `;
+    return;
+  }
+
+  companiesArray.forEach(renderCompanyCard);
+  renderAddCompanyCard();
+}
+
+function renderCompanyCard(company) {
+  const col = document.createElement("div");
+  col.className = "col";
+
+  col.innerHTML = `
+    <div class="company-card card h-100 position-relative py-4"
+         data-company-id="${company.id}"
+         style="cursor:pointer;">
+
+      <div class="position-absolute top-0 end-0 p-1 d-flex gap-2">
+        <button class="btn btn-sm btn-success edit-company" data-id="${company.id}">✎</button>
+        <button class="btn btn-sm btn-danger delete-company" data-id="${company.id}">🗑</button>
+      </div>
+
+      <div class="card-body d-flex justify-content-center align-items-center">
+        <strong class="fs-3">${company.name}</strong>
+      </div>
+    </div>
+  `;
+
+  grid.appendChild(col);
+}
+
+function renderAddCompanyCard() {
+  const col = document.createElement("div");
+  col.className = "col";
+
+  col.innerHTML = `
+    <div id="addCompanyCard"
+         class="card h-100 border border-2 d-flex justify-content-center align-items-center py-4"
+         style="cursor:pointer;">
+      <span class="fs-1 fw-bold">+</span>
+    </div>
+  `;
+
+  grid.appendChild(col);
+}
 
 /* ===============================
    CLICK HANDLING
 =============================== */
 document.addEventListener("click", async (e) => {
-
   /* ADD COMPANY */
   if (e.target.closest("#addCompanyCard")) {
     addOverlay.classList.remove("d-none");
@@ -94,15 +169,7 @@ document.addEventListener("click", async (e) => {
   const editBtn = e.target.closest(".edit-company");
   if (editBtn) {
     e.stopPropagation();
-    selectedCompanyId = editBtn.dataset.id;
-
-    const res = await fetch(`${API_URL}${selectedCompanyId}`);
-    const company = await res.json();
-
-    editNameInput.value = company.name || "";
-    editBranchInput.value = company.branch || "";
-
-    editOverlay.classList.remove("d-none");
+    await openEditCompany(editBtn.dataset.id);
     return;
   }
 
@@ -118,11 +185,38 @@ document.addEventListener("click", async (e) => {
   /* OPEN COMPANY → CLIENTS */
   const card = e.target.closest(".company-card");
   if (card) {
-    const companyId = card.dataset.companyId;
-    localStorage.setItem("activeCompanyId", companyId);
+    localStorage.setItem("activeCompanyId", card.dataset.companyId);
     window.location.href = "./clients/clients.html";
   }
 });
+
+/* ===============================
+   SEARCH & SORT
+=============================== */
+function sortCompanies(companiesArray, sortValue) {
+  const arr = [...companiesArray];
+
+  if (sortValue === "name") {
+    arr.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  return arr;
+}
+
+function applySearchAndSort() {
+  const query = searchInput.value.toLowerCase().trim();
+  const sortValue = sortSelect.value;
+
+  let filtered = allCompanies.filter(company =>
+    company.name.toLowerCase().includes(query)
+  );
+
+  filtered = sortCompanies(filtered, sortValue);
+  renderCompanies(filtered);
+}
+
+searchInput.addEventListener("input", applySearchAndSort);
+sortSelect.addEventListener("change", applySearchAndSort);
 
 /* ===============================
    ADD COMPANY
@@ -130,23 +224,20 @@ document.addEventListener("click", async (e) => {
 addForm.onsubmit = async (e) => {
   e.preventDefault();
 
-  const payload = {
-    name: addNameInput.value.trim()
-  };
+  const name = addNameInput.value.trim();
+  if (!name) return;
 
-  if (!payload.name) return;
+  try {
+    await apiFetch(`${FAST_API_URL}/companies/`, {
+      method: "POST",
+      body: JSON.stringify({ name })
+    });
 
-  const res = await fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-
-  if (res.ok) {
     addOverlay.classList.add("d-none");
     addForm.reset();
     loadCompanies();
-  } else {
+
+  } catch {
     alert("Failed to add company");
   }
 };
@@ -154,24 +245,34 @@ addForm.onsubmit = async (e) => {
 /* ===============================
    EDIT COMPANY
 =============================== */
+async function openEditCompany(companyId) {
+  selectedCompanyId = companyId;
+
+  const response = await apiFetch(`${FAST_API_URL}/companies/${companyId}`);
+  const company = await response.json();
+
+  editNameInput.value = company.name || "";
+  editBranchInput.value = company.branch || "";
+
+  editOverlay.classList.remove("d-none");
+}
+
 editForm.onsubmit = async (e) => {
   e.preventDefault();
 
-  const payload = {
-    name: editNameInput.value.trim(),
-    branch: editBranchInput.value.trim()
-  };
+  try {
+    await apiFetch(`${FAST_API_URL}/companies/${selectedCompanyId}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        name: editNameInput.value.trim(),
+        branch: editBranchInput.value.trim()
+      })
+    });
 
-  const res = await fetch(`${API_URL}${selectedCompanyId}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-
-  if (res.ok) {
     editOverlay.classList.add("d-none");
     loadCompanies();
-  } else {
+
+  } catch {
     alert("Failed to update company");
   }
 };
@@ -180,14 +281,15 @@ editForm.onsubmit = async (e) => {
    DELETE COMPANY
 =============================== */
 document.getElementById("confirmDeleteCompany").onclick = async () => {
-  const res = await fetch(`${API_URL}${selectedCompanyId}`, {
-    method: "DELETE"
-  });
+  try {
+    await apiFetch(`${FAST_API_URL}/companies/${selectedCompanyId}`, {
+      method: "DELETE"
+    });
 
-  if (res.ok) {
     deleteOverlay.classList.add("d-none");
     loadCompanies();
-  } else {
+
+  } catch {
     alert("Failed to delete company");
   }
 };
@@ -196,13 +298,18 @@ document.getElementById("confirmDeleteCompany").onclick = async () => {
    CLOSE BUTTONS
 =============================== */
 document.getElementById("closeAddCompany").onclick =
-document.getElementById("cancelAddCompany").onclick = () =>
-  addOverlay.classList.add("d-none");
+document.getElementById("cancelAddCompany").onclick =
+  () => addOverlay.classList.add("d-none");
 
 document.getElementById("closeEditCompany").onclick =
-document.getElementById("cancelEditCompany").onclick = () =>
-  editOverlay.classList.add("d-none");
+document.getElementById("cancelEditCompany").onclick =
+  () => editOverlay.classList.add("d-none");
 
 document.getElementById("closeDeleteCompany").onclick =
-document.getElementById("cancelDeleteCompany").onclick = () =>
-  deleteOverlay.classList.add("d-none");
+document.getElementById("cancelDeleteCompany").onclick =
+  () => deleteOverlay.classList.add("d-none");
+
+/* ===============================
+   INIT
+=============================== */
+window.addEventListener("DOMContentLoaded", loadCompanies);

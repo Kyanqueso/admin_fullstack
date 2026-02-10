@@ -1,6 +1,70 @@
+import pencilIcon from '../../../assets/icons/pencil.svg';
+import trashIcon from '../../../assets/icons/trashcan-black.svg';
+
 document.addEventListener("DOMContentLoaded", () => {
 
-  const API_URL = "http://127.0.0.1:8000/clients/";
+  /* ===============================
+     CONFIG
+  =============================== */
+  const FAST_API_URL = import.meta.env.VITE_BACKEND_URL;
+  const API_URL = `${FAST_API_URL}/clients`;
+
+  console.log("Clients API URL:", API_URL);
+
+  /* ===============================
+     AUTH HELPERS
+  =============================== */
+  function getAccessToken() {
+    const token = localStorage.getItem("access_token");
+
+    if (!token || token === "null" || token === "undefined") {
+      localStorage.removeItem("access_token");
+      window.location.href = "../auth/index.html";
+      throw new Error("Missing access token");
+    }
+
+    return token;
+  }
+
+  async function apiFetch(url, options = {}) {
+    const token = getAccessToken();
+
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+        ...(options.headers || {})
+      }
+    });
+
+    if (response.status === 401 || response.status === 403) {
+      localStorage.removeItem("access_token");
+      window.location.href = "../auth/index.html";
+      throw new Error("Unauthorized");
+    }
+
+    return response;
+  }
+
+  async function loadCompanyName() {
+    const heading = document.getElementById("company_name");
+
+    try {
+      const response = await apiFetch(`${FAST_API_URL}/companies/${COMPANY_ID}`);
+      const company = await response.json();
+
+      heading.textContent = `${company.name}'s Client List`;
+
+    } catch (error) {
+      console.error("Failed to load company name:", error);
+      heading.textContent = "Client List";
+    }
+  }
+
+  /* ===============================
+     DOM ELEMENTS
+  =============================== */
   const tableBody = document.querySelector("tbody");
 
   const addOverlay = document.getElementById("addClientOverlay");
@@ -13,14 +77,23 @@ document.addEventListener("DOMContentLoaded", () => {
   const deleteOverlay = document.getElementById("deleteClientOverlay");
 
   const notesTextarea = notesOverlay.querySelector("textarea");
+  const editFirstName = document.getElementById("editFirstName");
+  const editLastName = document.getElementById("editLastName");
+  const editAddress = document.getElementById("editAddress");
+  const editViber = document.getElementById("editViber");
+
+  const searchInput = document.querySelector('input[placeholder="Search name"]');
+  const sortSelect = document.querySelector(".form-select");
 
   const COMPANY_ID = localStorage.getItem("activeCompanyId");
 
   let selectedClientId = null;
   let rowToDelete = null;
+  let allClients = []; // cached clients for search/sort
 
   if (!COMPANY_ID) {
     alert("No company selected.");
+    window.location.href = "../companies.html";
     return;
   }
 
@@ -28,8 +101,8 @@ document.addEventListener("DOMContentLoaded", () => {
      OPEN / CLOSE ADD OVERLAY
   =============================== */
   openAddBtn.onclick = () => addOverlay.classList.remove("d-none");
-  closeAddBtn.onclick = cancelAddBtn.onclick = () =>
-    addOverlay.classList.add("d-none");
+  closeAddBtn.onclick =
+  cancelAddBtn.onclick = () => addOverlay.classList.add("d-none");
 
   /* ===============================
      LOAD CLIENTS
@@ -44,53 +117,18 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
 
     try {
-      const res = await fetch(`${API_URL}?company_id=${COMPANY_ID}`);
-      const clients = await res.json();
+      const response = await apiFetch(API_URL);
+      const clients = await response.json();
 
-      tableBody.innerHTML = "";
+      // FILTER CLIENTS BY COMPANY
+      allClients = clients.filter(
+        client => String(client.company_id) === String(COMPANY_ID)
+      );
 
-      if (clients.length === 0) {
-        tableBody.innerHTML = `
-          <tr>
-            <td colspan="8" class="text-center text-muted">
-              No clients for this company
-            </td>
-          </tr>
-        `;
-        return;
-      }
+      renderClientRows(allClients);
 
-      clients.forEach(client => {
-        const tr = document.createElement("tr");
-        tr.dataset.id = client.id;
-
-        tr.innerHTML = `
-          <td>${client.first_name}</td>
-          <td>${client.last_name}</td>
-          <td>${client.address}</td>
-          <td>${client.viber_number || "-"}</td>
-          <td>${client.updated_at || "-"}</td>
-          <td>
-            <button class="btn btn-sm btn-outline-dark view-notes">
-              View Notes
-            </button>
-          </td>
-          <td>
-            <button class="btn btn-sm edit-btn">
-              <img src="../../../assets/icons/pencil.svg" width="18">
-            </button>
-          </td>
-          <td>
-            <button class="btn btn-sm delete-btn">
-              <img src="../../../assets/icons/trashcan-black.svg" width="18">
-            </button>
-          </td>
-        `;
-
-        tableBody.appendChild(tr);
-      });
-
-    } catch {
+    } catch (error) {
+      console.error("Failed to load clients:", error);
       tableBody.innerHTML = `
         <tr>
           <td colspan="8" class="text-danger text-center">
@@ -101,10 +139,105 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  loadClients();
+  /* ===============================
+     RENDER CLIENT ROWS
+  =============================== */
+  function renderClientRows(clientsArray) {
+    tableBody.innerHTML = "";
+
+    if (clientsArray.length === 0) {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="8" class="text-center text-muted">
+            No clients found
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    clientsArray.forEach(renderClientRow);
+  }
+
+  function renderClientRow(client) {
+    const tr = document.createElement("tr");
+    tr.dataset.id = client.id;
+
+    tr.innerHTML = `
+      <td>${client.first_name}</td>
+      <td>${client.last_name}</td>
+      <td>${client.address}</td>
+      <td>${client.viber_number || "-"}</td>
+      <td>${client.updated_at || "-"}</td>
+      <td>
+        <button class="btn btn-sm btn-outline-dark view-notes">
+          View Notes
+        </button>
+      </td>
+      <td>
+        <button class="btn btn-sm edit-btn">
+          <img src="${pencilIcon}" width="18">
+        </button>
+      </td>
+      <td>
+        <button class="btn btn-sm delete-btn">
+          <img src="${trashIcon}" width="18">
+        </button>
+      </td>
+    `;
+
+    tableBody.appendChild(tr);
+  }
 
   /* ===============================
-     ADD CLIENT (UNCHANGED – WORKING)
+     LIVE SEARCH
+  =============================== */
+  searchInput.addEventListener("input", () => {
+    const query = searchInput.value.toLowerCase().trim();
+    let filtered = allClients.filter(client =>
+      `${client.first_name} ${client.last_name}`.toLowerCase().includes(query)
+    );
+
+    // apply current sort
+    const sortValue = sortSelect.value;
+    filtered = sortClients(filtered, sortValue);
+
+    renderClientRows(filtered);
+  });
+
+  /* ===============================
+     SORT FUNCTION
+  =============================== */
+  function sortClients(clientsArray, sortValue) {
+    const arr = [...clientsArray];
+    if (sortValue === "name") {
+      arr.sort((a, b) =>
+        a.first_name.localeCompare(b.first_name) || a.last_name.localeCompare(b.last_name)
+      );
+    } else if (sortValue === "recent") {
+      arr.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+    } else if (sortValue === "alpha") {
+      arr.sort((a, b) =>
+        `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`)
+      );
+    }
+    return arr;
+  }
+
+  sortSelect.addEventListener("change", () => {
+    const sortValue = sortSelect.value;
+    const query = searchInput.value.toLowerCase().trim();
+
+    let filtered = allClients.filter(client =>
+      `${client.first_name} ${client.last_name}`.toLowerCase().includes(query)
+    );
+
+    filtered = sortClients(filtered, sortValue);
+    renderClientRows(filtered);
+  });
+
+  /* ===============================
+     ADD CLIENT
   =============================== */
   document.getElementById("overlay-form").onsubmit = async (e) => {
     e.preventDefault();
@@ -119,60 +252,57 @@ document.addEventListener("DOMContentLoaded", () => {
       company_id: Number(COMPANY_ID)
     };
 
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+    try {
+      await apiFetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
 
-    if (!res.ok) {
+      addOverlay.classList.add("d-none");
+      e.target.reset();
+      loadCompanyName();
+      loadClients();
+
+    } catch {
       alert("Failed to add client");
-      return;
     }
-
-    addOverlay.classList.add("d-none");
-    e.target.reset();
-    loadClients();
   };
 
   /* ===============================
-     TABLE ACTIONS
+     TABLE ACTIONS (VIEW, EDIT, DELETE)
   =============================== */
   document.addEventListener("click", async (e) => {
 
-    /* VIEW NOTES */
     const notesBtn = e.target.closest(".view-notes");
     if (notesBtn) {
       const row = notesBtn.closest("tr");
       selectedClientId = row.dataset.id;
 
-      const res = await fetch(`${API_URL}${selectedClientId}`);
-      const client = await res.json();
+      const response = await apiFetch(`${API_URL}/${selectedClientId}`);
+      const client = await response.json();
 
       notesTextarea.value = client.notes || "";
       notesOverlay.classList.remove("d-none");
       return;
     }
 
-    /* EDIT CLIENT */
     const editBtn = e.target.closest(".edit-btn");
     if (editBtn) {
       const row = editBtn.closest("tr");
       selectedClientId = row.dataset.id;
 
-      const res = await fetch(`${API_URL}${selectedClientId}`);
-      const client = await res.json();
+      const response = await apiFetch(`${API_URL}/${selectedClientId}`);
+      const client = await response.json();
 
-      document.getElementById("editFirstName").value = client.first_name;
-      document.getElementById("editLastName").value = client.last_name;
-      document.getElementById("editAddress").value = client.address;
-      document.getElementById("editViber").value = client.viber_number || "";
+      editFirstName.value = client.first_name;
+      editLastName.value = client.last_name;
+      editAddress.value = client.address;
+      editViber.value = client.viber_number || "";
 
       editOverlay.classList.remove("d-none");
       return;
     }
 
-    /* DELETE CLIENT */
     const deleteBtn = e.target.closest(".delete-btn");
     if (deleteBtn) {
       rowToDelete = deleteBtn.closest("tr");
@@ -187,54 +317,61 @@ document.addEventListener("DOMContentLoaded", () => {
   notesOverlay.querySelector("form").onsubmit = async (e) => {
     e.preventDefault();
 
-    const res = await fetch(`${API_URL}${selectedClientId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ notes: notesTextarea.value.trim() })
-    });
+    try {
+      await apiFetch(`${API_URL}/${selectedClientId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ notes: notesTextarea.value.trim() })
+      });
 
-    if (res.ok) {
       notesOverlay.classList.add("d-none");
+      loadCompanyName();
       loadClients();
+
+    } catch {
+      alert("Failed to save notes");
     }
   };
 
   /* ===============================
-     EDIT CLIENT SUBMIT
+     EDIT CLIENT
   =============================== */
   editOverlay.querySelector("form").onsubmit = async (e) => {
     e.preventDefault();
 
-    const payload = {
-      first_name: editFirstName.value.trim(),
-      last_name: editLastName.value.trim(),
-      address: editAddress.value.trim(),
-      viber_number: editViber.value.trim()
-    };
+    try {
+      await apiFetch(`${API_URL}/${selectedClientId}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          first_name: editFirstName.value.trim(),
+          last_name: editLastName.value.trim(),
+          address: editAddress.value.trim(),
+          viber_number: editViber.value.trim()
+        })
+      });
 
-    const res = await fetch(`${API_URL}${selectedClientId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    if (res.ok) {
       editOverlay.classList.add("d-none");
+      loadCompanyName();
       loadClients();
+
+    } catch {
+      alert("Failed to update client");
     }
   };
 
   /* ===============================
-     DELETE CONFIRM
+     DELETE CLIENT
   =============================== */
   document.getElementById("confirmDelete").onclick = async () => {
-    const res = await fetch(`${API_URL}${selectedClientId}`, {
-      method: "DELETE"
-    });
+    try {
+      await apiFetch(`${API_URL}/${selectedClientId}`, {
+        method: "DELETE"
+      });
 
-    if (res.ok) {
       rowToDelete.remove();
       deleteOverlay.classList.add("d-none");
+
+    } catch {
+      alert("Failed to delete client");
     }
   };
 
@@ -250,5 +387,11 @@ document.addEventListener("DOMContentLoaded", () => {
     editOverlay.classList.add("d-none");
     deleteOverlay.classList.add("d-none");
   };
+
+  /* ===============================
+     INITIAL LOAD
+  =============================== */
+  loadCompanyName();
+  loadClients();
 
 });

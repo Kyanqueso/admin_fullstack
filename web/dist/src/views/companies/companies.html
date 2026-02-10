@@ -1,146 +1,141 @@
 <!DOCTYPE html>
-
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- Import CSS Files and Local Bootstrap-->
-
-    <title>Clients Page</title>
-  <script type="module" crossorigin src="../../../assets/bootstrap.min-BB4Wbeoi.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+ 
+  <title>Companies</title>
+  <script type="module" crossorigin src="../../../assets/companies-Ch3Bn8AV.js"></script>
+  <link rel="modulepreload" crossorigin href="../../../assets/bootstrap.min-BB4Wbeoi.js">
   <link rel="stylesheet" crossorigin href="../../../assets/bootstrap-B9K7SMpr.css">
-  <link rel="stylesheet" crossorigin href="../../../assets/companies-C1_-6ZLP.css">
+  <link rel="stylesheet" crossorigin href="../../../assets/companies-ByrufEK8.css">
 </head>
 
 <body>
-    <!-- Logout button -->
-    <div class="d-flex justify-content-end">
-        <button id="logout-btn" class="btn btn-danger my-3 me-2 me-md-5 fw-bold">
-            Logout
-        </button>
+
+<div class="d-flex justify-content-end">
+  <button id="logout-btn" class="btn btn-danger my-3 me-2 me-md-5 fw-bold">
+    Logout
+  </button>
+</div>
+
+<nav id="navigation"
+     class="w-75 d-flex flex-wrap mt-1 mb-4 mx-auto justify-content-center gap-4 text-center">
+  <a class="nav-link fs-4 p-3 p-lg-4 inactive" href="../analytics/analytics.html">Analytics</a>
+  <a class="nav-link fs-4 p-3 p-lg-4 active">Clients</a>
+  <a class="nav-link fs-4 p-3 p-lg-4 inactive" href="../web_content/web_content.html">Website Content</a>
+</nav>
+
+<hr class="w-75 mx-auto">
+
+<main class="container py-4">
+
+  <h1 class="text-center mb-4">Companies</h1>
+
+  <div class="row justify-content-center mb-5">
+    <div class="col-12 col-md-4 small-width">
+      <div class="input-group">
+        <span class="input-group-text">
+          <img src="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20640%20640'%3e%3c!--!Font%20Awesome%20Free%207.1.0%20by%20@fontawesome%20-%20https://fontawesome.com%20License%20-%20https://fontawesome.com/license/free%20Copyright%202026%20Fonticons,%20Inc.--%3e%3cpath%20d='M480%20272C480%20317.9%20465.1%20360.3%20440%20394.7L566.6%20521.4C579.1%20533.9%20579.1%20554.2%20566.6%20566.7C554.1%20579.2%20533.8%20579.2%20521.3%20566.7L394.7%20440C360.3%20465.1%20317.9%20480%20272%20480C157.1%20480%2064%20386.9%2064%20272C64%20157.1%20157.1%2064%20272%2064C386.9%2064%20480%20157.1%20480%20272zM272%20416C351.5%20416%20416%20351.5%20416%20272C416%20192.5%20351.5%20128%20272%20128C192.5%20128%20128%20192.5%20128%20272C128%20351.5%20192.5%20416%20272%20416z'/%3e%3c/svg%3e" width="20">
+        </span>
+        <input type="text" class="form-control" placeholder="Search companies">
+      </div>
     </div>
 
-    <nav id="navigation" class="w-75 d-flex flex-wrap mt-1 mb-4 mx-auto justify-content-center gap-4 text-center">
-        <a class="nav-link fs-4 p-3 p-lg-4 inactive" href="../analytics/analytics.html">Analytics</a>
-        <a class="nav-link fs-4 p-3 p-lg-4 active">Clients</a>
-        <a class="nav-link fs-4 p-3 p-lg-4 inactive" href="../web_content/web_content.html">Website Content</a>
-    </nav>
+    <div class="col-12 col-md-2 small-width">
+      <select class="form-select mt-2">
+        <option value="" selected disabled hidden>Sort by</option>
+        <option value="name">Name</option>
+      </select>
+    </div>
+  </div>
 
-    <hr class="w-75 mx-auto">
-    <main class="container py-4">
+  <!-- GRID -->
+  <div id="companyGrid"
+       class="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-3"></div>
 
-        <!-- Page Title -->
-        <h1 class="text-center mb-4">Client List</h1>
+</main>
 
-        <!-- Search + Sort -->
-        <div class="row justify-content-center mb-5">
+<!-- ================= OVERLAYS ================= -->
 
-            <div class="col-12 col-md-4 small-width">
-                <label class="form-label invisible">Search</label>
+<!-- ADD COMPANY -->
+<div class="overlay d-none" id="addCompanyOverlay">
+  <div class="overlay-content p-4">
+    <button class="overlay-close" id="closeAddCompany">✕</button>
 
-                <div class="input-group">
-                    <span class="input-group-text"><img src="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20640%20640'%3e%3c!--!Font%20Awesome%20Free%207.1.0%20by%20@fontawesome%20-%20https://fontawesome.com%20License%20-%20https://fontawesome.com/license/free%20Copyright%202026%20Fonticons,%20Inc.--%3e%3cpath%20d='M480%20272C480%20317.9%20465.1%20360.3%20440%20394.7L566.6%20521.4C579.1%20533.9%20579.1%20554.2%20566.6%20566.7C554.1%20579.2%20533.8%20579.2%20521.3%20566.7L394.7%20440C360.3%20465.1%20317.9%20480%20272%20480C157.1%20480%2064%20386.9%2064%20272C64%20157.1%20157.1%2064%20272%2064C386.9%2064%20480%20157.1%20480%20272zM272%20416C351.5%20416%20416%20351.5%20416%20272C416%20192.5%20351.5%20128%20272%20128C192.5%20128%20128%20192.5%20128%20272C128%20351.5%20192.5%20416%20272%20416z'/%3e%3c/svg%3e" alt="search" width="20"
-                        height="20"></span>
-                    <input id="searchInput" type="text" class="form-control" placeholder="Search">
-                </div>
-            </div>
-            <div class="col-12 col-md-2 small-width">
-                <label class="form-label"></label>
-                <select class="form-select mt-2">
-                    <option value="" selected disabled hidden>Sort by</option>
-                    <option value="name">Name</option>
-                    <option value="recent">Recently Added</option>
-                    <option value="alpha">Alphabetical</option>
-                </select>
+    <h5 class="mb-3">Add New Company</h5>
 
-            </div>
+    <form id="addCompanyForm">
+      <div class="mb-3">
+        <label class="form-label">Company Name</label>
+        <input type="text" class="form-control" id="addCompanyName" required>
+      </div>
 
-        </div>
+      <div class="d-flex gap-3">
+        <button type="button" class="btn btn-danger w-50" id="cancelAddCompany">
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-green w-50">
+          Confirm
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 
-        <!-- Client Cards Grid -->
-        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-3 ">
+<!-- EDIT COMPANY -->
+<div class="overlay d-none" id="editCompanyOverlay">
+  <div class="overlay-content p-4">
+    <button class="overlay-close" id="closeEditCompany">✕</button>
 
-            <a href="clients/clients.html" class="text-decoration-none">
-                <!-- Client Card -->
-                <div class=" col">
-                    <div class="client-card card h-100  position-relative py-4">
+    <h4 class="mb-4">Edit Existing Company</h4>
 
-                        <!-- Action buttons -->
-                        <div class="position-absolute top-0 end-0 p-1 d-flex gap-2">
-                            <button class="btn btn-sm btn-success ">✎</button>
+    <form id="editCompanyForm">
+      <div class="mb-3">
+        <label class="form-label">Company Name</label>
+        <input type="text" class="form-control" id="editCompanyName" required>
+      </div>
 
-                            <button class="btn btn-sm btn-danger">🗑</button>
-                        </div>
+      <div class="mb-4">
+        <label class="form-label">Company Branch</label>
+        <input type="text" class="form-control" id="editCompanyBranch">
+      </div>
 
-                        <!-- Card content -->
-                        <div class="card-body d-flex justify-content-center align-items-center">
-                            <strong class="fs-3">BDO</strong>
-                        </div>
+      <div class="d-flex gap-3">
+        <button type="button" class="btn btn-danger w-50" id="cancelEditCompany">
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-green w-50">
+          Update
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 
+<!-- DELETE COMPANY -->
+<div class="overlay d-none" id="deleteCompanyOverlay">
+  <div class="overlay-content p-4 text-center">
+    <button class="overlay-close" id="closeDeleteCompany">✕</button>
 
-                    </div>
+    <h5 class="mb-4">
+      Are you sure you want to<br>
+      delete this company?
+    </h5>
 
-                </div>
-            </a>
-            <a href="clients/clients.html" class="text-decoration-none">
-                <div class="col">
-                    <div class="client-card card h-100  position-relative py-4">
+    <div class="d-flex gap-3 justify-content-center">
+      <button class="btn btn-danger px-4" id="cancelDeleteCompany">
+        No
+      </button>
+      <button class="btn btn-green px-4" id="confirmDeleteCompany">
+        Yes
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="../../assets/bootstrap/bootstrap.bundle.min.js"></script>
 
-                        <div class="position-absolute top-0 end-0 p-1 d-flex gap-2">
-                            <button class="btn btn-sm btn-success">✎</button>
-                            <button class="btn btn-sm btn-danger">🗑</button>
-                        </div>
-
-                        <div class="card-body d-flex justify-content-center align-items-center">
-                            <strong class="fs-3">SM</strong>
-                        </div>
-
-                    </div>
-                </div>
-            </a>
-            <div class="col">
-                <div class="client-card card h-100  position-relative py-4">
-
-                    <div class="position-absolute top-0 end-0 p-1 d-flex gap-2">
-                        <button class="btn btn-sm btn-success">✎</button>
-                        <button class="btn btn-sm btn-danger">🗑</button>
-                    </div>
-
-                    <div class="card-body d-flex justify-content-center align-items-center">
-                        <strong class="fs-3">BPI</strong>
-                    </div>
-
-                </div>
-            </div>
-            <a href="clients/clients.html" class="text-decoration-none">
-                <div class="col">
-                    <div class="client-card card h-100  position-relative py-4">
-
-                        <div class="position-absolute top-0 end-0 p-1 d-flex gap-2">
-                            <button class="btn btn-sm btn-success ">✎</button>
-                            <button class="btn btn-sm btn-danger">🗑</button>
-                        </div>
-
-                        <div class="card-body d-flex justify-content-center align-items-center">
-                            <strong class="fs-3">UNIBANK</strong>
-                        </div>
-
-                    </div>
-                </div>
-            </a>
-            <!-- Add Client Card -->
-            <div class="col">
-                <div class="card h-100 border border-2 d-flex justify-content-center align-items-center py-4">
-                    <span class="fs-1 fw-bold">+</span>
-                </div>
-            </div>
-
-        </div>
-
-
-    </main>
-
-
-    <!-- Call companies.js and bootstrap bundle.js -->
-    <script src="../../assets/bootstrap/bootstrap.bundle.min.js"></script>
 </body>
+</html>
