@@ -18,7 +18,8 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.95.3",
-    "dotenv": "^17.2.3"
+    "dotenv": "^17.2.3",
+    "electron": "^40.2.1"
   },
   "type": "commonjs"
 }

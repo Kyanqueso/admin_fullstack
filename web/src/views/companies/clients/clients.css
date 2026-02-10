@@ -107,3 +107,30 @@
 .d-none {
   display: none !important;
 }
+
+/* FIX ADD CLIENT OVERLAY SPACING */
+#addClientOverlay .overlay-content {
+  max-width: 720px;
+}
+
+#addClientOverlay .row {
+  margin-bottom: 12px;
+}
+
+#addClientOverlay .form-control {
+  padding: 12px;
+}
+
+#addClientOverlay .btn {
+  padding: 14px;
+  font-size: 1rem;
+}
+
+#addClientOverlay .btn-green {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+#addClientOverlay .btn-danger {
+  background-color: #9b0000;
+}

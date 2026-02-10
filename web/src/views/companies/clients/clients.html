@@ -1,14 +1,14 @@
 <!DOCTYPE html>
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Import CSS Files and Local Bootstrap-->
+    <!-- CSS -->
     <link rel="stylesheet" href="../../../assets/bootstrap/bootstrap.min.css">
     <link rel="stylesheet" href="../../../css/global.css">
     <link rel="stylesheet" href="clients.css">
-
 
     <title>Client Page</title>
 </head>
@@ -18,72 +18,53 @@
     <!-- Back Button -->
     <div class="my-3">
         <a href="../companies.html" class="text-decoration-none">
-            <img src="../../../assets/icons/back-btn.svg" alt="Back" width="20" height="20">
+            <img src="../../../assets/icons/back-btn.svg" alt="Back" width="20">
         </a>
     </div>
 
     <!-- Tabs -->
-
-    <!-- Tabs -->
     <div class="row g-3 mb-4 client-tabs">
-
         <div class="col-12 col-sm-6 col-md-3">
             <a href="../clients/clients.html" class="text-decoration-none d-block">
-                <button class="btn tab-btn active w-100 p-3">
-                    Customer List
-                </button>
+                <button class="btn tab-btn active w-100 p-3">Customer List</button>
             </a>
         </div>
 
         <div class="col-12 col-sm-6 col-md-3">
             <a href="../orders/orders.html" class="text-decoration-none d-block">
-                <button class="btn tab-btn w-100 p-3">
-                    Orders
-                </button>
+                <button class="btn tab-btn w-100 p-3">Orders</button>
             </a>
         </div>
 
         <div class="col-12 col-sm-6 col-md-3">
             <a href="../payments/payments.html" class="text-decoration-none d-block">
-                <button class="btn tab-btn w-100 p-3">
-                    Payment
-                </button>
+                <button class="btn tab-btn w-100 p-3">Payment</button>
             </a>
         </div>
 
         <div class="col-12 col-sm-6 col-md-3">
             <a href="../complete_orders/complete_orders.html" class="text-decoration-none d-block">
-                <button class="btn tab-btn w-100 p-3">
-                    Completed Order
-                </button>
+                <button class="btn tab-btn w-100 p-3">Completed Order</button>
             </a>
         </div>
-
     </div>
-
-
-
-
 
     <!-- Page Title -->
     <h2 class="mb-2 mt-2">BDO's Client List</h2>
 
     <!-- Search / Sort / Add -->
     <div class="row align-items-end mb-4">
-
-        <!-- Search -->
         <div class="col-12 col-md-4 mb-2">
             <label class="form-label invisible">Search</label>
             <div class="input-group">
-                <span class="input-group-text"><img src="../../../assets/icons/search.svg" alt="search" width="20"
-                        height="20"></span>
+                <span class="input-group-text">
+                    <img src="../../../assets/icons/search.svg" width="20">
+                </span>
                 <input type="text" class="form-control" placeholder="Search name">
             </div>
         </div>
 
-        <!-- Sort -->
         <div class="col-12 col-md-2 mb-2">
-            <label class="form-label"></label>
             <select class="form-select mt-2">
                 <option value="" selected disabled hidden>Sort by</option>
                 <option value="name">Name</option>
@@ -92,21 +73,16 @@
             </select>
         </div>
 
-        <!-- Add Button -->
         <div class="col-12 col-md-6 text-md-end mt-3 mt-md-0">
             <button class="btn btn-outline-dark" id="openOverlay">
                 + Add New Customer
             </button>
-
         </div>
-
     </div>
 
-    <!-- Table -->
+    <!-- TABLE -->
     <div class="table-responsive">
         <table class="table align-middle">
-
-            <!-- Table Head -->
             <thead class="table-header">
                 <tr>
                     <th>First Name</th>
@@ -120,200 +96,100 @@
                 </tr>
             </thead>
 
-            <!-- Table Body -->
+            <!--  EMPTY TBODY (JS FILLS THIS) -->
             <tbody>
-
-                <tr>
-                    <td>Maria</td>
-                    <td>Santos</td>
-                    <td>123 Ayala Ave, Makati City</td>
-                    <td>09171234567</td>
-                    <td>Jan. 15, 2024</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-dark view-notes">View Notes</button>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm edit-btn"><img src="../../../assets/icons/pencil.svg" alt="search"
-                                width="20" height="20"></button>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm delete-btn"><img src="../../../assets/icons/trashcan-black.svg" alt="search"
-                                width="20" height="20">
-                        </button>
-                    </td>
-                </tr>
-
-                <tr>
-                    <td>Juan</td>
-                    <td>Cruz</td>
-                    <td>456 Taft Avenue, Manila</td>
-                    <td>09281234567</td>
-                    <td>Jan. 10, 2024</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-dark view-notes">View Notes</button>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm edit-btn"><img src="../../../assets/icons/pencil.svg" alt="search"
-                                width="20" height="20">
-                        </button>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm delete-btn"><img src="../../../assets/icons/trashcan-black.svg" alt="search"
-                                width="20" height="20">
-                        </button>
-                    </td>
-                </tr>
-
-                <tr>
-                    <td>Sofia</td>
-                    <td>Reyes</td>
-                    <td>789 EDSA, Quezon City</td>
-                    <td>09391234567</td>
-                    <td>Jan. 8, 2024</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-dark view-notes">View Notes</button>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm edit-btn"><img src="../../../assets/icons/pencil.svg" alt="search"
-                                width="20" height="20">
-                        </button>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm delete-btn"><img src="../../../assets/icons/trashcan-black.svg" alt="search"
-                                width="20" height="20">
-                        </button>
-                    </td>
-                </tr>
-
+                <!-- JS will populate clients here -->
             </tbody>
+
         </table>
     </div>
 
-    <!-- Scripts -->
-    <script type="module" src="clients.js"></script>
-    <script src="../../../assets/bootstrap/bootstrap.bundle.min.js"></script>
-
-
-    <!-- Overlay -->
+    <!-- ADD CLIENT OVERLAY -->
     <div class="overlay d-none" id="addClientOverlay">
-
         <div class="overlay-content p-4">
-
             <button class="overlay-close" id="closeOverlay">✕</button>
 
             <h5 class="mb-3">Add New Client</h5>
 
-            <form id="overlay-form" class="w-100">
-
-                <!-- First + Last Name (row) -->
-                <div class="row gx-0 gy-3 mb-3 w-100">
-                    <div class="col-12 col-md-6 pe-md-2">
+            <form id="overlay-form">
+                <div class="row mb-3">
+                    <div class="col-md-6">
                         <label class="form-label">First Name</label>
-                        <input type="text" class="form-control" placeholder="Enter First Name">
+                        <input type="text" class="form-control">
                     </div>
-
-                    <div class="col-12 col-md-6 ps-md-2">
+                    <div class="col-md-6">
                         <label class="form-label">Last Name</label>
-                        <input type="text" class="form-control" placeholder="Enter Last Name">
+                        <input type="text" class="form-control">
                     </div>
                 </div>
 
-
-                <!-- Address -->
-                <div class="mb-3 w-100">
+                <div class="mb-3">
                     <label class="form-label">Address</label>
-                    <input type="text" class="form-control" placeholder="Enter the Address of the Client">
+                    <input type="text" class="form-control">
                 </div>
 
-                <!-- Viber -->
-                <div class="mb-4 w-100">
+                <div class="mb-4">
                     <label class="form-label">Viber</label>
-                    <input type="text" class="form-control" placeholder="Enter the Viber Contact Number of the Client">
+                    <input type="text" class="form-control">
                 </div>
 
-                <!-- Buttons -->
-                <div class="d-flex gap-3 w-100">
-                    <button type="button" class="btn btn-danger w-50" id="cancelOverlay">
-                        Cancel
-                    </button>
-                    <button type="submit" class="btn btn-green w-50">
-                        Confirm
-                    </button>
+                <div class="d-flex gap-3">
+                    <button type="button" class="btn btn-danger w-50" id="cancelOverlay">Cancel</button>
+                    <button type="submit" class="btn btn-green w-50">Confirm</button>
                 </div>
-
             </form>
-
         </div>
-
     </div>
 
-    <!-- Client Notes Overlay -->
+    <!-- NOTES OVERLAY -->
     <div class="overlay d-none" id="clientNotesOverlay">
-
         <div class="overlay-content p-4">
-
             <button class="overlay-close" id="closeNotesOverlay">✕</button>
 
             <h5 class="mb-3">Client Notes</h5>
 
-            <form class="w-100">
+            <form>
+                <textarea class="form-control mb-4" rows="7" placeholder="Enter client notes here..."></textarea>
 
-                <!-- Notes textarea -->
-                <div class="mb-4 w-100">
-                    <textarea class="form-control" rows="7"
-                        placeholder="Enter client notes here...">Corporate account for company events and meetings. Always orders in bulk quantities. Requires detailed invoices with itemization for accounting purposes. Payment terms are Net 30. Prefers email confirmations with attached quotations. Contact person changes frequently, confirm recipient before delivery. Has specific brand preferences for certain items. Quality is priority over price.</textarea>
-                </div>
-
-                <!-- Button -->
-                <div class="d-flex justify-content-center">
+                <div class="text-center">
                     <button type="submit" class="btn btn-green px-4">
                         Save Changes
                     </button>
                 </div>
-
             </form>
-
         </div>
-
     </div>
-    <!-- Update Client Overlay -->
+
+    <!-- EDIT CLIENT OVERLAY -->
     <div class="overlay d-none" id="editClientOverlay">
-
         <div class="overlay-content p-4">
-
             <button class="overlay-close" id="closeEditOverlay">✕</button>
 
             <h5 class="mb-3">Update Existing Client</h5>
 
-            <form class="w-100">
-
-                <!-- First + Last Name -->
-                <div class="row gx-0 gy-3 mb-3 w-100">
-                    <div class="col-12 col-md-6 pe-md-2">
+            <form>
+                <div class="row mb-3">
+                    <div class="col-md-6">
                         <label class="form-label">First Name</label>
                         <input type="text" class="form-control" id="editFirstName">
                     </div>
-
-                    <div class="col-12 col-md-6 ps-md-2">
+                    <div class="col-md-6">
                         <label class="form-label">Last Name</label>
                         <input type="text" class="form-control" id="editLastName">
                     </div>
                 </div>
 
-                <!-- Address -->
-                <div class="mb-3 w-100">
+                <div class="mb-3">
                     <label class="form-label">Address</label>
                     <input type="text" class="form-control" id="editAddress">
                 </div>
 
-                <!-- Viber -->
-                <div class="mb-4 w-100">
+                <div class="mb-4">
                     <label class="form-label">Viber</label>
                     <input type="text" class="form-control" id="editViber">
                 </div>
 
-                <!-- Buttons -->
-                <div class="d-flex gap-3 w-100">
+                <div class="d-flex gap-3">
                     <button type="button" class="btn btn-danger w-50" id="cancelEditOverlay">
                         Cancel
                     </button>
@@ -321,36 +197,30 @@
                         Update
                     </button>
                 </div>
-
             </form>
-
         </div>
-
     </div>
 
-    <!-- Delete Client Overlay -->
+    <!-- DELETE CLIENT OVERLAY -->
     <div class="overlay d-none" id="deleteClientOverlay">
-
         <div class="overlay-content p-4 text-center">
-
             <button class="overlay-close" id="closeDeleteOverlay">✕</button>
 
             <h5 class="mb-4">
-                Are you sure you want to<br>
-                delete this client?
+                Are you sure you want to<br>delete this client?
             </h5>
 
-            <div class="d-flex gap-3 justify-content-center">
-                <button type="button" class="btn btn-danger px-4" id="cancelDelete">
-                    No
-                </button>
-                <button type="button" class="btn btn-green px-4" id="confirmDelete">
-                    Yes
-                </button>
+            <div class="d-flex justify-content-center gap-3">
+                <button class="btn btn-danger px-4" id="cancelDelete">No</button>
+                <button class="btn btn-green px-4" id="confirmDelete">Yes</button>
             </div>
-
         </div>
-
     </div>
 
+    <!-- JS -->
+    <script src="clients.js"></script>
+    <script src="../../../assets/bootstrap/bootstrap.bundle.min.js"></script>
+
 </body>
+
+</html>
