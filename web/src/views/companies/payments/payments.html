@@ -111,29 +111,6 @@
 
             <!-- Table Body -->
             <tbody>
-
-                <tr>
-                    <td>1</td>
-                    <td>Eishiea Mae Espinoza</td>
-                    <td>₱1,800.00</td>
-                    <td>Nov 8, 2025</td>
-                    <td class="text-danger">₱1,000.00</td>
-                    <td>-</td>
-                    <td>
-                        <button class="btn btn-sm text-white view-transaction-btn"
-                            style="background-color: var(--color-primary);">
-                            👁 View Transaction History
-                        </button>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm edit-payment-btn"><img src="../../../assets/icons/pencil.svg" alt="search" width="20"
-                                height="20">
-                        </button>
-                    </td>
-                </tr>
-
-
-
             </tbody>
         </table>
     </div>
@@ -148,9 +125,9 @@
 
             <!-- Customer summary -->
             <div class="transaction-summary">
-                <div><strong>Customer:</strong> Pedro Garcia</div>
-                <div><strong>Total Price:</strong> ₱2,500.00</div>
-                <div class="balance"><strong>Balance:</strong> ₱0.00</div>
+                <div><strong>Customer:</strong> <span id="historyCustomerName"></span></div>
+                <div><strong>Total Price:</strong> <span id="historyTotalPrice"></span></div>
+                <div><strong>Balance:</strong> <span id="historyBalance"></span></div>
             </div>
 
             <!-- Table -->
@@ -162,22 +139,7 @@
                         <th>Payment Date</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr>
-                        <td>1</td>
-                        <td>₱1,000.00</td>
-                        <td>Oct. 15, 2025</td>
-                    </tr>
-                    <tr>
-                        <td>2</td>
-                        <td>₱800.00</td>
-                        <td>Nov. 10, 2025</td>
-                    </tr>
-                    <tr>
-                        <td>3</td>
-                        <td>₱700.00</td>
-                        <td>Dec. 1, 2025</td>
-                    </tr>
+                <tbody id="historyTransactionBody">
                 </tbody>
             </table>
 
@@ -198,9 +160,9 @@
 
             <!-- Summary -->
             <div class="transaction-summary mb-3">
-                <div><strong>Customer:</strong> Pedro Garcia</div>
-                <div><strong>Total Price:</strong> ₱1,800</div>
-                <div class="balance"><strong>Current Balance:</strong> ₱700.00</div>
+                <div><strong>Customer:</strong> <span id="editCustomerName"></span></div>
+                <div><strong>Total Price:</strong> <span id="editTotalPrice"></span></div>
+                <div><strong>Current Balance:</strong> <span id="editBalance"></span></div>
             </div>
 
             <!-- Header row -->
@@ -213,50 +175,6 @@
 
             <!-- Transactions container -->
             <div id="transactionsContainer">
-
-                <!-- Transaction Row -->
-                <div class="transaction-row">
-                    <div>
-                        <label class="form-label">Amount (₱)</label>
-                        <input type="number" class="form-control" value="1000">
-                    </div>
-
-                    <div>
-                        <label class="form-label">Date</label>
-                        <input type="text" class="form-control" value="Oct. 15, 2025">
-                    </div>
-
-                    <button class="delete-transaction-btn">🗑</button>
-                </div>
-
-                <div class="transaction-row">
-                    <div>
-                        <label class="form-label">Amount (₱)</label>
-                        <input type="number" class="form-control" value="800">
-                    </div>
-
-                    <div>
-                        <label class="form-label">Date</label>
-                        <input type="text" class="form-control" value="Nov. 10, 2025">
-                    </div>
-
-                    <button class="delete-transaction-btn">🗑</button>
-                </div>
-
-                <div class="transaction-row">
-                    <div>
-                        <label class="form-label">Amount (₱)</label>
-                        <input type="number" class="form-control" value="700">
-                    </div>
-
-                    <div>
-                        <label class="form-label">Date</label>
-                        <input type="text" class="form-control" value="Dec. 1, 2025">
-                    </div>
-
-                    <button class="delete-transaction-btn">🗑</button>
-                </div>
-
             </div>
 
             <!-- Buttons -->
@@ -264,7 +182,7 @@
                 <button class="btn btn-danger w-50" id="cancelEditTransaction">
                     Cancel
                 </button>
-                <button class="btn btn-green w-50">
+                <button class="btn btn-green w-50" id="saveTransactionBtn">
                     Save Changes
                 </button>
             </div>
