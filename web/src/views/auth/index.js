@@ -4,96 +4,328 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey)
 
-// DOM Elements
+// ========== CLEAR SESSION ON LOGIN PAGE LOAD ==========
+// Only clear session if NOT an OAuth callback (to allow Google login to complete)
+const hasOAuthToken = window.location.hash.includes('access_token') ||
+                      window.location.search.includes('code');
+
+if (!hasOAuthToken) {
+    await supabase.auth.signOut();
+    localStorage.removeItem('access_token');
+}
+
+// ========== DOM ELEMENTS ==========
+// Login
 const loginBtn = document.getElementById('login-btn');
 const errorAlert = document.getElementById('error-alert');
+const successAlert = document.getElementById('success-alert');
 const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('password');
+const forgotPasswordLink = document.getElementById('forgot-password-link');
+const googleBtn = document.getElementById('google-btn');
 
-// Helper to show errors
-function showError(message) {
-    errorAlert.textContent = message;
+// Forgot Password Modal
+const forgotModal = document.getElementById('forgotPasswordModal');
+const closeModalBtn = document.getElementById('closeModalBtn');
+const modalError = document.getElementById('modal-error');
+const modalSuccess = document.getElementById('modal-success');
+const stepEmail = document.getElementById('step-email');
+const stepOtp = document.getElementById('step-otp');
+const stepPassword = document.getElementById('step-password');
+const resetEmailInput = document.getElementById('reset-email');
+const otpCodeInput = document.getElementById('otp-code');
+const sendCodeBtn = document.getElementById('send-code-btn');
+const verifyCodeBtn = document.getElementById('verify-code-btn');
+const updatePasswordBtn = document.getElementById('update-password-btn');
+
+// Modal helper functions
+function showModal() {
+    forgotModal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+function hideModal() {
+    forgotModal.classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+let resetEmail = '';
+
+// ========== ALERT HELPERS ==========
+function showError(msg) {
+    errorAlert.textContent = msg;
     errorAlert.classList.remove('d-none');
-    
-    // Reset button state
+    successAlert.classList.add('d-none');
     loginBtn.disabled = false;
     loginBtn.textContent = "Login";
 }
 
-// Helper to clear errors
-function clearError() {
+function showSuccess(msg) {
+    successAlert.textContent = msg;
+    successAlert.classList.remove('d-none');
     errorAlert.classList.add('d-none');
-    errorAlert.textContent = "";
 }
 
-async function login(email, password) {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    
-    if (error) {
-        // Supabase returns specific error messages (e.g. "Invalid login credentials")
-        throw new Error(error.message);
-    }
-
-    if (!data.session || !data.session.access_token) {
-        throw new Error("Login successful but no session was created.");
-    }
-
-    localStorage.setItem('access_token', data.session.access_token);
-    return data.session;
+function clearAlerts() {
+    errorAlert.classList.add('d-none');
+    successAlert.classList.add('d-none');
 }
 
-async function callBackend() {
+function showModalError(msg) {
+    modalError.textContent = msg;
+    modalError.classList.remove('d-none');
+    modalSuccess.classList.add('d-none');
+}
+
+function showModalSuccess(msg) {
+    modalSuccess.textContent = msg;
+    modalSuccess.classList.remove('d-none');
+    modalError.classList.add('d-none');
+}
+
+function clearModalAlerts() {
+    modalError.classList.add('d-none');
+    modalSuccess.classList.add('d-none');
+}
+
+// ========== BACKEND VERIFICATION ==========
+async function callBackend(checkAdmin = false) {
     const token = localStorage.getItem('access_token');
-    
     const backendUrl = import.meta.env.VITE_BACKEND_URL;
-    const res = await fetch(`${backendUrl}/protected`, {
-        headers: { 
+
+    // Use different endpoint for OAuth (Google) that checks admin table
+    const endpoint = checkAdmin ? '/protected/oauth' : '/protected';
+
+    const res = await fetch(`${backendUrl}${endpoint}`, {
+        headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
         },
     });
 
     if (!res.ok) {
-        // If backend rejects us (e.g. 401), throw an error
-        const errorText = await res.text(); 
-        console.error('Backend error:', res.status, errorText);
-        throw new Error("Server rejected login. Please contact admin.");
+        let errorMessage = "Server rejected login. Please contact admin.";
+
+        try {
+            const errorData = await res.json();
+            if (res.status === 403) {
+                errorMessage = errorData.detail || "Access denied. Your Google account is not authorized to access this admin portal.";
+            } else if (res.status === 401) {
+                errorMessage = errorData.detail || "Authentication failed. Please try again.";
+            }
+        } catch (e) {
+            console.error('Error parsing response:', e);
+        }
+
+        console.error('Backend error:', res.status);
+        throw new Error(errorMessage);
     }
 
     const data = await res.json();
     console.log('Backend verification success:', data);
 }
 
-// Main Event Listener
+// ========== EMAIL + PASSWORD LOGIN ==========
 loginBtn.addEventListener('click', async (e) => {
-    e.preventDefault(); // Prevent form submission refresh
-    clearError();
+    e.preventDefault();
+    clearAlerts();
 
     const email = emailInput.value.trim();
     const password = passwordInput.value.trim();
 
-    // Client-side validation
     if (!email || !password) {
         showError("Please enter both email and password.");
         return;
     }
 
-    // Set Loading State
     loginBtn.disabled = true;
     loginBtn.textContent = "Logging in...";
 
     try {
-        // Attempt Supabase Login
-        await login(email, password);
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-        // Verify with Backend (Optional, but good practice)
+        if (error) throw new Error(error.message);
+        if (!data.session?.access_token) throw new Error("Login successful but no session was created.");
+
+        localStorage.setItem('access_token', data.session.access_token);
         await callBackend();
-
-        // Redirect on Success
-        window.location.href = '../../views/analytics/analytics.html'; 
+        window.location.href = '../../views/analytics/analytics.html';
 
     } catch (err) {
         console.error(err);
         showError(err.message || "An unexpected error occurred.");
     }
 });
+
+// ========== FORGOT PASSWORD (IN-APP OTP FLOW) ==========
+
+// Open modal
+forgotPasswordLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    clearModalAlerts();
+    resetEmailInput.value = emailInput.value.trim();
+    stepEmail.classList.remove('d-none');
+    stepOtp.classList.add('d-none');
+    stepPassword.classList.add('d-none');
+    showModal();
+});
+
+// Close modal
+closeModalBtn.addEventListener('click', () => {
+    hideModal();
+});
+
+// Close modal when clicking overlay
+forgotModal.querySelector('.custom-modal-overlay').addEventListener('click', () => {
+    hideModal();
+});
+
+// Step 1: Send OTP
+sendCodeBtn.addEventListener('click', async () => {
+    clearModalAlerts();
+    resetEmail = resetEmailInput.value.trim();
+
+    if (!resetEmail) {
+        showModalError("Please enter your email.");
+        return;
+    }
+
+    sendCodeBtn.disabled = true;
+    sendCodeBtn.textContent = "Sending...";
+
+    try {
+        const { error } = await supabase.auth.signInWithOtp({
+            email: resetEmail,
+            options: { shouldCreateUser: false },
+        });
+
+        if (error) throw new Error(error.message);
+
+        showModalSuccess("Code sent! Check your email.");
+        stepEmail.classList.add('d-none');
+        stepOtp.classList.remove('d-none');
+
+    } catch (err) {
+        showModalError(err.message);
+    } finally {
+        sendCodeBtn.disabled = false;
+        sendCodeBtn.textContent = "Send Code";
+    }
+});
+
+// Step 2: Verify OTP
+verifyCodeBtn.addEventListener('click', async () => {
+    clearModalAlerts();
+    const code = otpCodeInput.value.trim();
+
+    if (!code || code.length !== 8) {
+        showModalError("Please enter the 8-digit code.");
+        return;
+    }
+
+    verifyCodeBtn.disabled = true;
+    verifyCodeBtn.textContent = "Verifying...";
+
+    try {
+        const { error } = await supabase.auth.verifyOtp({
+            email: resetEmail,
+            token: code,
+            type: 'email',
+        });
+
+        if (error) throw new Error(error.message);
+
+        showModalSuccess("Verified! Set your new password.");
+        stepOtp.classList.add('d-none');
+        stepPassword.classList.remove('d-none');
+
+    } catch (err) {
+        showModalError(err.message);
+    } finally {
+        verifyCodeBtn.disabled = false;
+        verifyCodeBtn.textContent = "Verify Code";
+    }
+});
+
+// Step 3: Update password
+updatePasswordBtn.addEventListener('click', async () => {
+    clearModalAlerts();
+    const newPassword = document.getElementById('new-password').value.trim();
+    const confirmPassword = document.getElementById('confirm-password').value.trim();
+
+    if (!newPassword || !confirmPassword) {
+        showModalError("Please fill in both fields.");
+        return;
+    }
+
+    if (newPassword !== confirmPassword) {
+        showModalError("Passwords do not match.");
+        return;
+    }
+
+    if (newPassword.length < 6) {
+        showModalError("Password must be at least 6 characters.");
+        return;
+    }
+
+    updatePasswordBtn.disabled = true;
+    updatePasswordBtn.textContent = "Updating...";
+
+    try {
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+        if (error) throw new Error(error.message);
+
+        showModalSuccess("Password updated! You can now log in.");
+
+        setTimeout(() => {
+            hideModal();
+            supabase.auth.signOut();
+        }, 2000);
+
+    } catch (err) {
+        showModalError(err.message);
+    } finally {
+        updatePasswordBtn.disabled = false;
+        updatePasswordBtn.textContent = "Update Password";
+    }
+});
+
+// ========== GOOGLE LOGIN ==========
+googleBtn.addEventListener('click', async () => {
+    clearAlerts();
+    const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+    });
+    if (error) showError(error.message);
+});
+
+// ========== HANDLE OAUTH REDIRECT ==========
+// Only handle OAuth redirects (Google), not initial page loads
+const urlParams = new URLSearchParams(window.location.search);
+const isOAuthCallback = urlParams.has('code') || window.location.hash.includes('access_token');
+
+if (isOAuthCallback) {
+    supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+            localStorage.setItem('access_token', session.access_token);
+            try {
+                // Check admin table for OAuth logins (Google)
+                await callBackend(true);
+                window.location.href = '../../views/analytics/analytics.html';
+            } catch (err) {
+                console.error('Backend verification failed:', err);
+
+                // Sign out the user
+                await supabase.auth.signOut();
+                localStorage.removeItem('access_token');
+
+                // Show error and redirect to login page (clean URL)
+                showError(err.message || "Authorization failed. Please contact admin.");
+
+                // Clean the URL to remove OAuth params
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+    });
+}

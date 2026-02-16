@@ -29,6 +29,7 @@ class Person(Base):
 class Admin(Person):
     __tablename__ = "admins"
     id = Column(Integer, ForeignKey("persons.id"), primary_key=True)
+    account = Column(String(50), nullable=False, unique=True)
     __mapper_args__ = {
         "polymorphic_identity": "admin"
     }
