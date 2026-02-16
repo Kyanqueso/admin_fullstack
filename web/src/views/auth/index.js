@@ -294,38 +294,47 @@ updatePasswordBtn.addEventListener('click', async () => {
 // ========== GOOGLE LOGIN ==========
 googleBtn.addEventListener('click', async () => {
     clearAlerts();
-    const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-    });
-    if (error) showError(error.message);
-});
 
-// ========== HANDLE OAUTH REDIRECT ==========
-// Only handle OAuth redirects (Google), not initial page loads
-const urlParams = new URLSearchParams(window.location.search);
-const isOAuthCallback = urlParams.has('code') || window.location.hash.includes('access_token');
+    // Check if running in Electron
+    if (window.electronAPI?.googleOAuth) {
+        googleBtn.disabled = true;
+        googleBtn.textContent = "Signing in...";
 
-if (isOAuthCallback) {
-    supabase.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-            localStorage.setItem('access_token', session.access_token);
-            try {
-                // Check admin table for OAuth logins (Google)
-                await callBackend(true);
-                window.location.href = '../../views/analytics/analytics.html';
-            } catch (err) {
-                console.error('Backend verification failed:', err);
+        try {
+            const result = await window.electronAPI.googleOAuth();
 
-                // Sign out the user
-                await supabase.auth.signOut();
-                localStorage.removeItem('access_token');
-
-                // Show error and redirect to login page (clean URL)
-                showError(err.message || "Authorization failed. Please contact admin.");
-
-                // Clean the URL to remove OAuth params
-                window.history.replaceState({}, document.title, window.location.pathname);
+            if (!result?.access_token) {
+                googleBtn.disabled = false;
+                googleBtn.textContent = "Sign in with Google";
+                return; // User closed the popup
             }
+
+            // Set the session in Supabase using the tokens
+            const { error } = await supabase.auth.setSession({
+                access_token: result.access_token,
+                refresh_token: result.refresh_token,
+            });
+
+            if (error) throw new Error(error.message);
+
+            localStorage.setItem('access_token', result.access_token);
+            await callBackend(true); // Check admin whitelist
+            window.location.href = '../../views/analytics/analytics.html';
+
+        } catch (err) {
+            console.error(err);
+            showError(err.message || "Google sign-in failed.");
+            await supabase.auth.signOut();
+            localStorage.removeItem('access_token');
+        } finally {
+            googleBtn.disabled = false;
+            googleBtn.textContent = "Sign in with Google";
         }
-    });
-}
+    } else {
+        // Fallback for non-Electron (e.g., browser testing)
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+        });
+        if (error) showError(error.message);
+    }
+});

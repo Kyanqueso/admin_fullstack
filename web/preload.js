@@ -4,8 +4,12 @@ window.addEventListener('DOMContentLoaded', () => {
     console.log('Electron loaded');
 });
 
-const { contextBridge } = require('electron');
+const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('env', {
     BACKEND_URL: "http://localhost:8000" // Hardcode for now to verify it works
+});
+
+contextBridge.exposeInMainWorld('electronAPI', {
+  googleOAuth: () => ipcRenderer.invoke('google-oauth'),
 });
