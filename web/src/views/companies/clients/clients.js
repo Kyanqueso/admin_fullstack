@@ -1,5 +1,6 @@
 import pencilIcon from '../../../assets/icons/pencil.svg';
 import trashIcon from '../../../assets/icons/trashcan-black.svg';
+import { getFromCache, saveToCache, clearCache } from '../../../js/apiCache.js';
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -49,11 +50,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function loadCompanyName() {
     const heading = document.getElementById("company_name");
+    const url = `${FAST_API_URL}/companies/${COMPANY_ID}`;
+
+    const cached = getFromCache(url);
+    if (cached) {
+      heading.textContent = `${cached.name}'s Client List`;
+      return;
+    }
 
     try {
-      const response = await apiFetch(`${FAST_API_URL}/companies/${COMPANY_ID}`);
+      const response = await apiFetch(url);
       const company = await response.json();
 
+      saveToCache(url, company);
       heading.textContent = `${company.name}'s Client List`;
 
     } catch (error) {
@@ -118,6 +127,15 @@ document.addEventListener("DOMContentLoaded", () => {
      LOAD CLIENTS
   =============================== */
   async function loadClients() {
+    const cached = getFromCache(API_URL);
+    if (cached) {
+      allClients = cached.filter(
+        client => String(client.company_id) === String(COMPANY_ID)
+      );
+      renderClientRows(allClients);
+      return;
+    }
+
     tableBody.innerHTML = `
       <tr>
         <td colspan="8" class="text-center">
@@ -129,6 +147,8 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const response = await apiFetch(API_URL);
       const clients = await response.json();
+
+      saveToCache(API_URL, clients);
 
       // FILTER CLIENTS BY COMPANY
       allClients = clients.filter(
@@ -270,6 +290,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       addOverlay.classList.add("d-none");
       e.target.reset();
+      clearCache();
       loadCompanyName();
       loadClients();
 
@@ -334,6 +355,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       notesOverlay.classList.add("d-none");
+      clearCache();
       loadCompanyName();
       loadClients();
 
@@ -360,6 +382,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       editOverlay.classList.add("d-none");
+      clearCache();
       loadCompanyName();
       loadClients();
 
@@ -379,6 +402,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       rowToDelete.remove();
       deleteOverlay.classList.add("d-none");
+      clearCache();
 
     } catch {
       alert("Failed to delete client");

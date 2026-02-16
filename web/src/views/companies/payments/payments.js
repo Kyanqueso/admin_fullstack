@@ -1,4 +1,5 @@
 import pencilIcon from '../../../assets/icons/pencil.svg';
+import { getFromCache, saveToCache, clearCache } from '../../../js/apiCache.js';
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -106,22 +107,45 @@ document.addEventListener("DOMContentLoaded", () => {
      LOAD DATA
   =============================== */
   async function loadData() {
-    tableBody.innerHTML = `
-      <tr><td colspan="8" class="text-center"><div class="spinner-border"></div></td></tr>
-    `;
+    // Try to serve everything from cache (no spinner)
+    const cachedClients = getFromCache(CLIENTS_URL);
+    const cachedOrders = getFromCache(ORDERS_URL);
+    const cachedSummaries = getFromCache(SUMMARIES_URL);
+    const cachedTransactions = getFromCache(TRANSACTIONS_URL);
+    const allCached = cachedClients && cachedOrders && cachedSummaries && cachedTransactions;
+
+    if (!allCached) {
+      tableBody.innerHTML = `
+        <tr><td colspan="8" class="text-center"><div class="spinner-border"></div></td></tr>
+      `;
+    }
 
     try {
-      const [clientsRes, ordersRes, summariesRes, transactionsRes] = await Promise.all([
-        apiFetch(CLIENTS_URL),
-        apiFetch(ORDERS_URL),
-        apiFetch(SUMMARIES_URL),
-        apiFetch(TRANSACTIONS_URL)
-      ]);
+      let allClients, allOrders, allSummaries, allTransactions;
 
-      const allClients = await clientsRes.json();
-      const allOrders = await ordersRes.json();
-      const allSummaries = await summariesRes.json();
-      const allTransactions = await transactionsRes.json();
+      if (allCached) {
+        allClients = cachedClients;
+        allOrders = cachedOrders;
+        allSummaries = cachedSummaries;
+        allTransactions = cachedTransactions;
+      } else {
+        const [clientsRes, ordersRes, summariesRes, transactionsRes] = await Promise.all([
+          apiFetch(CLIENTS_URL),
+          apiFetch(ORDERS_URL),
+          apiFetch(SUMMARIES_URL),
+          apiFetch(TRANSACTIONS_URL)
+        ]);
+
+        allClients = await clientsRes.json();
+        allOrders = await ordersRes.json();
+        allSummaries = await summariesRes.json();
+        allTransactions = await transactionsRes.json();
+
+        saveToCache(CLIENTS_URL, allClients);
+        saveToCache(ORDERS_URL, allOrders);
+        saveToCache(SUMMARIES_URL, allSummaries);
+        saveToCache(TRANSACTIONS_URL, allTransactions);
+      }
 
       // Build client map (filtered by company)
       const companyClients = allClients.filter(
@@ -426,6 +450,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       editOverlay.classList.add("d-none");
+      clearCache();
       await loadData();
     } catch (err) {
       console.error("Failed to save transactions:", err);

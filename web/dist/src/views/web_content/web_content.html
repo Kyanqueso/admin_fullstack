@@ -6,11 +6,12 @@
     <!-- Import CSS Files and Local Bootstrap-->
 
     <title>Website Content Management Page</title>
-  <script type="module" crossorigin src="../../../assets/web_content-CefV7vtM.js"></script>
+  <script type="module" crossorigin src="../../../assets/web_content-BRHKDr1B.js"></script>
   <link rel="modulepreload" crossorigin href="../../../assets/bootstrap.min-BB4Wbeoi.js">
   <link rel="modulepreload" crossorigin href="../../../assets/pencil-DOk75lq2.js">
+  <link rel="modulepreload" crossorigin href="../../../assets/apiCache-BsFi2VyI.js">
   <link rel="stylesheet" crossorigin href="../../../assets/bootstrap-B9K7SMpr.css">
-  <link rel="stylesheet" crossorigin href="../../../assets/web_content-cuiLgiez.css">
+  <link rel="stylesheet" crossorigin href="../../../assets/web_content-pGByud6Z.css">
 </head>
 <body>
     <!-- Logout button -->
@@ -72,17 +73,6 @@
             <h2 id="overlay-title" class="text-start">Title</h2>
             <p id="overlay-message" class="text-start">Message goes here...</p>
 
-            <!-- Loading Spinner -->
-            <div id="overlay-loading" class="d-none text-center my-3">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="mt-2">Processing...</p>
-            </div>
-
-            <!-- Success / Error Message -->
-            <div id="overlay-status" class="d-none my-2 p-2 rounded"></div>
-
             <!-- Form for Add/Edit -->
             <form id="overlay-form" class="d-none mt-3">
                 <label class="form-label text-black">Shoe Name</label>
@@ -91,8 +81,14 @@
                 <label class="form-label text-black">Price</label>
                 <input type="text" id="shoe-price" name="shoePrice" class="form-control mb-2" placeholder="Price" required>
 
-                <label class="form-label text-black">Upload Image</label>
-                <input type="file" id="shoe-image" name="shoeImage" class="form-control mb-2" accept="image/*" required>
+                <!-- Existing images shown during edit -->
+                <div id="existing-images-container" class="d-none mb-2">
+                    <label class="form-label text-black">Current Images</label>
+                    <div id="existing-images" class="d-flex flex-wrap gap-2"></div>
+                </div>
+
+                <label id="image-upload-label" class="form-label text-black">Upload Images (1-5 required)</label>
+                <input type="file" id="shoe-images" name="shoeImages" class="form-control mb-2" accept="image/*" multiple>
             </form>
 
             <!-- Buttons -->

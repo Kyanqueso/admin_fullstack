@@ -1,5 +1,6 @@
 import pencilIcon from '../../../assets/icons/pencil.svg';
 import trashIcon from '../../../assets/icons/trashcan-black.svg';
+import { getFromCache, saveToCache, clearCache } from '../../../js/apiCache.js';
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -83,8 +84,12 @@ document.addEventListener("DOMContentLoaded", () => {
   =============================== */
   async function loadCompanyClients() {
     try {
-      const response = await apiFetch(CLIENTS_URL);
-      const allClients = await response.json();
+      let allClients = getFromCache(CLIENTS_URL);
+      if (!allClients) {
+        const response = await apiFetch(CLIENTS_URL);
+        allClients = await response.json();
+        saveToCache(CLIENTS_URL, allClients);
+      }
       companyClients = allClients.filter(
         c => String(c.company_id) === String(COMPANY_ID)
       );
@@ -119,6 +124,13 @@ document.addEventListener("DOMContentLoaded", () => {
      LOAD ORDERS
   =============================== */
   async function loadOrders() {
+    const cached = getFromCache(ORDERS_URL);
+    if (cached) {
+      allOrders = cached.filter(order => clientMap[order.client_id]);
+      renderOrders(allOrders);
+      return;
+    }
+
     tableBody.innerHTML = `
       <tr><td colspan="17" class="text-center"><div class="spinner-border"></div></td></tr>
     `;
@@ -126,6 +138,8 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const response = await apiFetch(ORDERS_URL);
       const orders = await response.json();
+
+      saveToCache(ORDERS_URL, orders);
 
       // Filter orders to only those belonging to this company's clients
       allOrders = orders.filter(order => clientMap[order.client_id]);
@@ -363,6 +377,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       addOverlay.classList.add("d-none");
       form.reset();
+      clearCache();
       await loadOrders();
     } catch (err) {
       console.error("Failed to add order:", err);
@@ -401,6 +416,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       editOverlay.classList.add("d-none");
+      clearCache();
       await loadOrders();
     } catch (err) {
       console.error("Failed to update order:", err);
@@ -418,6 +434,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       deleteOverlay.classList.add("d-none");
+      clearCache();
       await loadOrders();
     } catch (err) {
       console.error("Failed to delete order:", err);

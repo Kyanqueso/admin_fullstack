@@ -1,5 +1,6 @@
 import pencilIcon from '../../assets/icons/pencil.svg';
 import trashIcon from '../../assets/icons/trash-can.svg';
+import { getFromCache, saveToCache, clearCache } from '../../js/apiCache.js';
 
 const FAST_API_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -21,11 +22,14 @@ const overlayForm = document.getElementById('overlay-form');
 const overlayCancel = document.getElementById('overlay-cancel');
 const overlayConfirm = document.getElementById('overlay-confirm');
 const overlayClose = document.getElementById('overlay-close');
-const overlayLoading = document.getElementById('overlay-loading');
-const overlayStatus = document.getElementById('overlay-status');
+
+const existingImagesContainer = document.getElementById('existing-images-container');
+const existingImagesDiv = document.getElementById('existing-images');
+const imageUploadLabel = document.getElementById('image-upload-label');
+const imageInput = document.getElementById('shoe-images');
 
 let allShoes = [];
-let selectedShoeId = null;
+let imagesToRemove = []; // track image IDs to remove during edit
 
 /* ===============================
    HTML ESCAPING
@@ -73,6 +77,14 @@ async function fetchShoeById(id) {
    LOAD SHOES
 =============================== */
 async function loadShoes() {
+    const url = `${FAST_API_URL}/shoe-management/shoes`;
+    const cached = getFromCache(url);
+    if (cached) {
+        allShoes = cached;
+        renderShoes(allShoes);
+        return;
+    }
+
     grid.innerHTML = `
         <div class="text-center my-5 w-100">
             <div class="spinner-border text-primary" role="status"></div>
@@ -81,7 +93,8 @@ async function loadShoes() {
     `;
 
     try {
-        const shoes = await apiFetch(`${FAST_API_URL}/shoe-management/shoes`);
+        const shoes = await apiFetch(url);
+        saveToCache(url, shoes);
         allShoes = shoes;
         renderShoes(allShoes);
     } catch (err) {
@@ -102,11 +115,15 @@ function renderShoes(shoesArray) {
     }
 
     shoesArray.forEach(shoe => {
+        const primaryImage = shoe.images && shoe.images.length > 0
+            ? shoe.images[0].image_url
+            : 'https://placehold.co/400';
+
         const col = document.createElement('div');
         col.className = 'col-12 col-md-6 col-lg-4';
         col.innerHTML = `
             <div class="card h-100 box-drop-shadow">
-                <img src="${escapeHtml(shoe.image_url) || 'https://placehold.co/400'}" class="card-img-top" alt="${escapeHtml(shoe.model_name)}">
+                <img src="${escapeHtml(primaryImage)}" class="card-img-top" alt="${escapeHtml(shoe.model_name)}">
                 <div class="accent-bg card-body d-flex flex-column">
                     <h5 class="card-title"><strong>${highlightQuery(shoe.model_name)}</strong></h5>
                     <p class="card-text flex-grow-1">${escapeHtml(String(shoe.price))}</p>
@@ -162,36 +179,46 @@ sortSelect.addEventListener('change', applySearchAndSort);
 /* ===============================
    OVERLAY HELPERS
 =============================== */
-function showLoadingOverlay() {
-    overlayLoading.classList.remove('d-none');
-    overlayStatus.classList.add('d-none');
-    overlayConfirm.disabled = true;
-    overlayCancel.disabled = true;
-}
-
-function hideLoadingOverlay() {
-    overlayLoading.classList.add('d-none');
-    overlayConfirm.disabled = false;
-    overlayCancel.disabled = false;
-}
-
-function showStatus(message, type = 'success') {
-    overlayStatus.textContent = message;
-    overlayStatus.classList.remove('bg-success', 'bg-danger', 'text-white');
-
-    if (type === 'success') overlayStatus.classList.add('bg-success', 'text-white');
-    else overlayStatus.classList.add('bg-danger', 'text-white');
-
-    overlayStatus.classList.remove('d-none');
-    setTimeout(() => overlayStatus.classList.add('d-none'), 5000);
-}
-
 function resetOverlayState() {
     overlayMessage.classList.remove('d-none');
     overlayForm.classList.add('d-none');
     overlayConfirm.className = 'btn';
+    overlayConfirm.disabled = false;
+    overlayCancel.disabled = false;
+    overlayClose.disabled = false;
+    existingImagesContainer.classList.add('d-none');
+    existingImagesDiv.innerHTML = '';
+    imagesToRemove = [];
 }
 
+/* ===============================
+   EXISTING IMAGES (Edit mode)
+=============================== */
+function renderExistingImages(images) {
+    existingImagesDiv.innerHTML = '';
+
+    if (!images || images.length === 0) {
+        existingImagesContainer.classList.add('d-none');
+        return;
+    }
+
+    existingImagesContainer.classList.remove('d-none');
+
+    images.forEach(img => {
+        const item = document.createElement('div');
+        item.className = 'existing-image-item';
+        item.dataset.imageId = img.id;
+        item.innerHTML = `
+            <img src="${escapeHtml(img.image_url)}" alt="Image ${img.display_order}">
+            <button type="button" class="remove-image-btn" title="Remove image">&times;</button>
+        `;
+        existingImagesDiv.appendChild(item);
+    });
+}
+
+/* ===============================
+   OPEN OVERLAY
+=============================== */
 function openOverlay(type, shoeData = {}) {
     resetOverlayState();
     overlay.classList.remove('d-none');
@@ -205,6 +232,11 @@ function openOverlay(type, shoeData = {}) {
         overlayForm.reset();
         overlayConfirm.className = 'btn btn-green';
         overlayConfirm.textContent = 'Add';
+
+        // Image input: required for add, label reflects 1-5
+        imageUploadLabel.textContent = 'Upload Images (1-5 required)';
+        imageInput.required = true;
+
     } else if (type === 'edit') {
         overlayTitle.innerHTML = '<strong>Edit Shoe</strong>';
         overlayMessage.classList.add('d-none');
@@ -213,6 +245,14 @@ function openOverlay(type, shoeData = {}) {
         overlayForm.shoePrice.value = shoeData.price || '';
         overlayConfirm.className = 'btn btn-green';
         overlayConfirm.textContent = 'Save';
+
+        // Show existing images with remove buttons
+        renderExistingImages(shoeData.images || []);
+
+        // Image input: optional for edit
+        imageUploadLabel.textContent = 'Add More Images (optional)';
+        imageInput.required = false;
+
     } else if (type === 'delete') {
         overlayTitle.innerHTML = '<strong>Delete Shoe?</strong>';
         overlayMessage.textContent = 'Are you sure you want to delete this shoe?';
@@ -226,18 +266,51 @@ function closeOverlay() {
     overlay.classList.add('d-none');
 }
 
-function lockOverlayAfterSuccess() {
-    overlayConfirm.disabled = true;
-    overlayCancel.disabled = true;
-    overlayClose.disabled = true;
-    overlayConfirm.textContent = 'Done';
-}
-
 /* ===============================
    EVENT LISTENERS
 =============================== */
 overlayCancel.addEventListener('click', closeOverlay);
 overlayClose.addEventListener('click', closeOverlay);
+
+// Remove existing image button (event delegation)
+existingImagesDiv.addEventListener('click', (e) => {
+    const removeBtn = e.target.closest('.remove-image-btn');
+    if (!removeBtn) return;
+
+    const item = removeBtn.closest('.existing-image-item');
+    const imageId = parseInt(item.dataset.imageId);
+
+    // Check: don't allow removing if it's the last image and no new files are queued
+    const remainingItems = existingImagesDiv.querySelectorAll('.existing-image-item').length - 1;
+    const newFiles = imageInput.files ? imageInput.files.length : 0;
+
+    if (remainingItems + newFiles < 1) {
+        alert('Shoe must have at least 1 image');
+        return;
+    }
+
+    imagesToRemove.push(imageId);
+    item.remove();
+});
+
+// Validate file count on input change
+imageInput.addEventListener('change', () => {
+    const newFiles = imageInput.files ? imageInput.files.length : 0;
+    const type = overlay.dataset.type;
+
+    if (type === 'add') {
+        if (newFiles > 5) {
+            alert('You can upload a maximum of 5 images');
+            imageInput.value = '';
+        }
+    } else if (type === 'edit') {
+        const remainingExisting = existingImagesDiv.querySelectorAll('.existing-image-item').length;
+        if (remainingExisting + newFiles > 5) {
+            alert(`You can only have 5 images total. Currently ${remainingExisting} existing.`);
+            imageInput.value = '';
+        }
+    }
+});
 
 document.getElementById('add-shoe-btn').addEventListener('click', e => {
     e.preventDefault();
@@ -266,37 +339,100 @@ document.addEventListener('click', async e => {
     }
 });
 
+/* ===============================
+   CONFIRM ACTION
+=============================== */
 overlayConfirm.addEventListener('click', async () => {
     const type = overlay.dataset.type;
     const id = overlay.dataset.shoeId;
     const name = overlayForm.shoeName?.value;
     const price = overlayForm.shoePrice?.value;
-    const imageFile = overlayForm.shoeImage?.files[0];
+    const newFiles = imageInput.files;
+
+    // Store original button text to restore on error
+    const originalText = overlayConfirm.textContent;
 
     try {
-        showLoadingOverlay();
+        // Disable buttons and show progress text
+        overlayConfirm.disabled = true;
+        overlayCancel.disabled = true;
+        overlayClose.disabled = true;
+
         let response;
-
-        const formData = new FormData();
-        if (name) formData.append('model_name', name);
-        if (price) formData.append('price', price);
-        if (imageFile) formData.append('image', imageFile);
-
         const authHeaders = getAuthHeaders();
 
+        // =====================
+        // ADD
+        // =====================
         if (type === 'add') {
+            if (!newFiles || newFiles.length === 0) {
+                throw new Error('Please select at least 1 image');
+            }
+            if (newFiles.length > 5) {
+                throw new Error('Maximum 5 images allowed');
+            }
+
+            overlayConfirm.textContent = 'Adding...';
+
+            const formData = new FormData();
+            formData.append('model_name', name);
+            formData.append('price', price);
+            for (const file of newFiles) {
+                formData.append('images', file);
+            }
+
             response = await fetch(`${FAST_API_URL}/shoe-management/shoes`, {
                 method: 'POST',
                 headers: authHeaders,
                 body: formData
             });
-        } else if (type === 'edit') {
+        }
+
+        // =====================
+        // EDIT
+        // =====================
+        if (type === 'edit') {
+            const remainingExisting = existingImagesDiv.querySelectorAll('.existing-image-item').length;
+            const newCount = newFiles ? newFiles.length : 0;
+
+            if (remainingExisting + newCount < 1) {
+                throw new Error('Shoe must have at least 1 image');
+            }
+            if (remainingExisting + newCount > 5) {
+                throw new Error('Maximum 5 images allowed');
+            }
+
+            overlayConfirm.textContent = 'Saving...';
+
+            const formData = new FormData();
+            formData.append('model_name', name);
+            formData.append('price', price);
+
+            // Append new image files
+            if (newFiles && newFiles.length > 0) {
+                for (const file of newFiles) {
+                    formData.append('images', file);
+                }
+            }
+
+            // Append image IDs to remove
+            if (imagesToRemove.length > 0) {
+                formData.append('remove_image_ids', imagesToRemove.join(','));
+            }
+
             response = await fetch(`${FAST_API_URL}/shoe-management/shoes/${id}`, {
                 method: 'PATCH',
                 headers: authHeaders,
                 body: formData
             });
-        } else if (type === 'delete') {
+        }
+
+        // =====================
+        // DELETE
+        // =====================
+        if (type === 'delete') {
+            overlayConfirm.textContent = 'Deleting...';
+
             response = await fetch(`${FAST_API_URL}/shoe-management/shoes/${id}`, {
                 method: 'DELETE',
                 headers: authHeaders
@@ -305,19 +441,17 @@ overlayConfirm.addEventListener('click', async () => {
 
         if (!response.ok) throw new Error(await response.text());
 
-        showStatus(
-            type === 'delete' ? 'Shoe deleted successfully!' :
-            type === 'edit' ? 'Shoe updated successfully!' : 'Shoe added successfully!',
-            'success'
-        );
-        lockOverlayAfterSuccess();
+        closeOverlay();
+        clearCache();
         await loadShoes();
-
-        setTimeout(() => closeOverlay(), 2500);
     } catch (err) {
         console.error(err);
-        showStatus(err.message || 'An error occurred', 'error');
-        hideLoadingOverlay();
+        alert(err.message || 'An error occurred');
+    } finally {
+        overlayConfirm.textContent = originalText;
+        overlayConfirm.disabled = false;
+        overlayCancel.disabled = false;
+        overlayClose.disabled = false;
     }
 });
 

@@ -1,3 +1,5 @@
+import { getFromCache, saveToCache } from '../../js/apiCache.js';
+
 const FAST_API_URL = import.meta.env.VITE_BACKEND_URL;
 
 console.log("Checking API URL:", FAST_API_URL);
@@ -24,27 +26,31 @@ function formatCurrencyToThousandPhp(amount) {
 }
 
 async function fetchAnalytics() {
-    try {
-        // Get the token from storage
-        const token = localStorage.getItem('access_token'); 
+    const url = `${FAST_API_URL}/analytics/`;
+    const cached = getFromCache(url);
+    if (cached) return cached;
 
-        const response = await fetch(`${FAST_API_URL}/analytics/`, {
+    try {
+        const token = localStorage.getItem('access_token');
+
+        const response = await fetch(url, {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${token}`, // Send the credentials
+                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             }
         });
 
         if (response.status === 401 || response.status === 403) {
-             // Redirect to login if token is missing or expired
              window.location.href = "../auth/index.html";
              return;
         }
 
         if (!response.ok) throw new Error('Failed to fetch analytics data');
 
-        return await response.json();
+        const data = await response.json();
+        saveToCache(url, data);
+        return data;
     } catch (error) {
         console.error('Error fetching analytics:', error);
         return null;
@@ -53,18 +59,21 @@ async function fetchAnalytics() {
 
 // Returns: { year_number, monthly_data: [{ month_number, month_name, sales }, ...] }
 async function fetchAnnualBreakdown(year = null) {
+    let url = `${FAST_API_URL}/analytics/annual-breakdown`;
+    if (year) {
+        url += `?year_number=${year}`;
+    }
+
+    const cached = getFromCache(url);
+    if (cached) return cached;
+
     try {
-        const token = localStorage.getItem('access_token'); // Get the token
-        
-        let url = `${FAST_API_URL}/analytics/annual-breakdown`;
-        if (year) {
-            url += `?year_number=${year}`;
-        }
+        const token = localStorage.getItem('access_token');
 
         const response = await fetch(url, {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${token}`, // Added this
+                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             }
         });
@@ -77,7 +86,9 @@ async function fetchAnnualBreakdown(year = null) {
             throw new Error('Failed to fetch annual breakdown data');
         }
 
-        return await response.json();
+        const data = await response.json();
+        saveToCache(url, data);
+        return data;
 
     } catch (error) {
         console.error('Error fetching annual breakdown:', error);

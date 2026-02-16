@@ -70,17 +70,6 @@
             <h2 id="overlay-title" class="text-start">Title</h2>
             <p id="overlay-message" class="text-start">Message goes here...</p>
 
-            <!-- Loading Spinner -->
-            <div id="overlay-loading" class="d-none text-center my-3">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="mt-2">Processing...</p>
-            </div>
-
-            <!-- Success / Error Message -->
-            <div id="overlay-status" class="d-none my-2 p-2 rounded"></div>
-
             <!-- Form for Add/Edit -->
             <form id="overlay-form" class="d-none mt-3">
                 <label class="form-label text-black">Shoe Name</label>
@@ -89,8 +78,14 @@
                 <label class="form-label text-black">Price</label>
                 <input type="text" id="shoe-price" name="shoePrice" class="form-control mb-2" placeholder="Price" required>
 
-                <label class="form-label text-black">Upload Image</label>
-                <input type="file" id="shoe-image" name="shoeImage" class="form-control mb-2" accept="image/*" required>
+                <!-- Existing images shown during edit -->
+                <div id="existing-images-container" class="d-none mb-2">
+                    <label class="form-label text-black">Current Images</label>
+                    <div id="existing-images" class="d-flex flex-wrap gap-2"></div>
+                </div>
+
+                <label id="image-upload-label" class="form-label text-black">Upload Images (1-5 required)</label>
+                <input type="file" id="shoe-images" name="shoeImages" class="form-control mb-2" accept="image/*" multiple>
             </form>
 
             <!-- Buttons -->

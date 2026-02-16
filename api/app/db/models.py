@@ -108,4 +108,16 @@ class ShoeCatalog(Base):
     id = Column(Integer, primary_key=True, name="shoe_catalog_id")
     model_name = Column(String(100), nullable=False)
     price = Column(Numeric(10, 2), nullable=False)
-    image_url = Column(String(500), nullable=True)
+
+    images = relationship("ShoeImage", back_populates="shoe_catalog", cascade="all, delete-orphan",
+                          order_by="ShoeImage.display_order")
+
+
+class ShoeImage(Base):
+    __tablename__ = "shoe_images"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    shoe_catalog_id = Column(Integer, ForeignKey("shoe_catalog.shoe_catalog_id", ondelete="CASCADE"), nullable=False)
+    image_url = Column(String(500), nullable=False)
+    display_order = Column(Integer, nullable=False, default=1)
+
+    shoe_catalog = relationship("ShoeCatalog", back_populates="images")

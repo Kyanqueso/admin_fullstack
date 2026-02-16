@@ -1,3 +1,5 @@
+import { getFromCache, saveToCache, clearCache } from '../../js/apiCache.js';
+
 /* ===============================
    CONFIG
 =============================== */
@@ -85,6 +87,14 @@ async function apiFetch(url, options = {}) {
    LOAD COMPANIES
 =============================== */
 async function loadCompanies() {
+  const url = `${FAST_API_URL}/companies/`;
+  const cached = getFromCache(url);
+  if (cached) {
+    allCompanies = cached;
+    renderCompanies(allCompanies);
+    return;
+  }
+
   grid.innerHTML = `
     <div class="col text-center">
       <div class="spinner-border"></div>
@@ -92,10 +102,11 @@ async function loadCompanies() {
   `;
 
   try {
-    const response = await apiFetch(`${FAST_API_URL}/companies/`);
+    const response = await apiFetch(url);
     const companies = await response.json();
 
-    allCompanies = companies; // cache for search/sort
+    saveToCache(url, companies);
+    allCompanies = companies;
     renderCompanies(allCompanies);
 
   } catch (error) {
@@ -245,6 +256,7 @@ addForm.onsubmit = async (e) => {
 
     addOverlay.classList.add("d-none");
     addForm.reset();
+    clearCache();
     loadCompanies();
 
   } catch {
@@ -280,6 +292,7 @@ editForm.onsubmit = async (e) => {
     });
 
     editOverlay.classList.add("d-none");
+    clearCache();
     loadCompanies();
 
   } catch {
@@ -297,6 +310,7 @@ document.getElementById("confirmDeleteCompany").onclick = async () => {
     });
 
     deleteOverlay.classList.add("d-none");
+    clearCache();
     loadCompanies();
 
   } catch {

@@ -3,11 +3,17 @@ from typing import Optional
 from decimal import Decimal
 
 
+class ShoeImageRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    image_url: str
+    display_order: int
+
+
 class ShoeCatalogCreate(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
     model_name: str
     price: Decimal
-    image_url: Optional[str] = None
 
 
 class ShoeCatalogRead(BaseModel):
@@ -15,11 +21,10 @@ class ShoeCatalogRead(BaseModel):
     id: int
     model_name: str
     price: Decimal
-    image_url: Optional[str] = None
+    images: list[ShoeImageRead] = []
 
 
 class ShoeCatalogUpdate(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
     model_name: Optional[str] = None
     price: Optional[Decimal] = None
-    image_url: Optional[str] = None
