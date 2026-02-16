@@ -3,13 +3,29 @@ from sqlalchemy.orm import Session
 from app.config.database import get_db
 from app.schemas.client import ClientCreate, ClientRead, ClientUpdate
 from app.services import client_service
+from typing import Optional
+from fastapi import Query
 
 router = APIRouter(prefix="/clients", tags=["Clients"])
 
 
 @router.get("/", response_model=list[ClientRead])
-def get_all_client(skip: int = 0, limit: int = 10000, db: Session = Depends(get_db)):
-    return client_service.get_clients(db, skip=skip, limit=limit)
+def get_all_client(
+    company_id: Optional[int] = Query(None),
+    search: Optional[str] = Query(None),
+    sort: Optional[str] = Query(None),
+    skip: int = 0,
+    limit: int = 10000,
+    db: Session = Depends(get_db)
+):
+    return client_service.get_clients(
+        db,
+        company_id=company_id,
+        search=search,
+        sort=sort,
+        skip=skip,
+        limit=limit
+    )
 
 
 @router.get("/{client_id}", response_model=ClientRead)

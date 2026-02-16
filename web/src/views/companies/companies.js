@@ -28,7 +28,26 @@ async function loadCompanies() {
   `;
 
   try {
-    const res = await fetch(API_URL);
+    let url = API_URL;
+
+    const searchValue = document.getElementById("searchInput")?.value.trim();
+    const sortValue = document.getElementById("sortSelect")?.value;
+
+    const params = new URLSearchParams();
+
+    if (searchValue) {
+      params.append("search", searchValue);
+    }
+
+    if (sortValue) {
+      params.append("sort", sortValue);
+    }
+
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+
+    const res = await fetch(url);
     const companies = await res.json();
 
     grid.innerHTML = "";
@@ -196,13 +215,21 @@ document.getElementById("confirmDeleteCompany").onclick = async () => {
    CLOSE BUTTONS
 =============================== */
 document.getElementById("closeAddCompany").onclick =
-document.getElementById("cancelAddCompany").onclick = () =>
-  addOverlay.classList.add("d-none");
+  document.getElementById("cancelAddCompany").onclick = () =>
+    addOverlay.classList.add("d-none");
 
 document.getElementById("closeEditCompany").onclick =
-document.getElementById("cancelEditCompany").onclick = () =>
-  editOverlay.classList.add("d-none");
+  document.getElementById("cancelEditCompany").onclick = () =>
+    editOverlay.classList.add("d-none");
 
 document.getElementById("closeDeleteCompany").onclick =
-document.getElementById("cancelDeleteCompany").onclick = () =>
-  deleteOverlay.classList.add("d-none");
+  document.getElementById("cancelDeleteCompany").onclick = () =>
+    deleteOverlay.classList.add("d-none");
+
+document.getElementById("searchInput")?.addEventListener("input", () => {
+  loadCompanies();
+});
+
+document.getElementById("sortSelect")?.addEventListener("change", () => {
+  loadCompanies();
+});

@@ -17,8 +17,33 @@ def get_company(db: Session, company_id: int):
     return db.query(Company).filter(Company.id == company_id).first()
 
 
-def get_companies(db: Session, skip: int = 0, limit: int | None = 103000):
-    query = db.query(Company).offset(skip)
+def get_companies(
+    db: Session,
+    search: str | None = None,
+    sort: str | None = None,
+    skip: int = 0,
+    limit: int | None = 103000
+):
+    query = db.query(Company)
+
+    
+    if search:
+        query = query.filter(Company.name.ilike(f"%{search}%"))
+
+    
+    # Sorting
+    if sort == "az":
+        query = query.order_by(Company.name.asc())
+
+    elif sort == "za":
+        query = query.order_by(Company.name.desc())
+
+    elif sort == "recent":
+        query = query.order_by(Company.id.desc())
+
+    elif sort == "oldest":
+        query = query.order_by(Company.id.asc())
+
     if limit is not None:
         query = query.limit(limit)
 

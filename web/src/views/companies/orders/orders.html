@@ -57,18 +57,20 @@
             <div class="input-group">
                 <span class="input-group-text"><img src="../../../assets/icons/search.svg" alt="search" width="20"
                         height="20"></span>
-                <input type="text" class="form-control" placeholder="Search name">
+                <input type="text" class="form-control" placeholder="Search name" id="searchOrders">
             </div>
         </div>
 
         <!-- Sort -->
         <div class="col-12 col-md-2 mb-2">
             <label class="form-label"></label>
-            <select class="form-select mt-2">
+            <select class="form-select mt-2" id="sortOrders">
                 <option value="" selected disabled hidden>Sort by</option>
-                <option value="name">Name</option>
+                <option value="az">A-Z</option>
+                <option value="za">Z-A</option>
                 <option value="recent">Recently Added</option>
-                <option value="alpha">Alphabetical</option>
+                <option value="oldest">Oldest</option>
+                <option value="orderid">Order ID</option>
             </select>
         </div>
 
@@ -109,34 +111,7 @@
                 </tr>
             </thead>
 
-            <tbody>
-                <tr>
-                    <td>1</td>
-                    <td>Maria Santos</td>
-                    <td>S2H5</td>
-                    <td>8</td>
-                    <td>Helga</td>
-                    <td>S1</td>
-                    <td>Square</td>
-                    <td>H5</td>
-                    <td>Liz</td>
-                    <td>No</td>
-                    <td>No</td>
-                    <td>Yes</td>
-                    <td>1</td>
-                    <td>₱1,800</td>
-                    <td>₱1,800</td>
-                    <td>
-                        <button class="btn btn-sm edit-order-btn">
-                            <img src="../../../assets/icons/pencil.svg" width="18">
-                        </button>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm delete-btn">
-                            <img src="../../../assets/icons/trashcan-black.svg" width="18">
-                        </button>
-                    </td>
-                </tr>
+            <tbody id="ordersTableBody">
             </tbody>
         </table>
     </div>
@@ -154,16 +129,13 @@
 
             <h5 class="mb-3">Add New Order</h5>
 
-            <form class="w-100">
+            <form class="w-100" id="addOrderForm">
 
                 <!-- Customer -->
                 <div class="mb-3">
                     <label class="form-label">Customer Name</label>
-                    <select class="form-select" required>
+                    <select class="form-select" required id="addCustomerId">
                         <option value="" selected disabled hidden>Select Customer</option>
-                        <option>Pedro Garcia</option>
-                        <option>Maria Santos</option>
-                        <option>Juan Cruz</option>
                     </select>
                 </div>
 
@@ -171,25 +143,25 @@
                 <div class="row gx-2 gy-3 mb-3">
                     <div class="col-6 col-md-3">
                         <label class="form-label">Style</label>
-                        <input class="form-control" placeholder="Enter Style">
+                        <input class="form-control" placeholder="Enter Style" id="addStyle">
                     </div>
                     <div class="col-6 col-md-3">
                         <label class="form-label">Size</label>
-                        <input class="form-control" placeholder="Enter Size">
+                        <input class="form-control" placeholder="Enter Size" id="addSize">
                     </div>
                     <div class="col-6 col-md-3">
                         <label class="form-label">Material</label>
-                        <select class="form-select">
+                        <select class="form-select" id="addMaterial">
                             <option value="" selected disabled hidden>Select Material</option>
                             <option>Helga</option>
-                            <option>Leather</option>
-                            <option>Suede</option>
+                            <option>Tanya</option>
+                            <option>Snake</option>
                             <option>Patent</option>
                         </select>
                     </div>
                     <div class="col-6 col-md-3">
                         <label class="form-label">Color</label>
-                        <input class="form-control" placeholder="Enter Color">
+                        <input class="form-control" placeholder="Enter Color Code" id="addColor">
                     </div>
                 </div>
 
@@ -197,26 +169,28 @@
                 <div class="row gx-2 gy-3 mb-3">
                     <div class="col-4">
                         <label class="form-label">Heel Type</label>
-                        <select class="form-select">
+                        <select class="form-select" id="addHeelType">
                             <option value="" selected disabled hidden>Select Heel</option>
-                            <option>Square</option>
-                            <option>Stiletto</option>
-                            <option>Block</option>
-                            <option>Kitten</option>
+                            <option>Cuban</option>
+                            <option>Putol</option>
+                            <option>Wedge</option>
+                            <option>Cone</option>
+                            <option>Contessa</option>
                         </select>
                     </div>
                     <div class="col-4">
                         <label class="form-label">Heel Size</label>
-                        <input class="form-control" placeholder="Enter Heel Size">
+                        <input class="form-control" placeholder="Enter Heel Size" id="addHeelSize">
                     </div>
                     <div class="col-4">
                         <label class="form-label">Mold Type</label>
-                        <select class="form-select">
+                        <select class="form-select" id="addMoldType">
                             <option value="" selected disabled hidden>Select Mold</option>
-                            <option>Liz</option>
+                            <option>None</option>
+                            <option>Ferage</option>
                             <option>Milani</option>
-                            <option>Classic</option>
-                            <option>Modern</option>
+                            <option>Liz</option>
+                            <option>Square</option>
                         </select>
                     </div>
                 </div>
@@ -227,11 +201,11 @@
                         <label class="form-label d-block">Buckle</label>
                         <div class="option-radios">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="addBuckle">
+                                <input class="form-check-input" type="radio" name="addBuckle" value="true">
                                 <label class="form-check-label">Yes</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="addBuckle" checked>
+                                <input class="form-check-input" type="radio" name="addBuckle" value="false" checked>
                                 <label class="form-check-label">No</label>
                             </div>
                         </div>
@@ -241,11 +215,11 @@
                         <label class="form-label d-block">Sling Back</label>
                         <div class="option-radios">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="addSling">
+                                <input class="form-check-input" type="radio" name="addSling" value="true">
                                 <label class="form-check-label">Yes</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="addSling" checked>
+                                <input class="form-check-input" type="radio" name="addSling" value="false" checked>
                                 <label class="form-check-label">No</label>
                             </div>
                         </div>
@@ -255,11 +229,11 @@
                         <label class="form-label d-block">Platform</label>
                         <div class="option-radios">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="addPlatform">
+                                <input class="form-check-input" type="radio" name="addPlatform" value="true">
                                 <label class="form-check-label">Yes</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="addPlatform" checked>
+                                <input class="form-check-input" type="radio" name="addPlatform" value="false" checked>
                                 <label class="form-check-label">No</label>
                             </div>
                         </div>
@@ -270,11 +244,11 @@
                 <div class="row gx-2 mb-4">
                     <div class="col-6">
                         <label class="form-label">Quantity</label>
-                        <input class="form-control" value="1">
+                        <input class="form-control" value="1" id="addQuantity">
                     </div>
                     <div class="col-6">
                         <label class="form-label">Price</label>
-                        <input class="form-control" placeholder="Enter Price">
+                        <input class="form-control" placeholder="Enter Price" id="addPrice">
                     </div>
                 </div>
 
@@ -299,73 +273,69 @@
             <button class="overlay-close" id="closeEditOrder">✕</button>
             <h5 class="mb-3">Edit Existing Order</h5>
 
-            <form class="w-100">
+            <form class="w-100" id="editOrderForm">
 
+                <!-- Customer (DISABLED – Option A) -->
                 <div class="mb-3">
                     <label class="form-label">Customer Name</label>
-                    <select class="form-select" required>
+                    <select class="form-select" required id="editCustomerId" disabled>
                         <option value="" selected disabled hidden>Select Customer</option>
-                        <option value="pedro">Pedro Garcia</option>
-                        <option value="ana">Ana Mendoza</option>
-                        <option value="carlos">Carlos Dela Cruz</option>
                     </select>
                 </div>
 
+                <!-- Model / Size / Material / Color -->
                 <div class="row gx-2 gy-3 mb-3">
                     <div class="col-6 col-md-3">
                         <label class="form-label">Style</label>
-                        <input class="form-control" value="B3H2">
+                        <input class="form-control" id="editModel">
                     </div>
                     <div class="col-6 col-md-3">
                         <label class="form-label">Size</label>
-                        <input class="form-control" value="10">
+                        <input class="form-control" id="editSize">
                     </div>
                     <div class="col-6 col-md-3">
                         <label class="form-label">Material</label>
-                        <select class="form-select" required>
+                        <select class="form-select" id="editMaterial">
                             <option value="" selected disabled hidden>Select Material</option>
-                            <option value="helga">Helga</option>
-                            <option value="leather">Leather</option>
-                            <option value="suede">Suede</option>
-                            <option value="patent">Patent</option>
-                            <option value="velvet">Velvet</option>
-                            <option value="canvas">Canvas</option>
-                            <option value="silk">Silk</option>
+                            <option value="Helga">Helga</option>
+                            <option value="Tanya">Tanya</option>
+                            <option value="Snake">Snake</option>
+                            <option value="Patent">Patent</option>
                         </select>
                     </div>
                     <div class="col-6 col-md-3">
                         <label class="form-label">Color</label>
-                        <input class="form-control" value="Brown">
+                        <input class="form-control" id="editColor">
                     </div>
                 </div>
 
+                <!-- Heel Section -->
                 <div class="row gx-2 gy-3 mb-3">
                     <div class="col-4">
                         <label class="form-label">Heel Type</label>
-                        <select class="form-select" required>
+                        <select class="form-select" id="editHeelType">
                             <option value="" selected disabled hidden>Select Heel</option>
-                            <option value="square">Square</option>
-                            <option value="stiletto">Stiletto</option>
-                            <option value="block">Block</option>
-                            <option value="kitten">Kitten</option>
-                            <option value="wedge">Wedge</option>
+                            <option value="Cuban">Cuban</option>
+                            <option value="Putol">Putol</option>
+                            <option value="Wedge">Wedge</option>
+                            <option value="Cone">Cone</option>
+                            <option value="Contessa">Contessa</option>
                         </select>
                     </div>
                     <div class="col-4">
                         <label class="form-label">Heel Size</label>
-                        <input class="form-control" value="H2">
+                        <input class="form-control" id="editHeelSize">
                     </div>
                     <div class="col-4">
                         <label class="form-label">Mold Type</label>
-                        <select class="form-select" required>
+                        <select class="form-select" id="editMold">
                             <option value="" selected disabled hidden>Select Mold</option>
-                            <option value="liz">Liz</option>
-                            <option value="milani">Milani</option>
-                            <option value="classic">Classic</option>
-                            <option value="modern">Modern</option>
-                            <option value="slim">Slim</option>
+                            <option value="None">None</option>
+                            <option value="Ferage">Ferage</option>
+                            <option value="Milani">Milani</option>
+                            <option value="Liz">Liz</option>
+                            <option value="Square">Square</option>
                         </select>
-
                     </div>
                 </div>
 
@@ -377,11 +347,11 @@
                         <label class="form-label d-block">Buckle</label>
                         <div class="option-radios">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="buckle" checked>
+                                <input class="form-check-input" type="radio" name="editBuckle" value="true">
                                 <label class="form-check-label">Yes</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="buckle">
+                                <input class="form-check-input" type="radio" name="editBuckle" value="false">
                                 <label class="form-check-label">No</label>
                             </div>
                         </div>
@@ -392,11 +362,11 @@
                         <label class="form-label d-block">Sling Back</label>
                         <div class="option-radios">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="slingback">
+                                <input class="form-check-input" type="radio" name="editSlingback" value="true">
                                 <label class="form-check-label">Yes</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="slingback" checked>
+                                <input class="form-check-input" type="radio" name="editSlingback" value="false">
                                 <label class="form-check-label">No</label>
                             </div>
                         </div>
@@ -407,19 +377,28 @@
                         <label class="form-label d-block">Platform</label>
                         <div class="option-radios">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="platform">
+                                <input class="form-check-input" type="radio" name="editPlatform" value="true">
                                 <label class="form-check-label">Yes</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="platform" checked>
+                                <input class="form-check-input" type="radio" name="editPlatform" value="false">
                                 <label class="form-check-label">No</label>
                             </div>
                         </div>
                     </div>
 
                 </div>
-
-
+                <!-- Quantity / Price -->
+                <div class="row gx-2 mb-4">
+                    <div class="col-6">
+                        <label class="form-label">Quantity</label>
+                        <input class="form-control" id="editQuantity">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Price</label>
+                        <input class="form-control" id="editPrice">
+                    </div>
+                </div>
                 <!-- BUTTONS -->
                 <div class="d-flex gap-3">
                     <button type="button" class="btn btn-danger w-50" id="cancelEditOrder">
