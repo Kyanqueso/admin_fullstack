@@ -7,9 +7,26 @@
     width: 50%;
 }
 
-#login-btn{
+#login-btn, #send-code-btn, #verify-code-btn, #update-password-btn{
     background-color: var(--color-primary);
     border: none;
+}
+
+/* Hover Effect */
+#login-btn:hover, 
+#send-code-btn:hover, 
+#verify-code-btn:hover, 
+#update-password-btn:hover {
+    background-color: #742442; /* Slightly lighter shade */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.google-btn {
+  border: none;
+}
+
+#google-icon{
+  margin-right: 2%;
 }
 
 /*In smaller screens make login width wider*/
