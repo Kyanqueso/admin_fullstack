@@ -34,15 +34,27 @@ def get_shoe_catalog(db: Session, shoe_id: int):
     )
 
 
-def get_shoe_catalogs(db: Session, skip: int = 0, limit: int | None = 10000):
+def get_shoe_catalogs(db: Session, skip: int = 0, limit: int | None = 10000, visible_only: bool = False):
     query = (
         db.query(ShoeCatalog)
         .options(subqueryload(ShoeCatalog.images))
         .offset(skip)
     )
+    if visible_only:
+        query = query.filter(ShoeCatalog.is_visible == True)
     if limit is not None:
         query = query.limit(limit)
     return query.all()
+
+
+def toggle_shoe_visibility(db: Session, shoe_id: int):
+    shoe = get_shoe_catalog(db, shoe_id)
+    if not shoe:
+        return None
+    shoe.is_visible = not shoe.is_visible
+    db.commit()
+    db.refresh(shoe)
+    return shoe
 
 
 def update_shoe_catalog(

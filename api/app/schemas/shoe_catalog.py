@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from decimal import Decimal
+from datetime import datetime
 
 
 class ShoeImageRead(BaseModel):
@@ -21,6 +22,8 @@ class ShoeCatalogRead(BaseModel):
     id: int
     model_name: str
     price: Decimal
+    is_visible: bool = True
+    date_added: datetime
     images: list[ShoeImageRead] = []
 
 

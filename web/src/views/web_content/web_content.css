@@ -12,6 +12,17 @@
     ) !important;
 }
 
+.edit-shoe-btn{
+    background-color: #2563eb; /* blue-600 */
+    color: white;
+    border: none;
+}
+.edit-shoe-btn:hover {
+    color: white;
+    background-color: #1d4ed8; /* blue-700 */
+    border: none;
+}
+
 .accent-bg{
     background-color: var(--color-accent) !important;
 }

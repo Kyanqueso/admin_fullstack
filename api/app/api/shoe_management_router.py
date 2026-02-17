@@ -2,15 +2,41 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, s
 from sqlalchemy.orm import Session
 from typing import Optional
 from app.config.database import get_db
+from app.config.auth import get_current_user
 from app.schemas.shoe_catalog import ShoeCatalogCreate, ShoeCatalogRead, ShoeCatalogUpdate
 from app.services import shoe_catalog_service
 
 router = APIRouter(prefix="/shoe-management", tags=["Shoe Management"])
 
 
+# Public endpoint — guest site uses this; only returns visible shoes
 @router.get("/shoes", response_model=list[ShoeCatalogRead])
 def get_all_shoes(skip: int = 0, limit: int = 10000, db: Session = Depends(get_db)):
-    return shoe_catalog_service.get_shoe_catalogs(db, skip=skip, limit=limit)
+    return shoe_catalog_service.get_shoe_catalogs(db, skip=skip, limit=limit, visible_only=True)
+
+
+# Admin endpoint — returns all shoes including hidden ones (auth required)
+@router.get("/admin/shoes", response_model=list[ShoeCatalogRead])
+def get_all_shoes_admin(
+    skip: int = 0,
+    limit: int = 10000,
+    db: Session = Depends(get_db),
+    _user=Depends(get_current_user)
+):
+    return shoe_catalog_service.get_shoe_catalogs(db, skip=skip, limit=limit, visible_only=False)
+
+
+# Toggle visibility (auth required)
+@router.patch("/shoes/{shoe_id}/visibility", response_model=ShoeCatalogRead)
+def toggle_shoe_visibility(
+    shoe_id: int,
+    db: Session = Depends(get_db),
+    _user=Depends(get_current_user)
+):
+    shoe = shoe_catalog_service.toggle_shoe_visibility(db, shoe_id)
+    if not shoe:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shoe not found")
+    return shoe
 
 
 @router.get("/shoes/{shoe_id}", response_model=ShoeCatalogRead)

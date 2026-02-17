@@ -109,6 +109,8 @@ class ShoeCatalog(Base):
     id = Column(Integer, primary_key=True, name="shoe_catalog_id")
     model_name = Column(String(100), nullable=False)
     price = Column(Numeric(10, 2), nullable=False)
+    is_visible = Column(Boolean, nullable=False, default=True)
+    date_added = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
     images = relationship("ShoeImage", back_populates="shoe_catalog", cascade="all, delete-orphan",
                           order_by="ShoeImage.display_order")

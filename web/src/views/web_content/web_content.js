@@ -1,5 +1,7 @@
 import pencilIcon from '../../assets/icons/pencil.svg';
 import trashIcon from '../../assets/icons/trash-can.svg';
+import eyeIcon from '../../assets/icons/eye.svg';
+import eyeSlashIcon from '../../assets/icons/eye-slash.svg';
 import { getFromCache, saveToCache, clearCache } from '../../js/apiCache.js';
 
 const FAST_API_URL = import.meta.env.VITE_BACKEND_URL;
@@ -77,7 +79,7 @@ async function fetchShoeById(id) {
    LOAD SHOES
 =============================== */
 async function loadShoes() {
-    const url = `${FAST_API_URL}/shoe-management/shoes`;
+    const url = `${FAST_API_URL}/shoe-management/admin/shoes`;
     const cached = getFromCache(url);
     if (cached) {
         allShoes = cached;
@@ -93,7 +95,7 @@ async function loadShoes() {
     `;
 
     try {
-        const shoes = await apiFetch(url);
+        const shoes = await apiFetch(url);  // apiFetch already attaches auth headers
         saveToCache(url, shoes);
         allShoes = shoes;
         renderShoes(allShoes);
@@ -121,18 +123,25 @@ function renderShoes(shoesArray) {
 
         const col = document.createElement('div');
         col.className = 'col-12 col-md-6 col-lg-4';
+        const hiddenBadge = shoe.is_visible ? '' : `<span class="badge bg-secondary mb-2">Hidden</span>`;
+        const toggleIcon = shoe.is_visible ? eyeSlashIcon : eyeIcon;
+        const toggleLabel = shoe.is_visible ? 'Hide' : 'Show';
         col.innerHTML = `
-            <div class="card h-100 box-drop-shadow">
+            <div class="card h-100 box-drop-shadow${shoe.is_visible ? '' : ' opacity-50'}">
                 <img src="${escapeHtml(primaryImage)}" class="card-img-top" alt="${escapeHtml(shoe.model_name)}">
                 <div class="accent-bg card-body d-flex flex-column">
+                    ${hiddenBadge}
                     <h5 class="card-title"><strong>${highlightQuery(shoe.model_name)}</strong></h5>
                     <p class="card-text flex-grow-1">${escapeHtml(String(shoe.price))}</p>
 
-                    <div class="d-flex flex-row gap-3">
-                        <a class="btn w-50 edit-shoe-btn" data-shoe-id="${shoe.id}">
+                    <div class="d-flex flex-row gap-2">
+                        <a class="btn btn-secondary w-33 toggle-visibility-btn" data-shoe-id="${shoe.id}" data-visible="${shoe.is_visible}">
+                            <img src="${toggleIcon}" width="16" height="16"> ${toggleLabel}
+                        </a>
+                        <a class="btn w-33 edit-shoe-btn" data-shoe-id="${shoe.id}">
                             <img src="${pencilIcon}" width="18" height="18"> Edit
                         </a>
-                        <a class="btn btn-danger w-50 delete-shoe-btn" data-shoe-id="${shoe.id}">
+                        <a class="btn btn-danger w-33 delete-shoe-btn" data-shoe-id="${shoe.id}">
                             <img src="${trashIcon}" width="18" height="18"> Delete
                         </a>
                     </div>
@@ -157,10 +166,14 @@ function highlightQuery(text) {
 
 function sortShoes(shoesArray, sortValue) {
     const arr = [...shoesArray];
-    if (sortValue === 'alpha') {
+    if (sortValue === 'a-z') {
         arr.sort((a, b) => a.model_name.localeCompare(b.model_name));
+    } else if (sortValue === 'z-a') {
+        arr.sort((a, b) => b.model_name.localeCompare(a.model_name));
     } else if (sortValue === 'recent') {
-        arr.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        arr.sort((a, b) => new Date(b.date_added) - new Date(a.date_added));
+    } else if (sortValue === 'oldest') {
+        arr.sort((a, b) => new Date(a.date_added) - new Date(b.date_added));
     }
     return arr;
 }
@@ -320,6 +333,7 @@ document.getElementById('add-shoe-btn').addEventListener('click', e => {
 document.addEventListener('click', async e => {
     const editBtn = e.target.closest('.edit-shoe-btn');
     const deleteBtn = e.target.closest('.delete-shoe-btn');
+    const toggleBtn = e.target.closest('.toggle-visibility-btn');
 
     if (editBtn) {
         e.preventDefault();
@@ -336,6 +350,23 @@ document.addEventListener('click', async e => {
         e.preventDefault();
         const id = deleteBtn.dataset.shoeId;
         openOverlay('delete', { id });
+    }
+
+    if (toggleBtn) {
+        e.preventDefault();
+        const id = toggleBtn.dataset.shoeId;
+        toggleBtn.textContent = '...';
+        toggleBtn.style.pointerEvents = 'none';
+        try {
+            await apiFetch(`${FAST_API_URL}/shoe-management/shoes/${id}/visibility`, { method: 'PATCH' });
+            clearCache();
+            await loadShoes();
+        } catch (err) {
+            console.error(err);
+            alert('Failed to toggle visibility');
+            toggleBtn.textContent = toggleBtn.dataset.visible === 'true' ? 'Hide' : 'Show';
+            toggleBtn.style.pointerEvents = '';
+        }
     }
 });
 
