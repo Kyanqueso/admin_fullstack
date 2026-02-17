@@ -7,9 +7,19 @@ from app.services import client_order_service
 router = APIRouter(prefix="/client-orders", tags=["Client Orders"])
 
 
-@router.get("/", response_model=list[ClientOrderRead])
-def get_all_client_order(skip: int = 0, limit: int = 10000, db: Session = Depends(get_db)):
-    return client_order_service.get_client_orders(db, skip=skip, limit=limit)
+@router.get("/")
+def get_all_client_order(
+        skip: int = 0,
+        limit: int = 10000,
+        completed: bool | None = None,
+        db: Session = Depends(get_db)
+):
+    return client_order_service.get_client_orders(
+        db,
+        skip=skip,
+        limit=limit,
+        completed=completed
+    )
 
 
 @router.get("/{client_order_id}", response_model=ClientOrderRead)

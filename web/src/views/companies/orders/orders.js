@@ -226,7 +226,7 @@ async function loadOrders() {
   if (!tbody) return;
 
   try {
-    const res = await fetch(`${API_BASE}/client-orders/`);
+    const res = await fetch(`${API_BASE}/client-orders/?completed=false`);
     ordersData = await res.json();
     renderOrders(ordersData);
 

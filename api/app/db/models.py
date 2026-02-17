@@ -66,6 +66,7 @@ class ClientOrder(Base):
     has_buckle = Column(Boolean, nullable=False, default=False)
     quantity = Column(Integer, nullable=False, default=1)
     price = Column(Numeric(10, 2), nullable=False)
+    is_zero_balance = Column(Boolean, nullable=False, default=False)
 
     client = relationship("Client", back_populates="client_orders")
     payment_summary = relationship("PaymentSummary", back_populates="client_order", uselist=False,

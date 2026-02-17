@@ -77,9 +77,17 @@ def recalculate_payment_summary(db: Session, payment_summary_id: int):
     ).scalar() or Decimal(0)
 
     order = payment_summary.client_order
-    order_total = order.price * order.quantity
+    order_total = Decimal(order.price) * Decimal(order.quantity)
 
-    payment_summary.paid_amount = total_paid
-    payment_summary.remaining_balance = order_total - total_paid
+    # Prevent overpayment effect
+    if total_paid >= order_total:
+        payment_summary.paid_amount = order_total
+        payment_summary.remaining_balance = Decimal(0)
+        order.is_zero_balance = True
+    else:
+        payment_summary.paid_amount = total_paid
+        payment_summary.remaining_balance = order_total - total_paid
+        order.is_zero_balance = False
 
+    db.flush()
     return payment_summary

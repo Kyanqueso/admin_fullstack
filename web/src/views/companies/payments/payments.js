@@ -277,44 +277,85 @@ function setupOverlayControls() {
         e.target.closest(".transaction-row").remove();
       }
     });
-    /* ===============================
-   SAVE TRANSACTIONS
+  /* ===============================
+ SAVE TRANSACTIONS
 =============================== */
-document.getElementById("saveTransactionsBtn")
-  ?.addEventListener("click", async () => {
+  document.getElementById("saveTransactionsBtn")
+    ?.addEventListener("click", async () => {
 
-    const editOverlay = document.getElementById("editTransactionOverlay");
-    const summaryId = editOverlay.dataset.summaryId;
+      const editOverlay = document.getElementById("editTransactionOverlay");
+      const summaryId = editOverlay.dataset.summaryId;
 
-    if (!summaryId) return;
+      if (!summaryId) return;
 
-    const rows = document.querySelectorAll(
-      "#transactionsContainer .transaction-row"
-    );
+      const summary = paymentSummaries.find(s => s.id == summaryId);
+      const order = ordersMap[summary.client_order_id];
 
-    for (let i = 0; i < rows.length; i++) {
+      const orderTotal = Number(order.price) * Number(order.quantity);
 
-      const amountInput = rows[i].querySelector("input[type='number']");
-      const dateInput = rows[i].querySelector("input[type='date']");
+      const rows = document.querySelectorAll(
+        "#transactionsContainer .transaction-row"
+      );
 
-      const amount = parseFloat(amountInput.value);
-      const paymentDate = dateInput.value;
+      let runningTotal = 0;
 
-      if (!amount || !paymentDate) continue;
+      for (let i = 0; i < rows.length; i++) {
 
-      await fetch(`${API_BASE}/payment-transactions/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          payment_summary_id: parseInt(summaryId),
-          payment_number: i + 1,
-          paid_amount: amount,
-          payment_date: paymentDate
-        })
-      });
-    }
+        const amountInput = rows[i].querySelector("input[type='number']");
+        const dateInput = rows[i].querySelector("input[type='date']");
 
-    await loadPaymentSummaries();
-    editOverlay.classList.add("d-none");
-  });
+        const amount = parseFloat(amountInput.value);
+        const paymentDate = dateInput.value;
+
+        // ❌ Empty validation
+        if (!amount || amount <= 0) {
+          alert("Payment amount must be greater than 0.");
+          return;
+        }
+
+        if (!paymentDate) {
+          alert("Please select a payment date.");
+          return;
+        }
+
+        runningTotal += amount;
+      }
+
+      // ❌ Prevent overpayment
+      if (runningTotal > orderTotal) {
+        alert("Total payments exceed order total.");
+        return;
+      }
+
+      // If validation passes, send to backend
+      for (let i = 0; i < rows.length; i++) {
+
+        const amountInput = rows[i].querySelector("input[type='number']");
+        const dateInput = rows[i].querySelector("input[type='date']");
+
+        const amount = parseFloat(amountInput.value);
+        const paymentDate = dateInput.value;
+
+        const response = await fetch(`${API_BASE}/payment-transactions/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            payment_summary_id: parseInt(summaryId),
+            payment_number: i + 1,
+            paid_amount: amount,
+            payment_date: paymentDate
+          })
+        });
+
+        // 🔥 THIS IS THE IMPORTANT ADDITION
+        if (!response.ok) {
+          const errorData = await response.json();
+          alert(errorData.detail || "Payment failed.");
+          return; // STOP execution immediately
+        }
+      }
+
+      await loadPaymentSummaries();
+      editOverlay.classList.add("d-none");
+    });
 }
