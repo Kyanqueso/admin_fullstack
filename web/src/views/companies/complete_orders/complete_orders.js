@@ -1,199 +1,71 @@
-document.addEventListener("DOMContentLoaded", () => {
+const API_BASE = "http://127.0.0.1:8000";
 
-  /* ===============================
-     CONFIG
-  =============================== */
-  const FAST_API_URL = import.meta.env.VITE_BACKEND_URL;
-  const ORDERS_URL = `${FAST_API_URL}/client-orders`;
-  const CLIENTS_URL = `${FAST_API_URL}/clients`;
-  const PAYMENT_SUMMARIES_URL = `${FAST_API_URL}/payment-summaries`;
+let clientsMap = {};
 
-  const COMPANY_ID = localStorage.getItem("activeCompanyId");
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadClients();
+  await loadCompletedOrders();
+});
 
-  if (!COMPANY_ID) {
-    alert("No company selected.");
-    window.location.href = "../companies.html";
-    return;
-  }
 
-  /* ===============================
-     AUTH HELPERS
-  =============================== */
-  function getAccessToken() {
-    const token = localStorage.getItem("access_token");
-    if (!token || token === "null" || token === "undefined") {
-      localStorage.removeItem("access_token");
-      window.location.href = "../../auth/index.html";
-      throw new Error("Missing access token");
-    }
-    return token;
-  }
+/* =========================
+   LOAD CLIENTS
+========================= */
+async function loadClients() {
+  const res = await fetch(`${API_BASE}/clients/`);
+  const clients = await res.json();
 
-  async function apiFetch(url, options = {}) {
-    const token = getAccessToken();
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json",
-        ...(options.headers || {})
-      }
-    });
+  clients.forEach(client => {
+    clientsMap[client.id] =
+      `${client.first_name} ${client.last_name}`;
+  });
+}
 
-    if (response.status === 401 || response.status === 403) {
-      localStorage.removeItem("access_token");
-      window.location.href = "../../auth/index.html";
-      throw new Error("Unauthorized");
-    }
 
-    return response;
-  }
+/* =========================
+   LOAD COMPLETED ORDERS
+========================= */
+async function loadCompletedOrders() {
 
-  function escapeHtml(str) {
-    if (!str) return '';
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
+  const tbody = document.getElementById("completedOrdersTableBody");
+  if (!tbody) return;
 
-  /* ===============================
-     DOM ELEMENTS
-  =============================== */
-  const tableBody = document.querySelector("tbody");
-  const searchInput = document.querySelector('input[placeholder="Search name"]');
-  const sortSelect = document.querySelector(".form-select");
+  tbody.innerHTML = "";
 
-  let allCompletedOrders = [];
-  let clientMap = {};
+  try {
+    const res = await fetch(`${API_BASE}/client-orders/?completed=true`);
+    const orders = await res.json();
 
-  /* ===============================
-     LOAD DATA
-  =============================== */
-  async function loadData() {
-    tableBody.innerHTML = `
-      <tr><td colspan="15" class="text-center"><div class="spinner-border"></div></td></tr>
-    `;
+    orders.forEach(order => {
 
-    try {
-      const [clientsRes, ordersRes, summariesRes] = await Promise.all([
-        apiFetch(CLIENTS_URL),
-        apiFetch(ORDERS_URL),
-        apiFetch(PAYMENT_SUMMARIES_URL)
-      ]);
+      const total = (
+        Number(order.price) * order.quantity
+      ).toLocaleString('en-PH', { minimumFractionDigits: 2 });
 
-      const allClients = await clientsRes.json();
-      const allOrders = await ordersRes.json();
-      const allSummaries = await summariesRes.json();
+      const row = document.createElement("tr");
 
-      // Build client map (filtered by company)
-      const companyClients = allClients.filter(
-        c => String(c.company_id) === String(COMPANY_ID)
-      );
-      clientMap = {};
-      companyClients.forEach(c => { clientMap[c.id] = c; });
-
-      // Build a set of order IDs that are fully paid (remaining_balance == 0)
-      const completedOrderIds = new Set();
-      allSummaries.forEach(s => {
-        if (Number(s.remaining_balance) === 0) {
-          completedOrderIds.add(s.client_order_id);
-        }
-      });
-
-      // Filter: orders for this company's clients AND fully paid
-      allCompletedOrders = allOrders.filter(order =>
-        clientMap[order.client_id] && completedOrderIds.has(order.id)
-      );
-
-      renderOrders(allCompletedOrders);
-    } catch (err) {
-      console.error("Failed to load completed orders:", err);
-      tableBody.innerHTML = `
-        <tr><td colspan="15" class="text-danger text-center">Failed to load completed orders</td></tr>
-      `;
-    }
-  }
-
-  /* ===============================
-     RENDER
-  =============================== */
-  function renderOrders(ordersArray) {
-    tableBody.innerHTML = "";
-
-    if (ordersArray.length === 0) {
-      tableBody.innerHTML = `
-        <tr><td colspan="15" class="text-center text-muted">No completed orders found</td></tr>
-      `;
-      return;
-    }
-
-    ordersArray.forEach(order => {
-      const client = clientMap[order.client_id];
-      const clientName = client
-        ? `${client.first_name} ${client.last_name}`
-        : "Unknown";
-      const total = (order.quantity * order.price).toFixed(2);
-
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${escapeHtml(String(order.id))}</td>
-        <td>${escapeHtml(clientName)}</td>
-        <td>${escapeHtml(order.model)}</td>
-        <td>${escapeHtml(String(order.size))}</td>
-        <td>${escapeHtml(order.material)}</td>
-        <td>${escapeHtml(order.color)}</td>
-        <td>${escapeHtml(order.heel_type)}</td>
-        <td>${escapeHtml(String(order.heel_size))}</td>
-        <td>${escapeHtml(order.mold)}</td>
+      row.innerHTML = `
+        <td>${order.id}</td>
+        <td>${clientsMap[order.client_id] || order.client_id}</td>
+        <td>${order.model}</td>
+        <td>${order.size}</td>
+        <td>${order.material}</td>
+        <td>${order.color}</td>
+        <td>${order.heel_type}</td>
+        <td>${order.heel_size}</td>
+        <td>${order.mold}</td>
         <td>${order.has_buckle ? "Yes" : "No"}</td>
         <td>${order.has_slingback ? "Yes" : "No"}</td>
         <td>${order.has_platform ? "Yes" : "No"}</td>
-        <td>${escapeHtml(String(order.quantity))}</td>
-        <td>${escapeHtml(String(order.price))}</td>
-        <td>${escapeHtml(total)}</td>
+        <td>${order.quantity}</td>
+        <td>₱${Number(order.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+        <td>₱${total}</td>
       `;
-      tableBody.appendChild(tr);
+
+      tbody.appendChild(row);
     });
+
+  } catch (err) {
+    console.error("Failed to load completed orders", err);
   }
-
-  /* ===============================
-     SEARCH & SORT
-  =============================== */
-  function getFilteredOrders() {
-    const query = searchInput.value.toLowerCase().trim();
-    let filtered = allCompletedOrders.filter(order => {
-      const client = clientMap[order.client_id];
-      const name = client ? `${client.first_name} ${client.last_name}` : "";
-      return name.toLowerCase().includes(query) || order.model.toLowerCase().includes(query);
-    });
-    return sortOrders(filtered, sortSelect.value);
-  }
-
-  function sortOrders(ordersArray, sortValue) {
-    const arr = [...ordersArray];
-    if (sortValue === "name") {
-      arr.sort((a, b) => {
-        const nameA = clientMap[a.client_id] ? `${clientMap[a.client_id].first_name} ${clientMap[a.client_id].last_name}` : "";
-        const nameB = clientMap[b.client_id] ? `${clientMap[b.client_id].first_name} ${clientMap[b.client_id].last_name}` : "";
-        return nameA.localeCompare(nameB);
-      });
-    } else if (sortValue === "recent") {
-      arr.sort((a, b) => new Date(b.order_date) - new Date(a.order_date));
-    } else if (sortValue === "alpha") {
-      arr.sort((a, b) => a.model.localeCompare(b.model));
-    }
-    return arr;
-  }
-
-  searchInput.addEventListener("input", () => renderOrders(getFilteredOrders()));
-  sortSelect.addEventListener("change", () => renderOrders(getFilteredOrders()));
-
-  /* ===============================
-     INIT
-  =============================== */
-  loadData();
-
-});
+}

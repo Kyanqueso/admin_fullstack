@@ -114,8 +114,27 @@ async function loadCompanies() {
   `;
 
   try {
-    const response = await apiFetch(url);
-    const companies = await response.json();
+    let url = FAST_API_URL;
+
+    const searchValue = document.getElementById("searchInput")?.value.trim();
+    const sortValue = document.getElementById("sortSelect")?.value;
+
+    const params = new URLSearchParams();
+
+    if (searchValue) {
+      params.append("search", searchValue);
+    }
+
+    if (sortValue) {
+      params.append("sort", sortValue);
+    }
+
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+
+    const res = await fetch(url);
+    const companies = await res.json();
 
     saveToCache(url, companies);
     allCompanies = companies;
@@ -334,18 +353,21 @@ document.getElementById("confirmDeleteCompany").onclick = async () => {
    CLOSE BUTTONS
 =============================== */
 document.getElementById("closeAddCompany").onclick =
-document.getElementById("cancelAddCompany").onclick =
-  () => addOverlay.classList.add("d-none");
+  document.getElementById("cancelAddCompany").onclick = () =>
+    addOverlay.classList.add("d-none");
 
 document.getElementById("closeEditCompany").onclick =
-document.getElementById("cancelEditCompany").onclick =
-  () => editOverlay.classList.add("d-none");
+  document.getElementById("cancelEditCompany").onclick = () =>
+    editOverlay.classList.add("d-none");
 
 document.getElementById("closeDeleteCompany").onclick =
-document.getElementById("cancelDeleteCompany").onclick =
-  () => deleteOverlay.classList.add("d-none");
+  document.getElementById("cancelDeleteCompany").onclick = () =>
+    deleteOverlay.classList.add("d-none");
 
-/* ===============================
-   INIT
-=============================== */
-window.addEventListener("DOMContentLoaded", loadCompanies);
+document.getElementById("searchInput")?.addEventListener("input", () => {
+  loadCompanies();
+});
+
+document.getElementById("sortSelect")?.addEventListener("change", () => {
+  loadCompanies();
+});

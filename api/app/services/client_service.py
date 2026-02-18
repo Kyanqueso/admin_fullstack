@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.db.models import Client
 from app.schemas.client import ClientCreate, ClientUpdate
+from sqlalchemy import or_
 
 
 def create_client(db: Session, client_data: ClientCreate):
@@ -17,8 +18,46 @@ def get_client(db: Session, client_id: int):
     return db.query(Client).filter(Client.id == client_id).first()
 
 
-def get_clients(db: Session, skip: int = 0, limit: int | None = 10000):
-    query = db.query(Client).offset(skip)
+def get_clients(
+    db: Session,
+    company_id: int | None = None,
+    search: str | None = None,
+    sort: str | None = None,
+    skip: int = 0,
+    limit: int | None = 10000
+):
+    query = db.query(Client)
+
+    # Filter by company
+    if company_id is not None:
+        query = query.filter(Client.company_id == company_id)
+
+    # Search by first OR last name
+    if search:
+        query = query.filter(
+            or_(
+                Client.first_name.ilike(f"%{search}%"),
+                Client.last_name.ilike(f"%{search}%"),
+                Client.address.ilike(f"%{search}%"),
+                Client.viber_number.ilike(f"%{search}%")
+            )
+        )
+
+    # Sorting
+    if sort == "az":
+        query = query.order_by(Client.first_name.asc())
+
+    elif sort == "za":
+        query = query.order_by(Client.first_name.desc())
+
+    elif sort == "recent":
+        query = query.order_by(Client.id.desc())
+
+    elif sort == "oldest":
+        query = query.order_by(Client.id.asc())
+        
+    query = query.offset(skip)
+
     if limit is not None:
         query = query.limit(limit)
 

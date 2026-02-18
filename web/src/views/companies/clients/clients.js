@@ -123,6 +123,15 @@ document.addEventListener("DOMContentLoaded", () => {
   closeAddBtn.onclick =
   cancelAddBtn.onclick = () => addOverlay.classList.add("d-none");
 
+  async function loadCompanyTitle() {
+    const res = await fetch(`http://127.0.0.1:8000/companies/${COMPANY_ID}`);
+    const company = await res.json();
+
+    document.getElementById("companyTitle").textContent =
+      `${company.name}'s Client List`;
+  }
+
+  loadCompanyTitle();
   /* ===============================
      LOAD CLIENTS
   =============================== */
@@ -145,8 +154,20 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
 
     try {
-      const response = await apiFetch(API_URL);
-      const clients = await response.json();
+      let url = `${API_URL}?company_id=${COMPANY_ID}`;
+
+      const searchValue = document.querySelector("input[placeholder='Search name']")?.value.trim();
+      const sortValue = document.querySelector("select.form-select")?.value;
+
+      if (searchValue) {
+        url += `&search=${encodeURIComponent(searchValue)}`;
+      }
+
+      if (sortValue) {
+        url += `&sort=${sortValue}`;
+      }
+
+      const res = await fetch(url); const clients = await res.json();
 
       saveToCache(API_URL, clients);
 
@@ -413,19 +434,24 @@ document.addEventListener("DOMContentLoaded", () => {
      CLOSE BUTTONS
   =============================== */
   document.getElementById("closeNotesOverlay").onclick =
-  document.getElementById("closeEditOverlay").onclick =
-  document.getElementById("cancelEditOverlay").onclick =
-  document.getElementById("closeDeleteOverlay").onclick =
-  document.getElementById("cancelDelete").onclick = () => {
-    notesOverlay.classList.add("d-none");
-    editOverlay.classList.add("d-none");
-    deleteOverlay.classList.add("d-none");
-  };
-
+    document.getElementById("closeEditOverlay").onclick =
+    document.getElementById("cancelEditOverlay").onclick =
+    document.getElementById("closeDeleteOverlay").onclick =
+    document.getElementById("cancelDelete").onclick = () => {
+      notesOverlay.classList.add("d-none");
+      editOverlay.classList.add("d-none");
+      deleteOverlay.classList.add("d-none");
+    };
+    
   /* ===============================
-     INITIAL LOAD
-  =============================== */
-  loadCompanyName();
-  loadClients();
+ SEARCH + SORT LISTENERS
+=============================== */
 
+  document.querySelector("input[placeholder='Search name']")?.addEventListener("input", () => {
+    loadClients();
+  });
+
+  document.querySelector("select.form-select")?.addEventListener("change", () => {
+    loadClients();
+  });
 });

@@ -22,12 +22,19 @@ def create_client_order(db: Session, client_order_data: ClientOrderCreate):
     return client_order
 
 
-def get_client_order(db: Session, client_order_id: int):
-    return db.query(ClientOrder).filter(ClientOrder.id == client_order_id).first()
+def get_client_orders(
+        db: Session,
+        skip: int = 0,
+        limit: int | None = 10000,
+        completed: bool | None = None
+):
+    query = db.query(ClientOrder)
 
+    if completed is not None:
+        query = query.filter(ClientOrder.is_zero_balance == completed)
 
-def get_client_orders(db: Session, skip: int = 0, limit: int | None = 10000):
-    query = db.query(ClientOrder).offset(skip)
+    query = query.offset(skip)
+
     if limit is not None:
         query = query.limit(limit)
 

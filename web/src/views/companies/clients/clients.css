@@ -63,9 +63,9 @@
    FORMS
 ====================== */
 #overlay-form {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+    width: 100%;
+
+  
 }
 
 .overlay-content h5 {
@@ -108,24 +108,48 @@
   display: none !important;
 }
 
-/* FIX ADD CLIENT OVERLAY SPACING */
+/* ======================
+   ADD CLIENT OVERLAY 
+====================== */
+
 #addClientOverlay .overlay-content {
-  max-width: 720px;
+  max-width: 750px;
+  padding: 35px;
 }
 
 #addClientOverlay .row {
-  margin-bottom: 12px;
+  margin-bottom: 18px;
 }
 
 #addClientOverlay .form-control {
-  padding: 12px;
-}
-
-#addClientOverlay .btn {
-  padding: 14px;
+  height: 48px;              /* taller inputs */
+  padding: 12px 16px;
   font-size: 1rem;
+  border-radius: 8px;
 }
 
+#addClientOverlay .form-label {
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+#addClientOverlay .form-control {
+  width: 100%;
+  height: 50px;
+  padding: 12px 16px;
+  font-size: 1rem;
+  border-radius: 8px;
+}
+
+/* Improve spacing between sections */
+#addClientOverlay .row {
+  margin-bottom: 20px;
+}
+/* Make modal more balanced */
+#addClientOverlay .overlay-content {
+  max-width: 800px;
+  padding: 40px;
+}
 #addClientOverlay .btn-green {
   background-color: var(--color-primary);
   color: white;
