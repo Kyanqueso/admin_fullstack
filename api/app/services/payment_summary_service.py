@@ -77,6 +77,8 @@ def recalculate_payment_summary(db: Session, payment_summary_id: int):
     ).scalar() or Decimal(0)
 
     order = payment_summary.client_order
+    # Expire the order to clear any stale session-level state before reading/writing
+    db.expire(order)
     order_total = Decimal(order.price) * Decimal(order.quantity)
 
     # Prevent overpayment effect

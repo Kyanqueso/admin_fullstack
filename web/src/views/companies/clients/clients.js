@@ -1,4 +1,4 @@
-import pencilIcon from '../../../assets/icons/pencil.svg';
+import pencilIcon from '../../../assets/icons/pencil-dark.svg';
 import trashIcon from '../../../assets/icons/trashcan-black.svg';
 import { getFromCache, saveToCache, clearCache } from '../../../js/apiCache.js';
 

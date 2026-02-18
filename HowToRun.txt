@@ -2,57 +2,126 @@
 HOW TO RUN THE PROJECT
 ===========================
 
-1. Clone the repository
------------------------
-git clone https://github.com/Kyanqueso/admin_fullstack.git
+PREREQUISITES
+-------------
+Make sure the following are installed on your machine before starting:
+
+  - Node.js  v18 or later   -> https://nodejs.org
+  - Python   v3.11 or later -> https://www.python.org
+  - Git                     -> https://git-scm.com
 
 ---
 
-2. Switch to web folder
--------------------------
-cd web
+STEP 1 — Clone and checkout the branch
+---------------------------------------
+  git clone https://github.com/Kyanqueso/admin_fullstack.git
+  cd admin_fullstack
+  git checkout mostly_complete
 
 ---
 
-3. Install node.js
-------------------------
-npm init -y
+STEP 2 — Set up the backend (Python / FastAPI)
+------------------------------------------------
+Open a terminal in the project root and run:
+
+  cd api
+
+  # Create a virtual environment
+  python -m venv venv
+
+  # Activate it
+  # Windows (CMD / PowerShell):
+  .\venv\Scripts\activate
+
+  # Mac / Linux:
+  source venv/bin/activate
+
+  # Install dependencies
+  pip install -r requirements.txt
+
+Verify that api/.env exists and contains the correct values.
+It should look like this:
+
+  SUPABASE_URL=...
+  SUPABASE_KEY=...
+  DATABASE_URL=...
+  SUPABASE_JWT_SECRET=...
+
+(Obtain these values from the project owner if not included in the branch.)
 
 ---
 
-4. Install node packages (If you haven't already)
--------------------------------------------------
-npm install electron --save-dev
-npm install dotenv
-npm install @supabase/supabase-js
-npm install vite --save-dev
+STEP 3 — Set up the frontend (Node.js / Electron)
+---------------------------------------------------
+Open a new terminal in the project root and run:
+
+  cd web
+  npm install
+
+Verify that web/.env exists and contains the correct values.
+It should look like this:
+
+  VITE_BACKEND_URL=http://localhost:8000
+  VITE_SUPABASE_URL=...
+  VITE_SUPABASE_KEY=...
 
 ---
 
-5. Run the program
-------------------
-npm run dev
+STEP 4 — Build the frontend
+-----------------------------
+Still inside the web/ folder, build the Vite bundle:
+
+  npm run build
+
+This generates the web/dist/ folder that Electron loads.
+You must re-run this step any time you change frontend source files.
 
 ---
 
-6. Create new terminal then execute these commands
---------------------------------------------------
-npm run build
-npm start
+STEP 5 — Run the application
+------------------------------
+Still inside the web/ folder:
 
+  npm start
 
-7. Notes
---------
-- No need to manually activate the backend (API Folder), it is handled by main.js
-- Be sure to install necessary packages (Refer to no.3).
-- Do not commit the `node_modules/` folder to GitHub; it's in .gitignore.
-- Use the `development` branch for actual feature work. DO NOT MODIFY 'main'.
+Backend must be activated!!!
 
 ---
 
-7.1 If Error on start due to missing uvicorn files and python libraries:
-------------------------------------------------------------------------
-cd api
-python -m venv venv
-.\venv\Scripts\Activate
-pip install --upgrade --force-reinstall -r requirements.txt
+NOTES
+-----
+- Run steps 2–5 in order on first setup. After that, only steps 4–5 are needed
+  for regular use (skip step 4 if you haven't changed any frontend files).
+
+- Do NOT commit the following folders — they are in .gitignore:
+    web/node_modules/
+    api/venv/
+
+- The web/dist/ folder is committed to the repo so Electron can load it.
+  If dist/ is missing or outdated, always run: npm run build
+
+---
+
+TROUBLESHOOTING
+---------------
+
+If the app opens but the backend does not connect (API errors in the UI):
+
+  1. Open a terminal and manually check if uvicorn starts correctly:
+       cd api
+       .\venv\Scripts\activate   (Windows) / source venv/bin/activate (Mac/Linux)
+       uvicorn app.main:app --reload
+
+  2. If you see import errors or missing packages, reinstall:
+       pip install --upgrade --force-reinstall -r requirements.txt
+
+  3. Confirm api/.env is present and has valid values.
+
+If npm start fails with a missing module error:
+
+  cd web
+  npm install
+  npm run build
+  npm start
+
+---

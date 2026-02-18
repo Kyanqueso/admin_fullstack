@@ -1,3 +1,4 @@
+import pencilIcon from '../../../assets/icons/pencil-dark.svg';
 import { getFromCache, saveToCache, clearCache } from '../../../js/apiCache.js';
 
 const FAST_API_URL = import.meta.env.VITE_BACKEND_URL;
@@ -44,6 +45,30 @@ async function apiFetch(url, options = {}) {
 
 
 /* ===============================
+   LOAD COMPANY NAME
+=============================== */
+async function loadCompanyName() {
+  const heading = document.getElementById("companyTitle");
+  const url = `${FAST_API_URL}/companies/${COMPANY_ID}`;
+
+  const cached = getFromCache(url);
+  if (cached) {
+    heading.textContent = `${cached.name}'s Client Payment List`;
+    return;
+  }
+
+  try {
+    const response = await apiFetch(url);
+    const company = await response.json();
+    saveToCache(url, company);
+    heading.textContent = `${company.name}'s Client Payment List`;
+  } catch (error) {
+    console.error("Failed to load company name:", error);
+  }
+}
+
+
+/* ===============================
    INIT
 =============================== */
 document.addEventListener("DOMContentLoaded", async () => {
@@ -57,6 +82,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     <tr><td colspan="8" class="text-center"><div class="spinner-border"></div></td></tr>
   `;
 
+  loadCompanyName();
   await loadClients();
   await loadOrders();
   await loadPaymentSummaries();
@@ -175,7 +201,7 @@ function renderPaymentRows(summaries) {
       <td>
         <button class="btn btn-sm edit-payment-btn"
           data-summary-id="${summary.id}">
-          <img src="../../../assets/icons/pencil.svg" width="18">
+          <img src="${pencilIcon}" width="18">
         </button>
       </td>
     `;

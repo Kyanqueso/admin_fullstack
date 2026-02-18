@@ -39,6 +39,30 @@ async function apiFetch(url, options = {}) {
   return response;
 }
 
+/* ===============================
+   LOAD COMPANY NAME
+=============================== */
+async function loadCompanyName() {
+  const heading = document.getElementById("companyTitle");
+  const url = `${FAST_API_URL}/companies/${COMPANY_ID}`;
+
+  const cached = getFromCache(url);
+  if (cached) {
+    heading.textContent = `${cached.name}'s Completed Orders`;
+    return;
+  }
+
+  try {
+    const response = await apiFetch(url);
+    const company = await response.json();
+    saveToCache(url, company);
+    heading.textContent = `${company.name}'s Completed Orders`;
+  } catch (error) {
+    console.error("Failed to load company name:", error);
+  }
+}
+
+
 document.addEventListener("DOMContentLoaded", async () => {
 
   if (!COMPANY_ID) {
@@ -47,10 +71,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+  loadCompanyName();
   await loadClients();
   await loadCompletedOrders();
 
   setupSearchAndSort();
+});
+
+// Re-fetch when browser restores this page from bfcache (Back/Forward buttons),
+// because DOMContentLoaded does NOT re-fire in that case.
+window.addEventListener("pageshow", (event) => {
+  if (event.persisted) {
+    loadCompletedOrders();
+  }
 });
 
 
@@ -87,14 +120,9 @@ async function loadCompletedOrders() {
   `;
 
   try {
-    const url = `${FAST_API_URL}/client-orders/?completed=true`;
-    let orders = getFromCache(url);
-
-    if (!orders) {
-      const res = await apiFetch(url);
-      orders = await res.json();
-      saveToCache(url, orders);
-    }
+    // Always fetch fresh — completed status changes when transactions are added/deleted
+    const res = await apiFetch(`${FAST_API_URL}/client-orders/?completed=true`);
+    const orders = await res.json();
 
     // Only keep orders belonging to this company's clients
     allCompletedOrders = orders.filter(

@@ -1,4 +1,4 @@
-import pencilIcon from '../../../assets/icons/pencil.svg';
+import pencilIcon from '../../../assets/icons/pencil-dark.svg';
 import trashIcon from '../../../assets/icons/trashcan-black.svg';
 import { getFromCache, saveToCache, clearCache } from '../../../js/apiCache.js';
 
@@ -49,6 +49,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     return response;
+  }
+
+  async function loadCompanyName() {
+    const heading = document.getElementById("companyTitle");
+    const url = `${FAST_API_URL}/companies/${COMPANY_ID}`;
+
+    const cached = getFromCache(url);
+    if (cached) {
+      heading.textContent = `${cached.name}'s Client Order List`;
+      return;
+    }
+
+    try {
+      const response = await apiFetch(url);
+      const company = await response.json();
+      saveToCache(url, company);
+      heading.textContent = `${company.name}'s Client Order List`;
+    } catch (error) {
+      console.error("Failed to load company name:", error);
+    }
   }
 
   function escapeHtml(str) {
@@ -466,6 +486,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   /* ===============================
      INIT
   =============================== */
+  loadCompanyName();
   await loadCompanyClients();
   await loadOrders();
 });
