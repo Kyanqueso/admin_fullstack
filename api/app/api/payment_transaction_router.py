@@ -24,7 +24,10 @@ def get_payment_transaction(payment_transaction_id: int, db: Session = Depends(g
 
 @router.post("/", response_model=PaymentTransactionRead, status_code=status.HTTP_201_CREATED)
 def create_payment_transaction(payment_transaction_data: PaymentTransactionCreate, db: Session = Depends(get_db)):
-    payment_transaction = payment_transaction_service.create_payment_transaction(db, payment_transaction_data)
+    try:
+        payment_transaction = payment_transaction_service.create_payment_transaction(db, payment_transaction_data)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     if not payment_transaction:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unable to create Payment Transaction")
 

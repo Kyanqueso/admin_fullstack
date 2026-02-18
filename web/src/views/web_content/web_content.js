@@ -92,9 +92,9 @@ async function loadShoes() {
     }
 
     grid.innerHTML = `
-        <div class="text-center my-5 w-100">
+        <div class="col-12 d-flex flex-column align-items-center justify-content-center py-5">
             <div class="spinner-border text-primary" role="status"></div>
-            <p>Loading shoes...</p>
+            <p class="mt-2 text-muted">Loading shoes...</p>
         </div>
     `;
 

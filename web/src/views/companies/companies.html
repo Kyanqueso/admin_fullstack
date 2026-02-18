@@ -30,10 +30,10 @@
 
   <main class="container py-4">
 
-    <h1 class="text-center mb-4">Companies</h1>
+    <h1 class="text-center mb-4 fw-bold">Companies</h1>
 
-    <div class="row justify-content-center mb-5">
-      <div class="col-12 col-md-4 small-width">
+    <div class="row justify-content-center align-items-center mb-5">
+      <div class="col-12 col-md-4 small-width mb-2 mb-md-0">
         <div class="input-group">
           <span class="input-group-text">
             <img src="../../assets/icons/search.svg" width="20">
@@ -43,7 +43,7 @@
       </div>
 
       <div class="col-12 col-md-2 small-width">
-        <select id="sortSelect" class="form-select mt-2">
+        <select id="sortSelect" class="form-select">
           <option value="" selected disabled hidden>Sort by</option>
           <option value="az">A–Z</option>
           <option value="za">Z–A</option>
@@ -51,6 +51,14 @@
           <option value="oldest">Oldest First</option>
         </select>
       </div>
+    </div>
+
+    <!-- LOADING -->
+    <div id="dashboard-loader" class="d-flex flex-column align-items-center justify-content-center" style="min-height: 50vh;">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2 text-muted fw-bold">Loading Companies...</p>
     </div>
 
     <!-- GRID -->

@@ -6,11 +6,11 @@
     <!-- Import CSS Files and Local Bootstrap-->
 
     <title>Client Payment List</title>
-  <script type="module" crossorigin src="../../../../assets/payments-uY-MV8_q.js"></script>
+  <script type="module" crossorigin src="../../../../assets/payments-Bk14bQJO.js"></script>
   <link rel="modulepreload" crossorigin href="../../../../assets/bootstrap.min-BB4Wbeoi.js">
   <link rel="modulepreload" crossorigin href="../../../../assets/apiCache-BsFi2VyI.js">
   <link rel="stylesheet" crossorigin href="../../../../assets/bootstrap-B9K7SMpr.css">
-  <link rel="stylesheet" crossorigin href="../../../../assets/payments-CeT5vAAT.css">
+  <link rel="stylesheet" crossorigin href="../../../../assets/payments-BbVjrkLl.css">
 </head>
 
 <body class="px-4">
@@ -60,7 +60,7 @@
     </div>
 
     <!-- Page Title -->
-    <h2 class="mb-2 mt-2">Client Payment List</h2>
+    <h2 class="mb-5 mt-2">Client Payment List</h2>
 
     <!-- Search / Sort -->
     <div class="row align-items-end mb-4">
@@ -75,7 +75,7 @@
         </div>
 
         <div class="col-12 col-md-2 mb-2">
-            <select class="form-select mt-2">
+            <select class="form-select">
                 <option value="" selected disabled hidden>Sort by</option>
                 <option value="name">Name</option>
                 <option value="recent">Recently Added</option>
@@ -178,7 +178,10 @@
             <!-- Empty container (NO HARDCODE) -->
             <div id="transactionsContainer"></div>
 
-            <div class="d-flex gap-3 mt-4">
+            <!-- Inline error message -->
+            <div id="editErrorMsg" class="alert alert-danger d-none mt-3 mb-0 py-2 px-3" role="alert"></div>
+
+            <div class="d-flex gap-3 mt-3">
                 <button class="btn btn-danger w-50" id="cancelEditTransaction">
                     Cancel
                 </button>

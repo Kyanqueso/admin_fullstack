@@ -139,10 +139,17 @@
   color: red;
   align-self: center;
 }
+/* New (unsaved) transaction row — green border to distinguish from read-only existing rows */
+.transaction-row-new {
+  border-color: var(--color-btn-green);
+}
+
 /* Wider edit transaction modal */
 #editTransactionOverlay .overlay-content {
   max-width: 550px;   /* adjust to 700–800 if you want */
   width: 95%;
+  max-height: 85vh;
+  overflow-y: auto;
 }
 
 /* Force left alignment inside transaction rows */

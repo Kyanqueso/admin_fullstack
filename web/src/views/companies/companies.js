@@ -41,6 +41,7 @@ function getAccessToken() {
    DOM ELEMENTS
 =============================== */
 const grid = document.getElementById("companyGrid");
+const loader = document.getElementById("dashboard-loader");
 const searchInput = document.querySelector('input[placeholder="Search companies"]');
 const sortSelect = document.querySelector(".form-select");
 
@@ -102,15 +103,13 @@ async function loadCompanies() {
   const cached = getFromCache(url);
   if (cached) {
     allCompanies = cached;
+    loader.classList.add("d-none");
     renderCompanies(allCompanies);
     return;
   }
 
-  grid.innerHTML = `
-    <div class="col text-center">
-      <div class="spinner-border"></div>
-    </div>
-  `;
+  loader.classList.remove("d-none");
+  grid.innerHTML = "";
 
   try {
     const res = await apiFetch(url);
@@ -118,12 +117,14 @@ async function loadCompanies() {
 
     saveToCache(url, companies);
     allCompanies = companies;
+    loader.classList.add("d-none");
     renderCompanies(allCompanies);
 
   } catch (error) {
     console.error("Failed to load companies:", error);
+    loader.classList.add("d-none");
     grid.innerHTML = `
-      <div class="col text-danger text-center">
+      <div class="col-12 text-danger text-center">
         Failed to load companies
       </div>
     `;
@@ -228,8 +229,14 @@ document.addEventListener("click", async (e) => {
 function sortCompanies(companiesArray, sortValue) {
   const arr = [...companiesArray];
 
-  if (sortValue === "name") {
+  if (sortValue === "az") {
     arr.sort((a, b) => a.name.localeCompare(b.name));
+  } else if (sortValue === "za") {
+    arr.sort((a, b) => b.name.localeCompare(a.name));
+  } else if (sortValue === "recent") {
+    arr.sort((a, b) => b.id - a.id);
+  } else if (sortValue === "oldest") {
+    arr.sort((a, b) => a.id - b.id);
   }
 
   return arr;
@@ -259,7 +266,17 @@ addForm.onsubmit = async (e) => {
   const name = addNameInput.value.trim();
   if (!name) return;
 
+  const submitBtn = addForm.querySelector('[type="submit"]');
+  const cancelBtn = document.getElementById("cancelAddCompany");
+  const closeBtn = document.getElementById("closeAddCompany");
+  const originalText = submitBtn.textContent;
+
   try {
+    submitBtn.disabled = true;
+    cancelBtn.disabled = true;
+    closeBtn.disabled = true;
+    submitBtn.textContent = "Adding...";
+
     await apiFetch(`${FAST_API_URL}/companies/`, {
       method: "POST",
       body: JSON.stringify({ name })
@@ -272,6 +289,11 @@ addForm.onsubmit = async (e) => {
 
   } catch {
     alert("Failed to add company");
+  } finally {
+    submitBtn.textContent = originalText;
+    submitBtn.disabled = false;
+    cancelBtn.disabled = false;
+    closeBtn.disabled = false;
   }
 };
 
@@ -292,7 +314,17 @@ async function openEditCompany(companyId) {
 editForm.onsubmit = async (e) => {
   e.preventDefault();
 
+  const submitBtn = editForm.querySelector('[type="submit"]');
+  const cancelBtn = document.getElementById("cancelEditCompany");
+  const closeBtn = document.getElementById("closeEditCompany");
+  const originalText = submitBtn.textContent;
+
   try {
+    submitBtn.disabled = true;
+    cancelBtn.disabled = true;
+    closeBtn.disabled = true;
+    submitBtn.textContent = "Saving...";
+
     await apiFetch(`${FAST_API_URL}/companies/${selectedCompanyId}`, {
       method: "PATCH",
       body: JSON.stringify({
@@ -306,6 +338,11 @@ editForm.onsubmit = async (e) => {
 
   } catch {
     alert("Failed to update company");
+  } finally {
+    submitBtn.textContent = originalText;
+    submitBtn.disabled = false;
+    cancelBtn.disabled = false;
+    closeBtn.disabled = false;
   }
 };
 
@@ -313,7 +350,17 @@ editForm.onsubmit = async (e) => {
    DELETE COMPANY
 =============================== */
 document.getElementById("confirmDeleteCompany").onclick = async () => {
+  const confirmBtn = document.getElementById("confirmDeleteCompany");
+  const cancelBtn = document.getElementById("cancelDeleteCompany");
+  const closeBtn = document.getElementById("closeDeleteCompany");
+  const originalText = confirmBtn.textContent;
+
   try {
+    confirmBtn.disabled = true;
+    cancelBtn.disabled = true;
+    closeBtn.disabled = true;
+    confirmBtn.textContent = "Deleting...";
+
     await apiFetch(`${FAST_API_URL}/companies/${selectedCompanyId}`, {
       method: "DELETE"
     });
@@ -324,6 +371,11 @@ document.getElementById("confirmDeleteCompany").onclick = async () => {
 
   } catch {
     alert("Failed to delete company");
+  } finally {
+    confirmBtn.textContent = originalText;
+    confirmBtn.disabled = false;
+    cancelBtn.disabled = false;
+    closeBtn.disabled = false;
   }
 };
 

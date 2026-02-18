@@ -7,7 +7,7 @@
 
 
   <title>Companies</title>
-  <script type="module" crossorigin src="../../../assets/companies-C-tErQvy.js"></script>
+  <script type="module" crossorigin src="../../../assets/companies-B2fjK98_.js"></script>
   <link rel="modulepreload" crossorigin href="../../../assets/bootstrap.min-BB4Wbeoi.js">
   <link rel="modulepreload" crossorigin href="../../../assets/apiCache-BsFi2VyI.js">
   <link rel="stylesheet" crossorigin href="../../../assets/bootstrap-B9K7SMpr.css">
@@ -32,10 +32,10 @@
 
   <main class="container py-4">
 
-    <h1 class="text-center mb-4">Companies</h1>
+    <h1 class="text-center mb-4 fw-bold">Companies</h1>
 
-    <div class="row justify-content-center mb-5">
-      <div class="col-12 col-md-4 small-width">
+    <div class="row justify-content-center align-items-center mb-5">
+      <div class="col-12 col-md-4 small-width mb-2 mb-md-0">
         <div class="input-group">
           <span class="input-group-text">
             <img src="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20640%20640'%3e%3c!--!Font%20Awesome%20Free%207.1.0%20by%20@fontawesome%20-%20https://fontawesome.com%20License%20-%20https://fontawesome.com/license/free%20Copyright%202026%20Fonticons,%20Inc.--%3e%3cpath%20d='M480%20272C480%20317.9%20465.1%20360.3%20440%20394.7L566.6%20521.4C579.1%20533.9%20579.1%20554.2%20566.6%20566.7C554.1%20579.2%20533.8%20579.2%20521.3%20566.7L394.7%20440C360.3%20465.1%20317.9%20480%20272%20480C157.1%20480%2064%20386.9%2064%20272C64%20157.1%20157.1%2064%20272%2064C386.9%2064%20480%20157.1%20480%20272zM272%20416C351.5%20416%20416%20351.5%20416%20272C416%20192.5%20351.5%20128%20272%20128C192.5%20128%20128%20192.5%20128%20272C128%20351.5%20192.5%20416%20272%20416z'/%3e%3c/svg%3e" width="20">
@@ -45,7 +45,7 @@
       </div>
 
       <div class="col-12 col-md-2 small-width">
-        <select id="sortSelect" class="form-select mt-2">
+        <select id="sortSelect" class="form-select">
           <option value="" selected disabled hidden>Sort by</option>
           <option value="az">A–Z</option>
           <option value="za">Z–A</option>
@@ -53,6 +53,14 @@
           <option value="oldest">Oldest First</option>
         </select>
       </div>
+    </div>
+
+    <!-- LOADING -->
+    <div id="dashboard-loader" class="d-flex flex-column align-items-center justify-content-center" style="min-height: 50vh;">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2 text-muted fw-bold">Loading Companies...</p>
     </div>
 
     <!-- GRID -->

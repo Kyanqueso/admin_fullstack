@@ -298,7 +298,17 @@ document.addEventListener("DOMContentLoaded", () => {
       company_id: Number(COMPANY_ID)
     };
 
+    const submitBtn = e.target.querySelector('[type="submit"]');
+    const cancelBtn = document.getElementById("cancelOverlay");
+    const closeBtn = document.getElementById("closeOverlay");
+    const originalText = submitBtn.textContent;
+
     try {
+      submitBtn.disabled = true;
+      cancelBtn.disabled = true;
+      closeBtn.disabled = true;
+      submitBtn.textContent = "Adding...";
+
       await apiFetch(API_URL, {
         method: "POST",
         body: JSON.stringify(payload)
@@ -312,6 +322,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     } catch {
       alert("Failed to add client");
+    } finally {
+      submitBtn.textContent = originalText;
+      submitBtn.disabled = false;
+      cancelBtn.disabled = false;
+      closeBtn.disabled = false;
     }
   };
 
@@ -364,7 +379,15 @@ document.addEventListener("DOMContentLoaded", () => {
   notesOverlay.querySelector("form").onsubmit = async (e) => {
     e.preventDefault();
 
+    const submitBtn = e.target.querySelector('[type="submit"]');
+    const closeBtn = document.getElementById("closeNotesOverlay");
+    const originalText = submitBtn.textContent;
+
     try {
+      submitBtn.disabled = true;
+      closeBtn.disabled = true;
+      submitBtn.textContent = "Saving...";
+
       await apiFetch(`${API_URL}/${selectedClientId}`, {
         method: "PATCH",
         body: JSON.stringify({ notes: notesTextarea.value.trim() })
@@ -377,6 +400,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     } catch {
       alert("Failed to save notes");
+    } finally {
+      submitBtn.textContent = originalText;
+      submitBtn.disabled = false;
+      closeBtn.disabled = false;
     }
   };
 
@@ -386,7 +413,17 @@ document.addEventListener("DOMContentLoaded", () => {
   editOverlay.querySelector("form").onsubmit = async (e) => {
     e.preventDefault();
 
+    const submitBtn = e.target.querySelector('[type="submit"]');
+    const cancelBtn = document.getElementById("cancelEditOverlay");
+    const closeBtn = document.getElementById("closeEditOverlay");
+    const originalText = submitBtn.textContent;
+
     try {
+      submitBtn.disabled = true;
+      cancelBtn.disabled = true;
+      closeBtn.disabled = true;
+      submitBtn.textContent = "Saving...";
+
       await apiFetch(`${API_URL}/${selectedClientId}`, {
         method: "PATCH",
         body: JSON.stringify({
@@ -404,6 +441,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     } catch {
       alert("Failed to update client");
+    } finally {
+      submitBtn.textContent = originalText;
+      submitBtn.disabled = false;
+      cancelBtn.disabled = false;
+      closeBtn.disabled = false;
     }
   };
 
@@ -411,7 +453,17 @@ document.addEventListener("DOMContentLoaded", () => {
      DELETE CLIENT
   =============================== */
   document.getElementById("confirmDelete").onclick = async () => {
+    const confirmBtn = document.getElementById("confirmDelete");
+    const cancelBtn = document.getElementById("cancelDelete");
+    const closeBtn = document.getElementById("closeDeleteOverlay");
+    const originalText = confirmBtn.textContent;
+
     try {
+      confirmBtn.disabled = true;
+      cancelBtn.disabled = true;
+      closeBtn.disabled = true;
+      confirmBtn.textContent = "Deleting...";
+
       await apiFetch(`${API_URL}/${selectedClientId}`, {
         method: "DELETE"
       });
@@ -422,6 +474,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     } catch {
       alert("Failed to delete client");
+    } finally {
+      confirmBtn.textContent = originalText;
+      confirmBtn.disabled = false;
+      cancelBtn.disabled = false;
+      closeBtn.disabled = false;
     }
   };
 

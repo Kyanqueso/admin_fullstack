@@ -276,7 +276,17 @@ document.addEventListener("DOMContentLoaded", async () => {
       price: Number(document.getElementById("addPrice").value) || 0,
     };
 
+    const submitBtn = e.target.querySelector('[type="submit"]');
+    const cancelBtn = document.getElementById("cancelAddOrder");
+    const closeBtn = document.getElementById("closeAddOrder");
+    const originalText = submitBtn.textContent;
+
     try {
+      submitBtn.disabled = true;
+      cancelBtn.disabled = true;
+      closeBtn.disabled = true;
+      submitBtn.textContent = "Adding...";
+
       await apiFetch(ORDERS_URL, {
         method: "POST",
         body: JSON.stringify(payload)
@@ -289,6 +299,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (err) {
       console.error("Failed to add order:", err);
       alert("Failed to add order");
+    } finally {
+      submitBtn.textContent = originalText;
+      submitBtn.disabled = false;
+      cancelBtn.disabled = false;
+      closeBtn.disabled = false;
     }
   });
 
@@ -364,7 +379,17 @@ document.addEventListener("DOMContentLoaded", async () => {
       price: Number(document.getElementById("editPrice").value),
     };
 
+    const submitBtn = e.target.querySelector('[type="submit"]');
+    const cancelBtn = document.getElementById("cancelEditOrder");
+    const closeBtn = document.getElementById("closeEditOrder");
+    const originalText = submitBtn.textContent;
+
     try {
+      submitBtn.disabled = true;
+      cancelBtn.disabled = true;
+      closeBtn.disabled = true;
+      submitBtn.textContent = "Saving...";
+
       await apiFetch(`${ORDERS_URL}/${selectedOrderId}`, {
         method: "PATCH",
         body: JSON.stringify(payload)
@@ -376,6 +401,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (err) {
       console.error("Failed to update order:", err);
       alert("Failed to update order");
+    } finally {
+      submitBtn.textContent = originalText;
+      submitBtn.disabled = false;
+      cancelBtn.disabled = false;
+      closeBtn.disabled = false;
     }
   });
 
@@ -404,7 +434,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("confirmDeleteOrder")?.addEventListener("click", async () => {
     if (!selectedOrderId) return;
 
+    const confirmBtn = document.getElementById("confirmDeleteOrder");
+    const cancelBtn = document.getElementById("cancelDeleteOrder");
+    const closeBtn = document.getElementById("closeDeleteOrder");
+    const originalText = confirmBtn.textContent;
+
     try {
+      confirmBtn.disabled = true;
+      cancelBtn.disabled = true;
+      closeBtn.disabled = true;
+      confirmBtn.textContent = "Deleting...";
+
       await apiFetch(`${ORDERS_URL}/${selectedOrderId}`, {
         method: "DELETE"
       });
@@ -415,6 +455,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (err) {
       console.error("Failed to delete order:", err);
       alert("Failed to delete order");
+    } finally {
+      confirmBtn.textContent = originalText;
+      confirmBtn.disabled = false;
+      cancelBtn.disabled = false;
+      closeBtn.disabled = false;
     }
   });
 
