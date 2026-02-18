@@ -37,6 +37,7 @@ class ClientOrderRead(BaseModel):
     has_buckle: bool
     quantity: int
     price: Decimal
+    is_zero_balance: bool
 
 
 class ClientOrderUpdate(BaseModel):

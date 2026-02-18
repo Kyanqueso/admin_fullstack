@@ -49,7 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function loadCompanyName() {
-    const heading = document.getElementById("company_name");
+    const heading = document.getElementById("companyTitle");
     const url = `${FAST_API_URL}/companies/${COMPANY_ID}`;
 
     const cached = getFromCache(url);
@@ -123,15 +123,8 @@ document.addEventListener("DOMContentLoaded", () => {
   closeAddBtn.onclick =
   cancelAddBtn.onclick = () => addOverlay.classList.add("d-none");
 
-  async function loadCompanyTitle() {
-    const res = await fetch(`http://127.0.0.1:8000/companies/${COMPANY_ID}`);
-    const company = await res.json();
-
-    document.getElementById("companyTitle").textContent =
-      `${company.name}'s Client List`;
-  }
-
-  loadCompanyTitle();
+  loadCompanyName();
+  loadClients();
   /* ===============================
      LOAD CLIENTS
   =============================== */
@@ -147,7 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     tableBody.innerHTML = `
       <tr>
-        <td colspan="8" class="text-center">
+        <td colspan="7" class="text-center">
           <div class="spinner-border"></div>
         </td>
       </tr>
@@ -167,7 +160,8 @@ document.addEventListener("DOMContentLoaded", () => {
         url += `&sort=${sortValue}`;
       }
 
-      const res = await fetch(url); const clients = await res.json();
+      const res = await apiFetch(url);
+      const clients = await res.json();
 
       saveToCache(API_URL, clients);
 
@@ -182,7 +176,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Failed to load clients:", error);
       tableBody.innerHTML = `
         <tr>
-          <td colspan="8" class="text-danger text-center">
+          <td colspan="7" class="text-danger text-center">
             Failed to load clients
           </td>
         </tr>
@@ -199,7 +193,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (clientsArray.length === 0) {
       tableBody.innerHTML = `
         <tr>
-          <td colspan="8" class="text-center text-muted">
+          <td colspan="7" class="text-center text-muted">
             No clients found
           </td>
         </tr>
@@ -219,7 +213,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <td>${escapeHtml(client.last_name)}</td>
       <td>${escapeHtml(client.address)}</td>
       <td>${escapeHtml(client.viber_number) || "-"}</td>
-      <td>${escapeHtml(client.updated_at) || "-"}</td>
       <td>
         <button class="btn btn-sm btn-outline-dark view-notes">
           View Notes
@@ -266,7 +259,9 @@ document.addEventListener("DOMContentLoaded", () => {
         a.first_name.localeCompare(b.first_name) || a.last_name.localeCompare(b.last_name)
       );
     } else if (sortValue === "recent") {
-      arr.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+      arr.sort((a, b) => b.id - a.id);
+    } else if (sortValue === "oldest") {
+      arr.sort((a, b) => a.id - b.id);
     } else if (sortValue === "alpha") {
       arr.sort((a, b) =>
         `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`)
@@ -443,15 +438,4 @@ document.addEventListener("DOMContentLoaded", () => {
       deleteOverlay.classList.add("d-none");
     };
     
-  /* ===============================
- SEARCH + SORT LISTENERS
-=============================== */
-
-  document.querySelector("input[placeholder='Search name']")?.addEventListener("input", () => {
-    loadClients();
-  });
-
-  document.querySelector("select.form-select")?.addEventListener("change", () => {
-    loadClients();
-  });
 });

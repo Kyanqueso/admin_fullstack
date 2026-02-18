@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
- 
+
   <title>Companies</title>
-  <script type="module" crossorigin src="../../../assets/companies-DJiXwT6q.js"></script>
+  <script type="module" crossorigin src="../../../assets/companies-C-tErQvy.js"></script>
   <link rel="modulepreload" crossorigin href="../../../assets/bootstrap.min-BB4Wbeoi.js">
   <link rel="modulepreload" crossorigin href="../../../assets/apiCache-BsFi2VyI.js">
   <link rel="stylesheet" crossorigin href="../../../assets/bootstrap-B9K7SMpr.css">
@@ -15,142 +16,139 @@
 
 <body>
 
-<div class="d-flex justify-content-end">
-  <button id="logout-btn" class="btn btn-danger my-3 me-2 me-md-5 fw-bold">
-    Logout
-  </button>
-</div>
-
-<nav id="navigation"
-     class="w-75 d-flex flex-wrap mt-1 mb-4 mx-auto justify-content-center gap-4 text-center">
-  <a class="nav-link fs-4 p-3 p-lg-4 inactive" href="../analytics/analytics.html">Analytics</a>
-  <a class="nav-link fs-4 p-3 p-lg-4 active">Clients</a>
-  <a class="nav-link fs-4 p-3 p-lg-4 inactive" href="../web_content/web_content.html">Website Content</a>
-</nav>
-
-<hr class="w-75 mx-auto">
-
-<main class="container py-4">
-
-  <h1 class="text-center mb-4">Companies</h1>
-
-  <div class="row justify-content-center mb-5">
-    <div class="col-12 col-md-4 small-width">
-      <div class="input-group">
-        <span class="input-group-text">
-          <img src="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20640%20640'%3e%3c!--!Font%20Awesome%20Free%207.1.0%20by%20@fontawesome%20-%20https://fontawesome.com%20License%20-%20https://fontawesome.com/license/free%20Copyright%202026%20Fonticons,%20Inc.--%3e%3cpath%20d='M480%20272C480%20317.9%20465.1%20360.3%20440%20394.7L566.6%20521.4C579.1%20533.9%20579.1%20554.2%20566.6%20566.7C554.1%20579.2%20533.8%20579.2%20521.3%20566.7L394.7%20440C360.3%20465.1%20317.9%20480%20272%20480C157.1%20480%2064%20386.9%2064%20272C64%20157.1%20157.1%2064%20272%2064C386.9%2064%20480%20157.1%20480%20272zM272%20416C351.5%20416%20416%20351.5%20416%20272C416%20192.5%20351.5%20128%20272%20128C192.5%20128%20128%20192.5%20128%20272C128%20351.5%20192.5%20416%20272%20416z'/%3e%3c/svg%3e" width="20">
-        </span>
-        <input type="text" class="form-control" placeholder="Search companies">
-      </div>
-    </div>
-
-    <div class="col-12 col-md-2 small-width">
-      <select class="form-select mt-2">
-        <option value="" selected disabled hidden>Sort by</option>
-        <option value="name">Name</option>
-      </select>
-    </div>
-  </div>
-
-  <!-- GRID -->
-  <div id="companyGrid"
-       class="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-3"></div>
-
-</main>
-
-<!-- ================= OVERLAYS ================= -->
-
-<!-- ADD COMPANY -->
-<div class="overlay d-none" id="addCompanyOverlay">
-  <div class="overlay-content p-4">
-    <button class="overlay-close" id="closeAddCompany">✕</button>
-
-    <h5 class="mb-3">Add New Company</h5>
-
-    <form id="addCompanyForm">
-      <div class="mb-3">
-        <label class="form-label">Company Name</label>
-        <input type="text" class="form-control" id="addCompanyName" required>
-      </div>
-
-      <div class="d-flex gap-3">
-        <button type="button" class="btn btn-danger w-50" id="cancelAddCompany">
-          Cancel
-        </button>
-        <button type="submit" class="btn btn-green w-50">
-          Confirm
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- EDIT COMPANY -->
-<div class="overlay d-none" id="editCompanyOverlay">
-  <div class="overlay-content p-4">
-    <button class="overlay-close" id="closeEditCompany">✕</button>
-
-    <h4 class="mb-4">Edit Existing Company</h4>
-
-    <form id="editCompanyForm">
-      <div class="mb-3">
-        <label class="form-label">Company Name</label>
-        <input type="text" class="form-control" id="editCompanyName" required>
-      </div>
-
-      <div class="mb-4">
-        <label class="form-label">Company Branch</label>
-        <input type="text" class="form-control" id="editCompanyBranch">
-      </div>
-
-      <div class="d-flex gap-3">
-        <button type="button" class="btn btn-danger w-50" id="cancelEditCompany">
-          Cancel
-        </button>
-        <button type="submit" class="btn btn-green w-50">
-          Update
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- DELETE COMPANY -->
-<div class="overlay d-none" id="deleteCompanyOverlay">
-  <div class="overlay-content p-4 text-center">
-    <button class="overlay-close" id="closeDeleteCompany">✕</button>
-
-    <h5 class="mb-4">
-      Are you sure you want to<br>
-      delete this company?
-    </h5>
-
-    <div class="d-flex gap-3 justify-content-center">
-      <button class="btn btn-danger px-4" id="cancelDeleteCompany">
-        No
-      </button>
-      <button class="btn btn-green px-4" id="confirmDeleteCompany">
-        Yes
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- Logout Confirmation Overlay -->
-<div id="logout-overlay" class="overlay d-none">
-  <div class="overlay-content p-4 position-relative">
-    <button id="logout-overlay-close" class="overlay-close btn p-3 position-absolute top-0 end-0">
-      <img src="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20640%20640'%3e%3c!--!Font%20Awesome%20Free%207.1.0%20by%20@fontawesome%20-%20https://fontawesome.com%20License%20-%20https://fontawesome.com/license/free%20Copyright%202026%20Fonticons,%20Inc.--%3e%3cpath%20d='M504.6%20148.5C515.9%20134.9%20514.1%20114.7%20500.5%20103.4C486.9%2092.1%20466.7%2093.9%20455.4%20107.5L320%20270L184.6%20107.5C173.3%2093.9%20153.1%2092.1%20139.5%20103.4C125.9%20114.7%20124.1%20134.9%20135.4%20148.5L278.3%20320L135.4%20491.5C124.1%20505.1%20125.9%20525.3%20139.5%20536.6C153.1%20547.9%20173.3%20546.1%20184.6%20532.5L320%20370L455.4%20532.5C466.7%20546.1%20486.9%20547.9%20500.5%20536.6C514.1%20525.3%20515.9%20505.1%20504.6%20491.5L361.7%20320L504.6%20148.5z'/%3e%3c/svg%3e" alt="Close" width="24" height="24">
+  <div class="d-flex justify-content-end">
+    <button id="logout-btn" class="btn btn-danger my-3 me-2 me-md-5 fw-bold">
+      Logout
     </button>
-    <h5 class="mb-4 text-center">Do you want to log out?</h5>
-    <div class="d-flex justify-content-center gap-3">
-      <button id="logout-no" class="btn btn-secondary px-4">No</button>
-      <button id="logout-yes" class="btn btn-danger px-4">Yes</button>
+  </div>
+
+  <nav id="navigation" class="w-75 d-flex flex-wrap mt-1 mb-4 mx-auto justify-content-center gap-4 text-center">
+    <a class="nav-link fs-4 p-3 p-lg-4 inactive" href="../analytics/analytics.html">Analytics</a>
+    <a class="nav-link fs-4 p-3 p-lg-4 active">Clients</a>
+    <a class="nav-link fs-4 p-3 p-lg-4 inactive" href="../web_content/web_content.html">Website Content</a>
+  </nav>
+
+  <hr class="w-75 mx-auto">
+
+  <main class="container py-4">
+
+    <h1 class="text-center mb-4">Companies</h1>
+
+    <div class="row justify-content-center mb-5">
+      <div class="col-12 col-md-4 small-width">
+        <div class="input-group">
+          <span class="input-group-text">
+            <img src="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20640%20640'%3e%3c!--!Font%20Awesome%20Free%207.1.0%20by%20@fontawesome%20-%20https://fontawesome.com%20License%20-%20https://fontawesome.com/license/free%20Copyright%202026%20Fonticons,%20Inc.--%3e%3cpath%20d='M480%20272C480%20317.9%20465.1%20360.3%20440%20394.7L566.6%20521.4C579.1%20533.9%20579.1%20554.2%20566.6%20566.7C554.1%20579.2%20533.8%20579.2%20521.3%20566.7L394.7%20440C360.3%20465.1%20317.9%20480%20272%20480C157.1%20480%2064%20386.9%2064%20272C64%20157.1%20157.1%2064%20272%2064C386.9%2064%20480%20157.1%20480%20272zM272%20416C351.5%20416%20416%20351.5%20416%20272C416%20192.5%20351.5%20128%20272%20128C192.5%20128%20128%20192.5%20128%20272C128%20351.5%20192.5%20416%20272%20416z'/%3e%3c/svg%3e" width="20">
+          </span>
+          <input type="text" id="searchInput" class="form-control" placeholder="Search companies">
+        </div>
+      </div>
+
+      <div class="col-12 col-md-2 small-width">
+        <select id="sortSelect" class="form-select mt-2">
+          <option value="" selected disabled hidden>Sort by</option>
+          <option value="az">A–Z</option>
+          <option value="za">Z–A</option>
+          <option value="recent">Recently Added</option>
+          <option value="oldest">Oldest First</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- GRID -->
+    <div id="companyGrid" class="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-3"></div>
+
+  </main>
+
+  <!-- ================= OVERLAYS ================= -->
+
+  <!-- ADD COMPANY -->
+  <div class="overlay d-none" id="addCompanyOverlay">
+    <div class="overlay-content p-4">
+      <button class="overlay-close" id="closeAddCompany">✕</button>
+
+      <h5 class="mb-3">Add New Company</h5>
+
+      <form id="addCompanyForm">
+        <div class="mb-3">
+          <label class="form-label">Company Name</label>
+          <input type="text" class="form-control" id="addCompanyName" required>
+        </div>
+
+        <div class="d-flex gap-3">
+          <button type="button" class="btn btn-danger w-50" id="cancelAddCompany">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-green w-50">
+            Confirm
+          </button>
+        </div>
+      </form>
     </div>
   </div>
-</div>
+
+  <!-- EDIT COMPANY -->
+  <div class="overlay d-none" id="editCompanyOverlay">
+    <div class="overlay-content p-4">
+      <button class="overlay-close" id="closeEditCompany">✕</button>
+
+      <h4 class="mb-4">Edit Existing Company</h4>
+
+      <form id="editCompanyForm">
+        <div class="mb-3">
+          <label class="form-label">Company Name</label>
+          <input type="text" class="form-control" id="editCompanyName" required>
+        </div>
+
+        <div class="d-flex gap-3">
+          <button type="button" class="btn btn-danger w-50" id="cancelEditCompany">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-green w-50">
+            Update
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DELETE COMPANY -->
+  <div class="overlay d-none" id="deleteCompanyOverlay">
+    <div class="overlay-content p-4 text-center">
+      <button class="overlay-close" id="closeDeleteCompany">✕</button>
+
+      <h5 class="mb-4">
+        Are you sure you want to<br>
+        delete this company?
+      </h5>
+
+      <div class="d-flex gap-3 justify-content-center">
+        <button class="btn btn-danger px-4" id="cancelDeleteCompany">
+          No
+        </button>
+        <button class="btn btn-green px-4" id="confirmDeleteCompany">
+          Yes
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Logout Confirmation Overlay -->
+  <div id="logout-overlay" class="overlay d-none">
+    <div class="overlay-content p-4 position-relative">
+      <button id="logout-overlay-close" class="overlay-close btn p-3 position-absolute top-0 end-0">
+        <img src="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20640%20640'%3e%3c!--!Font%20Awesome%20Free%207.1.0%20by%20@fontawesome%20-%20https://fontawesome.com%20License%20-%20https://fontawesome.com/license/free%20Copyright%202026%20Fonticons,%20Inc.--%3e%3cpath%20d='M504.6%20148.5C515.9%20134.9%20514.1%20114.7%20500.5%20103.4C486.9%2092.1%20466.7%2093.9%20455.4%20107.5L320%20270L184.6%20107.5C173.3%2093.9%20153.1%2092.1%20139.5%20103.4C125.9%20114.7%20124.1%20134.9%20135.4%20148.5L278.3%20320L135.4%20491.5C124.1%20505.1%20125.9%20525.3%20139.5%20536.6C153.1%20547.9%20173.3%20546.1%20184.6%20532.5L320%20370L455.4%20532.5C466.7%20546.1%20486.9%20547.9%20500.5%20536.6C514.1%20525.3%20515.9%20505.1%20504.6%20491.5L361.7%20320L504.6%20148.5z'/%3e%3c/svg%3e" alt="Close" width="24" height="24">
+      </button>
+      <h5 class="mb-4 text-center">Do you want to log out?</h5>
+      <div class="d-flex justify-content-center gap-3">
+        <button id="logout-no" class="btn btn-secondary px-4">No</button>
+        <button id="logout-yes" class="btn btn-danger px-4">Yes</button>
+      </div>
+    </div>
+  </div>
 
-<script src="../../assets/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="../../assets/bootstrap/bootstrap.bundle.min.js"></script>
 
 </body>
+
 </html>

@@ -56,7 +56,6 @@ const editForm = document.getElementById("editCompanyForm");
 /* Inputs */
 const addNameInput = document.getElementById("addCompanyName");
 const editNameInput = document.getElementById("editCompanyName");
-const editBranchInput = document.getElementById("editCompanyBranch");
 
 let selectedCompanyId = null;
 let allCompanies = []; // cached for search + sort
@@ -114,26 +113,7 @@ async function loadCompanies() {
   `;
 
   try {
-    let url = FAST_API_URL;
-
-    const searchValue = document.getElementById("searchInput")?.value.trim();
-    const sortValue = document.getElementById("sortSelect")?.value;
-
-    const params = new URLSearchParams();
-
-    if (searchValue) {
-      params.append("search", searchValue);
-    }
-
-    if (sortValue) {
-      params.append("sort", sortValue);
-    }
-
-    if (params.toString()) {
-      url += `?${params.toString()}`;
-    }
-
-    const res = await fetch(url);
+    const res = await apiFetch(url);
     const companies = await res.json();
 
     saveToCache(url, companies);
@@ -305,7 +285,6 @@ async function openEditCompany(companyId) {
   const company = await response.json();
 
   editNameInput.value = company.name || "";
-  editBranchInput.value = company.branch || "";
 
   editOverlay.classList.remove("d-none");
 }
@@ -317,8 +296,7 @@ editForm.onsubmit = async (e) => {
     await apiFetch(`${FAST_API_URL}/companies/${selectedCompanyId}`, {
       method: "PATCH",
       body: JSON.stringify({
-        name: editNameInput.value.trim(),
-        branch: editBranchInput.value.trim()
+        name: editNameInput.value.trim()
       })
     });
 
@@ -364,10 +342,7 @@ document.getElementById("closeDeleteCompany").onclick =
   document.getElementById("cancelDeleteCompany").onclick = () =>
     deleteOverlay.classList.add("d-none");
 
-document.getElementById("searchInput")?.addEventListener("input", () => {
-  loadCompanies();
-});
-
-document.getElementById("sortSelect")?.addEventListener("change", () => {
-  loadCompanies();
-});
+/* ===============================
+   INIT
+=============================== */
+loadCompanies();

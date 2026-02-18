@@ -2,120 +2,7 @@ import pencilIcon from '../../../assets/icons/pencil.svg';
 import trashIcon from '../../../assets/icons/trashcan-black.svg';
 import { getFromCache, saveToCache, clearCache } from '../../../js/apiCache.js';
 
-document.addEventListener("DOMContentLoaded", () => {
-const API_BASE = "http://127.0.0.1:8000";
-let clientsMap = {};
-let ordersData = [];
-
-
 document.addEventListener("DOMContentLoaded", async () => {
-
-  const searchInput = document.getElementById("searchOrders");
-
-  searchInput?.addEventListener("input", () => {
-    const term = searchInput.value.toLowerCase();
-
-    const filtered = ordersData.filter(order => {
-      const clientName = (clientsMap[order.client_id] || "").toLowerCase();
-      return clientName.includes(term);
-    });
-
-    renderOrders(filtered);
-  });
-
-  const sortSelect = document.getElementById("sortOrders");
-
-  sortSelect?.addEventListener("change", () => {
-    const value = sortSelect.value;
-    let sorted = [...ordersData];
-
-    switch (value) {
-
-      case "az":
-        sorted.sort((a, b) => {
-          const nameA = (clientsMap[a.client_id] || "").toLowerCase();
-          const nameB = (clientsMap[b.client_id] || "").toLowerCase();
-          return nameA.localeCompare(nameB);
-        });
-        break;
-
-      case "za":
-        sorted.sort((a, b) => {
-          const nameA = (clientsMap[a.client_id] || "").toLowerCase();
-          const nameB = (clientsMap[b.client_id] || "").toLowerCase();
-          return nameB.localeCompare(nameA);
-        });
-        break;
-
-      case "recent":
-        sorted.sort((a, b) => b.id - a.id);
-        break;
-
-      case "oldest":
-        sorted.sort((a, b) => a.id - b.id);
-        break;
-
-      case "orderid":
-        sorted.sort((a, b) => a.id - b.id);
-        break;
-    }
-
-    renderOrders(sorted);
-  });
-
-  /* =========================
-     EDIT ORDER SUBMIT (PATCH)
-  ========================= */
-  const editForm = document.getElementById("editOrderForm");
-
-  editForm?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const overlay = document.getElementById("editOrderOverlay");
-    const orderId = overlay.dataset.orderId;
-
-    if (!orderId) {
-      alert("Order ID missing");
-      return;
-    }
-
-    const updateData = {
-      model: document.getElementById("editModel").value,
-      size: document.getElementById("editSize").value,
-      material: document.getElementById("editMaterial").value,
-      color: document.getElementById("editColor").value,
-      heel_type: document.getElementById("editHeelType").value,
-      heel_size: document.getElementById("editHeelSize").value,
-      mold: document.getElementById("editMold").value,
-      quantity: parseInt(document.getElementById("editQuantity").value),
-      price: document.getElementById("editPrice").value,
-
-      has_buckle: document.querySelector("input[name='editBuckle']:checked").value === "true",
-      has_slingback: document.querySelector("input[name='editSlingback']:checked").value === "true",
-      has_platform: document.querySelector("input[name='editPlatform']:checked").value === "true"
-    };
-
-    try {
-      const res = await fetch(`${API_BASE}/client-orders/${orderId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updateData)
-      });
-
-      if (res.ok) {
-        overlay.classList.add("d-none");
-        await loadOrders();
-      } else {
-        const err = await res.json();
-        console.error(err);
-        alert(await res.text());
-      }
-
-    } catch (error) {
-      console.error("PATCH error:", error);
-    }
-  });
-
 
   /* ===============================
      CONFIG
@@ -123,7 +10,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const FAST_API_URL = import.meta.env.VITE_BACKEND_URL;
   const ORDERS_URL = `${FAST_API_URL}/client-orders`;
   const CLIENTS_URL = `${FAST_API_URL}/clients`;
-
   const COMPANY_ID = localStorage.getItem("activeCompanyId");
 
   if (!COMPANY_ID) {
@@ -178,18 +64,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   /* ===============================
      DOM ELEMENTS
   =============================== */
-  const tableBody = document.querySelector("tbody");
-  const searchInput = document.querySelector('input[placeholder="Search name"]');
-  const sortSelect = document.querySelector(".form-select");
-
+  const tableBody = document.getElementById("ordersTableBody");
   const addOverlay = document.getElementById("addOrderOverlay");
   const editOverlay = document.getElementById("editOrderOverlay");
   const deleteOverlay = document.getElementById("deleteOrderOverlay");
 
   let selectedOrderId = null;
   let allOrders = [];
-  let companyClients = [];
-  // Map client_id -> { first_name, last_name }
   let clientMap = {};
 
   /* ===============================
@@ -203,28 +84,30 @@ document.addEventListener("DOMContentLoaded", async () => {
         allClients = await response.json();
         saveToCache(CLIENTS_URL, allClients);
       }
-      companyClients = allClients.filter(
+
+      const companyClients = allClients.filter(
         c => String(c.company_id) === String(COMPANY_ID)
       );
+
       clientMap = {};
       companyClients.forEach(c => {
-        clientMap[c.id] = c;
+        clientMap[c.id] = `${c.first_name} ${c.last_name}`;
       });
-      populateClientDropdowns();
+
+      populateClientDropdowns(companyClients);
     } catch (err) {
       console.error("Failed to load clients:", err);
     }
   }
 
-  function populateClientDropdowns() {
-    const selects = document.querySelectorAll("#addOrderOverlay select:first-of-type, #editOrderOverlay select:first-of-type");
-    selects.forEach(select => {
-      // Keep the first placeholder option
-      const placeholder = select.querySelector("option[disabled]");
-      select.innerHTML = '';
-      if (placeholder) select.appendChild(placeholder);
+  function populateClientDropdowns(clients) {
+    const addSelect = document.getElementById("addCustomerId");
+    const editSelect = document.getElementById("editCustomerId");
 
-      companyClients.forEach(client => {
+    [addSelect, editSelect].forEach(select => {
+      if (!select) return;
+      select.innerHTML = `<option value="" selected disabled hidden>Select Customer</option>`;
+      clients.forEach(client => {
         const opt = document.createElement("option");
         opt.value = client.id;
         opt.textContent = `${client.first_name} ${client.last_name}`;
@@ -252,36 +135,126 @@ document.addEventListener("DOMContentLoaded", async () => {
       const response = await apiFetch(ORDERS_URL);
       const orders = await response.json();
 
-  closeEditBtn?.addEventListener("click", () => {
-    editOverlay.classList.add("d-none");
+      saveToCache(ORDERS_URL, orders);
+      allOrders = orders.filter(order => clientMap[order.client_id]);
+      renderOrders(allOrders);
+
+    } catch (err) {
+      console.error("Failed to load orders:", err);
+      tableBody.innerHTML = `
+        <tr><td colspan="17" class="text-danger text-center">Failed to load orders</td></tr>
+      `;
+    }
+  }
+
+  /* ===============================
+     RENDER ORDERS
+  =============================== */
+  function renderOrders(data) {
+    tableBody.innerHTML = "";
+
+    if (data.length === 0) {
+      tableBody.innerHTML = `
+        <tr><td colspan="17" class="text-center text-muted">No orders found</td></tr>
+      `;
+      return;
+    }
+
+    data.forEach(order => {
+      const row = document.createElement("tr");
+
+      const total = (Number(order.price) * order.quantity)
+        .toLocaleString('en-PH', { minimumFractionDigits: 2 });
+
+      row.innerHTML = `
+        <td>${order.id}</td>
+        <td>${escapeHtml(clientMap[order.client_id] || String(order.client_id))}</td>
+        <td>${escapeHtml(order.model)}</td>
+        <td>${order.size}</td>
+        <td>${escapeHtml(order.material)}</td>
+        <td>${escapeHtml(order.color)}</td>
+        <td>${escapeHtml(order.heel_type)}</td>
+        <td>${order.heel_size}</td>
+        <td>${escapeHtml(order.mold)}</td>
+        <td>${order.has_buckle ? "Yes" : "No"}</td>
+        <td>${order.has_slingback ? "Yes" : "No"}</td>
+        <td>${order.has_platform ? "Yes" : "No"}</td>
+        <td>${order.quantity}</td>
+        <td>₱${Number(order.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+        <td>₱${total}</td>
+        <td>
+          <button class="btn btn-sm edit-order-btn" data-id="${order.id}">
+            <img src="${pencilIcon}" width="18">
+          </button>
+        </td>
+        <td>
+          <button class="btn btn-sm delete-btn" data-id="${order.id}">
+            <img src="${trashIcon}" width="18">
+          </button>
+        </td>
+      `;
+
+      tableBody.appendChild(row);
+    });
+  }
+
+  /* ===============================
+     SEARCH & SORT
+  =============================== */
+  document.getElementById("searchOrders")?.addEventListener("input", (e) => {
+    const term = e.target.value.toLowerCase();
+    const filtered = allOrders.filter(order =>
+      (clientMap[order.client_id] || "").toLowerCase().includes(term)
+    );
+    renderOrders(filtered);
   });
 
-  // DELETE
-  document.getElementById("closeDeleteOrder")?.addEventListener("click", () => {
-    deleteOverlay.classList.add("d-none");
-  });
-  document.getElementById("cancelDeleteOrder")?.addEventListener("click", () => {
-    deleteOverlay.classList.add("d-none");
+  document.getElementById("sortOrders")?.addEventListener("change", (e) => {
+    const value = e.target.value;
+    let sorted = [...allOrders];
+
+    switch (value) {
+      case "az":
+        sorted.sort((a, b) =>
+          (clientMap[a.client_id] || "").localeCompare(clientMap[b.client_id] || "")
+        );
+        break;
+      case "za":
+        sorted.sort((a, b) =>
+          (clientMap[b.client_id] || "").localeCompare(clientMap[a.client_id] || "")
+        );
+        break;
+      case "recent":
+        sorted.sort((a, b) => b.id - a.id);
+        break;
+      case "oldest":
+      case "orderid":
+        sorted.sort((a, b) => a.id - b.id);
+        break;
+    }
+
+    renderOrders(sorted);
   });
 
   /* ===============================
-     TABLE CLICK: EDIT & DELETE
+     ADD ORDER
   =============================== */
-  document.addEventListener("click", async (e) => {
-    const editBtn = e.target.closest(".edit-order-btn");
-    if (editBtn) {
-      const orderId = editBtn.dataset.id;
-      selectedOrderId = orderId;
-
-  closeDeleteBtn?.addEventListener("click", () => {
-    deleteOverlay.classList.add("d-none");
+  document.getElementById("openOverlay")?.addEventListener("click", () => {
+    addOverlay.classList.remove("d-none");
   });
 
-    const form = e.target;
-    const selects = form.querySelectorAll("select");
-    const inputs = form.querySelectorAll("input.form-control");
+  document.getElementById("closeAddOrder")?.addEventListener("click", () => {
+    addOverlay.classList.add("d-none");
+  });
 
-    const clientId = selects[0].value;
+  document.getElementById("cancelAddOrder")?.addEventListener("click", () => {
+    addOverlay.classList.add("d-none");
+  });
+
+  document.getElementById("addOrderForm")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const clientId = document.getElementById("addCustomerId").value;
     if (!clientId) {
       alert("Please select a customer");
       return;
@@ -289,18 +262,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const payload = {
       client_id: Number(clientId),
-      model: inputs[0].value.trim(),
-      size: Number(inputs[1].value) || 0,
-      material: selects[1].value || inputs[0].value.trim(),
-      color: inputs[2].value.trim(),
-      heel_type: selects[2].value || "",
-      heel_size: Number(inputs[3].value) || 0,
-      mold: selects[3].value || "",
-      has_buckle: getRadioValue(form, "addBuckle"),
-      has_slingback: getRadioValue(form, "addSling"),
-      has_platform: getRadioValue(form, "addPlatform"),
-      quantity: Number(inputs[4].value) || 1,
-      price: Number(inputs[5].value) || 0,
+      model: document.getElementById("addStyle").value.trim(),
+      size: Number(document.getElementById("addSize").value) || 0,
+      material: document.getElementById("addMaterial").value,
+      color: document.getElementById("addColor").value.trim(),
+      heel_type: document.getElementById("addHeelType").value,
+      heel_size: Number(document.getElementById("addHeelSize").value) || 0,
+      mold: document.getElementById("addMoldType").value,
+      has_buckle: document.querySelector("input[name='addBuckle']:checked")?.value === "true",
+      has_slingback: document.querySelector("input[name='addSling']:checked")?.value === "true",
+      has_platform: document.querySelector("input[name='addPlatform']:checked")?.value === "true",
+      quantity: Number(document.getElementById("addQuantity").value) || 1,
+      price: Number(document.getElementById("addPrice").value) || 0,
     };
 
     try {
@@ -310,37 +283,85 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
 
       addOverlay.classList.add("d-none");
-      form.reset();
+      e.target.reset();
       clearCache();
       await loadOrders();
     } catch (err) {
       console.error("Failed to add order:", err);
       alert("Failed to add order");
     }
-  };
+  });
+
+  /* ===============================
+     EDIT ORDER (open overlay on row button click)
+  =============================== */
+  document.addEventListener("click", async (e) => {
+    const editBtn = e.target.closest(".edit-order-btn");
+    if (editBtn) {
+      const orderId = editBtn.dataset.id;
+      selectedOrderId = orderId;
+
+      try {
+        const res = await apiFetch(`${ORDERS_URL}/${orderId}`);
+        const order = await res.json();
+
+        document.getElementById("editCustomerId").value = order.client_id;
+        document.getElementById("editModel").value = order.model;
+        document.getElementById("editSize").value = order.size;
+        document.getElementById("editMaterial").value = order.material;
+        document.getElementById("editColor").value = order.color;
+        document.getElementById("editHeelType").value = order.heel_type;
+        document.getElementById("editHeelSize").value = order.heel_size;
+        document.getElementById("editMold").value = order.mold;
+        document.getElementById("editQuantity").value = order.quantity;
+        document.getElementById("editPrice").value = order.price;
+
+        const buckleVal = order.has_buckle ? "true" : "false";
+        const slingVal = order.has_slingback ? "true" : "false";
+        const platformVal = order.has_platform ? "true" : "false";
+
+        const buckleRadio = document.querySelector(`input[name="editBuckle"][value="${buckleVal}"]`);
+        const slingRadio = document.querySelector(`input[name="editSlingback"][value="${slingVal}"]`);
+        const platformRadio = document.querySelector(`input[name="editPlatform"][value="${platformVal}"]`);
+
+        if (buckleRadio) buckleRadio.checked = true;
+        if (slingRadio) slingRadio.checked = true;
+        if (platformRadio) platformRadio.checked = true;
+
+        editOverlay.classList.remove("d-none");
+      } catch (err) {
+        console.error("Failed to load order for edit", err);
+      }
+      return;
+    }
+
+    /* DELETE BUTTON - open overlay */
+    const deleteBtn = e.target.closest(".delete-btn");
+    if (deleteBtn) {
+      selectedOrderId = deleteBtn.dataset.id;
+      deleteOverlay.classList.remove("d-none");
+    }
+  });
 
   /* ===============================
      EDIT ORDER (form submit)
   =============================== */
-  editOverlay.querySelector("form").onsubmit = async (e) => {
+  document.getElementById("editOrderForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const form = e.target;
-    const selects = form.querySelectorAll("select");
-    const inputs = form.querySelectorAll("input.form-control");
-
     const payload = {
-      client_id: Number(selects[0].value),
-      model: inputs[0].value.trim(),
-      size: Number(inputs[1].value) || 0,
-      material: selects[1].value || "",
-      color: inputs[2].value.trim(),
-      heel_type: selects[2].value || "",
-      heel_size: Number(inputs[3].value) || 0,
-      mold: selects[3].value || "",
-      has_buckle: getRadioValue(form, "buckle"),
-      has_slingback: getRadioValue(form, "slingback"),
-      has_platform: getRadioValue(form, "platform"),
+      model: document.getElementById("editModel").value.trim(),
+      size: Number(document.getElementById("editSize").value) || 0,
+      material: document.getElementById("editMaterial").value,
+      color: document.getElementById("editColor").value.trim(),
+      heel_type: document.getElementById("editHeelType").value,
+      heel_size: Number(document.getElementById("editHeelSize").value) || 0,
+      mold: document.getElementById("editMold").value,
+      has_buckle: document.querySelector("input[name='editBuckle']:checked")?.value === "true",
+      has_slingback: document.querySelector("input[name='editSlingback']:checked")?.value === "true",
+      has_platform: document.querySelector("input[name='editPlatform']:checked")?.value === "true",
+      quantity: parseInt(document.getElementById("editQuantity").value),
+      price: Number(document.getElementById("editPrice").value),
     };
 
     try {
@@ -356,12 +377,33 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.error("Failed to update order:", err);
       alert("Failed to update order");
     }
-  };
+  });
+
+  /* ===============================
+     EDIT / DELETE OVERLAY CLOSE BUTTONS
+  =============================== */
+  document.getElementById("closeEditOrder")?.addEventListener("click", () => {
+    editOverlay.classList.add("d-none");
+  });
+
+  document.getElementById("cancelEditOrder")?.addEventListener("click", () => {
+    editOverlay.classList.add("d-none");
+  });
+
+  document.getElementById("closeDeleteOrder")?.addEventListener("click", () => {
+    deleteOverlay.classList.add("d-none");
+  });
+
+  document.getElementById("cancelDeleteOrder")?.addEventListener("click", () => {
+    deleteOverlay.classList.add("d-none");
+  });
 
   /* ===============================
      DELETE ORDER
   =============================== */
-  document.getElementById("confirmDeleteOrder").onclick = async () => {
+  document.getElementById("confirmDeleteOrder")?.addEventListener("click", async () => {
+    if (!selectedOrderId) return;
+
     try {
       await apiFetch(`${ORDERS_URL}/${selectedOrderId}`, {
         method: "DELETE"
@@ -374,254 +416,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.error("Failed to delete order:", err);
       alert("Failed to delete order");
     }
-  };
+  });
 
   /* ===============================
      INIT
   =============================== */
-  (async () => {
-    await loadCompanyClients();
-    await loadOrders();
-  })();
-
-  /* =========================
-     ADD ORDER SUBMIT
-  ========================= */
-  const addForm = document.getElementById("addOrderForm");
-
-  addForm?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const orderData = {
-      client_id: parseInt(document.getElementById("addCustomerId").value),
-
-      model: document.getElementById("addStyle").value,
-      size: document.getElementById("addSize").value,
-      material: document.getElementById("addMaterial").value,
-      color: document.getElementById("addColor").value,
-
-      mold: document.getElementById("addMoldType").value,
-      heel_type: document.getElementById("addHeelType").value,
-      heel_size: document.getElementById("addHeelSize").value,
-
-      has_buckle: document.querySelector("input[name='addBuckle']:checked")?.nextElementSibling.innerText === "Yes",
-      has_slingback: document.querySelector("input[name='addSling']:checked")?.nextElementSibling.innerText === "Yes",
-      has_platform: document.querySelector("input[name='addPlatform']:checked")?.nextElementSibling.innerText === "Yes",
-
-      quantity: parseInt(document.getElementById("addQuantity").value),
-      price: document.getElementById("addPrice").value
-    };
-
-    try {
-      const res = await fetch(`${API_BASE}/client-orders/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderData)
-      });
-
-      if (res.ok) {
-        addOverlay.classList.add("d-none");
-        addForm.reset();
-        loadOrders();
-      } else {
-        alert("Failed to create order");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Server error while creating order");
-    }
-  });
-
-  // Load initial data
-  await loadClientsForDropdown();
+  await loadCompanyClients();
   await loadOrders();
 });
-
-
-/* =========================
-   LOAD ORDERS
-========================= */
-async function loadOrders() {
-  const tbody = document.getElementById("ordersTableBody");
-  if (!tbody) return;
-
-  try {
-    const res = await fetch(`${API_BASE}/client-orders/?completed=false`);
-    ordersData = await res.json();
-    renderOrders(ordersData);
-
-  } catch (err) {
-    console.error(err);
-    alert("Failed to load orders");
-  }
-}
-
-function renderOrders(data) {
-  const tbody = document.getElementById("ordersTableBody");
-  tbody.innerHTML = "";
-
-  data.forEach(order => {
-    const row = document.createElement("tr");
-
-    const total = (Number(order.price) * order.quantity)
-      .toLocaleString('en-PH', { minimumFractionDigits: 2 });
-
-    row.innerHTML = `
-      <td>${order.id}</td>
-      <td>${clientsMap[order.client_id] || order.client_id}</td>
-      <td>${order.model}</td>
-      <td>${order.size}</td>
-      <td>${order.material}</td>
-      <td>${order.color}</td>
-      <td>${order.heel_type}</td>
-      <td>${order.heel_size}</td>
-      <td>${order.mold}</td>
-      <td>${order.has_buckle ? "Yes" : "No"}</td>
-      <td>${order.has_slingback ? "Yes" : "No"}</td>
-      <td>${order.has_platform ? "Yes" : "No"}</td>
-      <td>${order.quantity}</td>
-      <td>₱${Number(order.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
-      <td>₱${total}</td>
-      <td>
-        <button class="btn btn-sm edit-order-btn" data-id="${order.id}">
-          <img src="../../../assets/icons/pencil.svg" width="18">
-        </button>
-      </td>
-      <td>
-        <button class="btn btn-sm delete-btn" data-id="${order.id}">
-          <img src="../../../assets/icons/trashcan-black.svg" width="18">
-        </button>
-      </td>
-    `;
-
-    tbody.appendChild(row);
-  });
-
-  attachDeleteHandlers();
-  attachEditHandlers();
-}
-
-/* =========================
-   LOAD CLIENTS FOR DROPDOWN
-========================= */
-async function loadClientsForDropdown() {
-  const addSelect = document.getElementById("addCustomerId");
-  const editSelect = document.getElementById("editCustomerId");
-
-  try {
-    const res = await fetch(`${API_BASE}/clients/`);
-    const clients = await res.json();
-
-    // Clear map before refilling
-    clientsMap = {};
-
-    clients.forEach(client => {
-      clientsMap[client.id] = `${client.first_name} ${client.last_name}`;
-    });
-
-    if (addSelect) {
-      addSelect.innerHTML = `<option value="" selected disabled hidden>Select Customer</option>`;
-      clients.forEach(client => {
-        const option = document.createElement("option");
-        option.value = client.id;
-        option.textContent = clientsMap[client.id];
-        addSelect.appendChild(option);
-      });
-    }
-
-    if (editSelect) {
-      editSelect.innerHTML = `<option value="" selected disabled hidden>Select Customer</option>`;
-      clients.forEach(client => {
-        const option = document.createElement("option");
-        option.value = client.id;
-        option.textContent = clientsMap[client.id];
-        editSelect.appendChild(option);
-      });
-    }
-
-  } catch (err) {
-    console.error("Failed to load clients", err);
-  }
-}
-
-
-/* =========================
-   DELETE ORDER
-========================= */
-let deleteOrderId = null;
-
-function attachDeleteHandlers() {
-  document.querySelectorAll(".delete-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      deleteOrderId = btn.dataset.id;
-      document.getElementById("deleteOrderOverlay").classList.remove("d-none");
-    });
-  });
-}
-
-document.getElementById("confirmDeleteOrder")?.addEventListener("click", async () => {
-  if (!deleteOrderId) return;
-
-  try {
-    await fetch(`${API_BASE}/client-orders/${deleteOrderId}`, {
-      method: "DELETE"
-    });
-
-    document.getElementById("deleteOrderOverlay").classList.add("d-none");
-    loadOrders();
-  } catch (err) {
-    console.error(err);
-    alert("Failed to delete order");
-  }
-});
-
-/* =========================
-   EDIT HANDLER (overlay open only)
-========================= */
-function attachEditHandlers() {
-  document.querySelectorAll(".edit-order-btn").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      const orderId = btn.dataset.id;
-
-      try {
-        const res = await fetch(`${API_BASE}/client-orders/${orderId}`);
-        const order = await res.json();
-
-        // Fill form fields
-        document.getElementById("editCustomerId").value = order.client_id;
-        document.getElementById("editCustomerId").disabled = true;
-
-        document.getElementById("editModel").value = order.model;
-        document.getElementById("editSize").value = order.size;
-        document.getElementById("editMaterial").value = order.material;
-        document.getElementById("editColor").value = order.color;
-        document.getElementById("editHeelType").value = order.heel_type;
-        document.getElementById("editHeelSize").value = order.heel_size;
-        document.getElementById("editMold").value = order.mold;
-        document.getElementById("editQuantity").value = order.quantity;
-        document.getElementById("editPrice").value = order.price;
-
-        const buckleValue = order.has_buckle ? "true" : "false";
-        const slingValue = order.has_slingback ? "true" : "false";
-        const platformValue = order.has_platform ? "true" : "false";
-
-        const buckleRadio = document.querySelector(`input[name="editBuckle"][value="${buckleValue}"]`);
-        const slingRadio = document.querySelector(`input[name="editSlingback"][value="${slingValue}"]`);
-        const platformRadio = document.querySelector(`input[name="editPlatform"][value="${platformValue}"]`);
-
-        if (buckleRadio) buckleRadio.checked = true;
-        if (slingRadio) slingRadio.checked = true;
-        if (platformRadio) platformRadio.checked = true;
-
-        // Store order ID for update
-        document.getElementById("editOrderOverlay").dataset.orderId = orderId;
-
-        document.getElementById("editOrderOverlay").classList.remove("d-none");
-
-      } catch (err) {
-        console.error("Failed to load order for edit", err);
-      }
-    });
-  });
-}
-

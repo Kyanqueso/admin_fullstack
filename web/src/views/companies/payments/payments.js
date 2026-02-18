@@ -1,15 +1,62 @@
-const API_BASE = "http://127.0.0.1:8000";
+import { getFromCache, saveToCache, clearCache } from '../../../js/apiCache.js';
+
+const FAST_API_URL = import.meta.env.VITE_BACKEND_URL;
+const COMPANY_ID = localStorage.getItem("activeCompanyId");
 
 let clientsMap = {};
 let ordersMap = {};
 let paymentSummaries = [];
 
+/* ===============================
+   AUTH HELPERS
+=============================== */
+function getAccessToken() {
+  const token = localStorage.getItem("access_token");
+  if (!token || token === "null" || token === "undefined") {
+    localStorage.removeItem("access_token");
+    window.location.href = "../../auth/index.html";
+    throw new Error("Missing access token");
+  }
+  return token;
+}
+
+async function apiFetch(url, options = {}) {
+  const token = getAccessToken();
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json",
+      ...(options.headers || {})
+    }
+  });
+
+  if (response.status === 401 || response.status === 403) {
+    localStorage.removeItem("access_token");
+    window.location.href = "../../auth/index.html";
+    throw new Error("Unauthorized");
+  }
+
+  return response;
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
+
+  if (!COMPANY_ID) {
+    alert("No company selected.");
+    window.location.href = "../companies.html";
+    return;
+  }
+
+  document.getElementById("paymentsTableBody").innerHTML = `
+    <tr><td colspan="8" class="text-center"><div class="spinner-border"></div></td></tr>
+  `;
 
   await loadClients();
   await loadOrders();
   await loadPaymentSummaries();
 
+  setupSearchAndSort();
   setupOverlayControls();
 });
 
@@ -18,12 +65,20 @@ document.addEventListener("DOMContentLoaded", async () => {
    LOAD CLIENTS
 =============================== */
 async function loadClients() {
-  const res = await fetch(`${API_BASE}/clients/`);
-  const clients = await res.json();
+  const url = `${FAST_API_URL}/clients/`;
+  let clients = getFromCache(url);
 
-  clients.forEach(client => {
-    clientsMap[client.id] = `${client.first_name} ${client.last_name}`;
-  });
+  if (!clients) {
+    const res = await apiFetch(url);
+    clients = await res.json();
+    saveToCache(url, clients);
+  }
+
+  clients
+    .filter(c => String(c.company_id) === String(COMPANY_ID))
+    .forEach(client => {
+      clientsMap[client.id] = `${client.first_name} ${client.last_name}`;
+    });
 }
 
 
@@ -31,12 +86,20 @@ async function loadClients() {
    LOAD ORDERS
 =============================== */
 async function loadOrders() {
-  const res = await fetch(`${API_BASE}/client-orders/`);
-  const orders = await res.json();
+  const url = `${FAST_API_URL}/client-orders/`;
+  let orders = getFromCache(url);
 
-  orders.forEach(order => {
-    ordersMap[order.id] = order;
-  });
+  if (!orders) {
+    const res = await apiFetch(url);
+    orders = await res.json();
+    saveToCache(url, orders);
+  }
+
+  orders
+    .filter(order => clientsMap[order.client_id] !== undefined)
+    .forEach(order => {
+      ordersMap[order.id] = order;
+    });
 }
 
 
@@ -44,23 +107,50 @@ async function loadOrders() {
    LOAD PAYMENT SUMMARIES
 =============================== */
 async function loadPaymentSummaries() {
+  const tbody = document.getElementById("paymentsTableBody");
+  tbody.innerHTML = `
+    <tr><td colspan="8" class="text-center"><div class="spinner-border"></div></td></tr>
+  `;
 
+  const url = `${FAST_API_URL}/payment-summaries/`;
+  let cached = getFromCache(url);
+
+  if (cached) {
+    paymentSummaries = cached;
+  } else {
+    const res = await apiFetch(url);
+    paymentSummaries = await res.json();
+    saveToCache(url, paymentSummaries);
+  }
+
+  renderPaymentRows(paymentSummaries);
+}
+
+
+/* ===============================
+   RENDER PAYMENT ROWS
+=============================== */
+function renderPaymentRows(summaries) {
   const tbody = document.getElementById("paymentsTableBody");
   tbody.innerHTML = "";
 
-  const res = await fetch(`${API_BASE}/payment-summaries/`);
-  paymentSummaries = await res.json();
+  // Only show summaries whose order belongs to this company
+  const visible = summaries.filter(s => ordersMap[s.client_order_id]);
 
-  paymentSummaries.forEach(summary => {
+  if (visible.length === 0) {
+    tbody.innerHTML = `
+      <tr><td colspan="8" class="text-center text-muted">No payments found</td></tr>
+    `;
+    return;
+  }
 
+  visible.forEach(summary => {
     const order = ordersMap[summary.client_order_id];
-    if (!order) return;
-
-    const clientName = clientsMap[order.client_id];
+    const clientName = clientsMap[order.client_id] || "-";
     const totalAmount = Number(order.price) * Number(order.quantity);
 
-    const orderDate = order.created_at
-      ? new Date(order.created_at).toLocaleDateString()
+    const orderDate = order.order_date
+      ? new Date(order.order_date).toLocaleDateString()
       : "-";
 
     const balanceClearedDate =
@@ -69,7 +159,6 @@ async function loadPaymentSummaries() {
         : "-";
 
     const row = document.createElement("tr");
-
     row.innerHTML = `
       <td>${order.id}</td>
       <td>${clientName}</td>
@@ -97,7 +186,46 @@ async function loadPaymentSummaries() {
     tbody.appendChild(row);
   });
 
+  // Re-attach handlers every time rows are re-rendered
   attachDynamicHandlers();
+}
+
+
+/* ===============================
+   SEARCH & SORT
+=============================== */
+function setupSearchAndSort() {
+  const searchInput = document.querySelector('input[placeholder="Search name"]');
+  const sortSelect = document.querySelector('.form-select');
+
+  function applySearchAndSort() {
+    const query = (searchInput?.value || "").toLowerCase().trim();
+    const sortValue = sortSelect?.value || "";
+
+    let result = paymentSummaries.filter(s => {
+      const order = ordersMap[s.client_order_id];
+      if (!order) return false;
+      const clientName = (clientsMap[order.client_id] || "").toLowerCase();
+      return clientName.includes(query);
+    });
+
+    if (sortValue === "name" || sortValue === "alpha") {
+      result.sort((a, b) => {
+        const nameA = clientsMap[ordersMap[a.client_order_id]?.client_id] || "";
+        const nameB = clientsMap[ordersMap[b.client_order_id]?.client_id] || "";
+        return nameA.localeCompare(nameB);
+      });
+    } else if (sortValue === "recent") {
+      result.sort((a, b) =>
+        (ordersMap[b.client_order_id]?.id || 0) - (ordersMap[a.client_order_id]?.id || 0)
+      );
+    }
+
+    renderPaymentRows(result);
+  }
+
+  searchInput?.addEventListener("input", applySearchAndSort);
+  sortSelect?.addEventListener("change", applySearchAndSort);
 }
 
 
@@ -125,7 +253,7 @@ function attachDynamicHandlers() {
       const tableBody = document.getElementById("historyTransactionsBody");
       tableBody.innerHTML = "";
 
-      const res = await fetch(`${API_BASE}/payment-transactions/`);
+      const res = await apiFetch(`${FAST_API_URL}/payment-transactions/`);
       const transactions = await res.json();
 
       const filtered = transactions.filter(
@@ -169,7 +297,7 @@ function attachDynamicHandlers() {
       const container = document.getElementById("transactionsContainer");
       container.innerHTML = "";
 
-      const res = await fetch(`${API_BASE}/payment-transactions/`);
+      const res = await apiFetch(`${FAST_API_URL}/payment-transactions/`);
       const transactions = await res.json();
 
       const filtered = transactions.filter(
@@ -269,7 +397,7 @@ function setupOverlayControls() {
         const transactionId = e.target.dataset.id;
 
         if (transactionId) {
-          await fetch(`${API_BASE}/payment-transactions/${transactionId}`, {
+          await apiFetch(`${FAST_API_URL}/payment-transactions/${transactionId}`, {
             method: "DELETE"
           });
         }
@@ -277,9 +405,10 @@ function setupOverlayControls() {
         e.target.closest(".transaction-row").remove();
       }
     });
+
   /* ===============================
- SAVE TRANSACTIONS
-=============================== */
+     SAVE TRANSACTIONS
+  =============================== */
   document.getElementById("saveTransactionsBtn")
     ?.addEventListener("click", async () => {
 
@@ -290,7 +419,6 @@ function setupOverlayControls() {
 
       const summary = paymentSummaries.find(s => s.id == summaryId);
       const order = ordersMap[summary.client_order_id];
-
       const orderTotal = Number(order.price) * Number(order.quantity);
 
       const rows = document.querySelectorAll(
@@ -300,14 +428,11 @@ function setupOverlayControls() {
       let runningTotal = 0;
 
       for (let i = 0; i < rows.length; i++) {
-
         const amountInput = rows[i].querySelector("input[type='number']");
         const dateInput = rows[i].querySelector("input[type='date']");
-
         const amount = parseFloat(amountInput.value);
         const paymentDate = dateInput.value;
 
-        // ❌ Empty validation
         if (!amount || amount <= 0) {
           alert("Payment amount must be greater than 0.");
           return;
@@ -321,24 +446,19 @@ function setupOverlayControls() {
         runningTotal += amount;
       }
 
-      // ❌ Prevent overpayment
       if (runningTotal > orderTotal) {
         alert("Total payments exceed order total.");
         return;
       }
 
-      // If validation passes, send to backend
       for (let i = 0; i < rows.length; i++) {
-
         const amountInput = rows[i].querySelector("input[type='number']");
         const dateInput = rows[i].querySelector("input[type='date']");
-
         const amount = parseFloat(amountInput.value);
         const paymentDate = dateInput.value;
 
-        const response = await fetch(`${API_BASE}/payment-transactions/`, {
+        const response = await apiFetch(`${FAST_API_URL}/payment-transactions/`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             payment_summary_id: parseInt(summaryId),
             payment_number: i + 1,
@@ -347,14 +467,14 @@ function setupOverlayControls() {
           })
         });
 
-        // 🔥 THIS IS THE IMPORTANT ADDITION
         if (!response.ok) {
           const errorData = await response.json();
           alert(errorData.detail || "Payment failed.");
-          return; // STOP execution immediately
+          return;
         }
       }
 
+      clearCache();
       await loadPaymentSummaries();
       editOverlay.classList.add("d-none");
     });
