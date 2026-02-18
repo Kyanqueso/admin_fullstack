@@ -6,7 +6,7 @@
     <!-- Import CSS Files and Local Bootstrap-->
 
     <title>Website Content Management Page</title>
-  <script type="module" crossorigin src="../../../assets/web_content-DjA7Iv0D.js"></script>
+  <script type="module" crossorigin src="../../../assets/web_content-TndWKhJr.js"></script>
   <link rel="modulepreload" crossorigin href="../../../assets/bootstrap.min-BB4Wbeoi.js">
   <link rel="modulepreload" crossorigin href="../../../assets/pencil-OSk29Rca.js">
   <link rel="modulepreload" crossorigin href="../../../assets/apiCache-BsFi2VyI.js">
@@ -97,6 +97,20 @@
             <div class="d-flex justify-content-end gap-2 mt-3">
                 <button id="overlay-cancel" class="btn btn-secondary">Cancel</button>
                 <button id="overlay-confirm" class="btn btn-green">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Confirmation Overlay -->
+    <div id="logout-overlay" class="overlay d-none">
+        <div class="overlay-content p-4 position-relative">
+            <button id="logout-overlay-close" class="overlay-close btn p-3 position-absolute top-0 end-0">
+                <img src="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20640%20640'%3e%3c!--!Font%20Awesome%20Free%207.1.0%20by%20@fontawesome%20-%20https://fontawesome.com%20License%20-%20https://fontawesome.com/license/free%20Copyright%202026%20Fonticons,%20Inc.--%3e%3cpath%20d='M504.6%20148.5C515.9%20134.9%20514.1%20114.7%20500.5%20103.4C486.9%2092.1%20466.7%2093.9%20455.4%20107.5L320%20270L184.6%20107.5C173.3%2093.9%20153.1%2092.1%20139.5%20103.4C125.9%20114.7%20124.1%20134.9%20135.4%20148.5L278.3%20320L135.4%20491.5C124.1%20505.1%20125.9%20525.3%20139.5%20536.6C153.1%20547.9%20173.3%20546.1%20184.6%20532.5L320%20370L455.4%20532.5C466.7%20546.1%20486.9%20547.9%20500.5%20536.6C514.1%20525.3%20515.9%20505.1%20504.6%20491.5L361.7%20320L504.6%20148.5z'/%3e%3c/svg%3e" alt="Close" width="24" height="24">
+            </button>
+            <h5 class="mb-4 text-center">Do you want to log out?</h5>
+            <div class="d-flex justify-content-center gap-3">
+                <button id="logout-no" class="btn btn-secondary px-4">No</button>
+                <button id="logout-yes" class="btn btn-danger px-4">Yes</button>
             </div>
         </div>
     </div>

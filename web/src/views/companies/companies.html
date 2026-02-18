@@ -134,6 +134,20 @@
   </div>
 </div>
 
+<!-- Logout Confirmation Overlay -->
+<div id="logout-overlay" class="overlay d-none">
+  <div class="overlay-content p-4 position-relative">
+    <button id="logout-overlay-close" class="overlay-close btn p-3 position-absolute top-0 end-0">
+      <img src="../../assets/icons/x-solid.svg" alt="Close" width="24" height="24">
+    </button>
+    <h5 class="mb-4 text-center">Do you want to log out?</h5>
+    <div class="d-flex justify-content-center gap-3">
+      <button id="logout-no" class="btn btn-secondary px-4">No</button>
+      <button id="logout-yes" class="btn btn-danger px-4">Yes</button>
+    </div>
+  </div>
+</div>
+
 <script type="module" src="companies.js"></script>
 <script src="../../assets/bootstrap/bootstrap.bundle.min.js"></script>
 

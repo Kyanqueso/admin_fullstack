@@ -274,9 +274,13 @@ async function initAnalytics() {
     }
 }
 
-// Logout button handler
-document.getElementById('logout-btn').addEventListener('click', function() {
-    // Clear any session data if necessary
+// Logout confirmation overlay
+const logoutOverlay = document.getElementById('logout-overlay');
+document.getElementById('logout-btn').addEventListener('click', () => logoutOverlay.classList.remove('d-none'));
+document.getElementById('logout-overlay-close').addEventListener('click', () => logoutOverlay.classList.add('d-none'));
+document.getElementById('logout-no').addEventListener('click', () => logoutOverlay.classList.add('d-none'));
+document.getElementById('logout-yes').addEventListener('click', () => {
+    localStorage.clear();
     window.location.href = "../auth/index.html";
 });
 

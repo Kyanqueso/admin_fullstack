@@ -6,11 +6,15 @@ import { getFromCache, saveToCache, clearCache } from '../../js/apiCache.js';
 
 const FAST_API_URL = import.meta.env.VITE_BACKEND_URL;
 
-// Logout
-document.getElementById('logout-btn').onclick = function() {
+// Logout confirmation overlay
+const logoutOverlay = document.getElementById('logout-overlay');
+document.getElementById('logout-btn').addEventListener('click', () => logoutOverlay.classList.remove('d-none'));
+document.getElementById('logout-overlay-close').addEventListener('click', () => logoutOverlay.classList.add('d-none'));
+document.getElementById('logout-no').addEventListener('click', () => logoutOverlay.classList.add('d-none'));
+document.getElementById('logout-yes').addEventListener('click', () => {
     localStorage.clear();
     window.location.href = "../auth/index.html";
-};
+});
 
 // DOM elements
 const grid = document.getElementById('shoe-grid');
