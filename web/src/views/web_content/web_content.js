@@ -18,7 +18,7 @@ document.getElementById('logout-yes').addEventListener('click', () => {
 
 // DOM elements
 const grid = document.getElementById('shoe-grid');
-const searchInput = document.querySelector('input[placeholder="Search name"]');
+const searchInput = document.querySelector('input[placeholder="Search Shoe Name"]');
 const sortSelect = document.querySelector('.form-select');
 
 const overlay = document.getElementById('shoe-overlay');
@@ -36,6 +36,42 @@ const imageInput = document.getElementById('shoe-images');
 
 let allShoes = [];
 let imagesToRemove = []; // track image IDs to remove during edit
+
+// Block emojis on all text inputs in real time
+[searchInput, document.getElementById('shoe-name')]
+    .forEach(el => blockEmojis(el));
+
+// Prevent e, E, +, - on the price number input (browser allows these by default)
+document.getElementById('shoe-price').addEventListener('keydown', e => {
+    if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault();
+});
+
+/* ===============================
+   INPUT VALIDATION
+=============================== */
+const emojiRegex = /\p{Extended_Pictographic}/u;
+
+function isValidInput(value) {
+    return value.length <= 100
+        && !/[\x00-\x1F\x7F]/.test(value)
+        && !emojiRegex.test(value);
+}
+
+function blockEmojis(el) {
+    el.addEventListener('input', () => {
+        const original = el.value;
+        const cleaned = original.replace(/\p{Extended_Pictographic}/gu, '');
+        if (cleaned !== original) {
+            let pos = null;
+            try { pos = el.selectionStart; } catch {}
+            el.value = cleaned;
+            if (pos !== null) {
+                const newPos = Math.max(0, pos - (original.length - cleaned.length));
+                try { el.setSelectionRange(newPos, newPos); } catch {}
+            }
+        }
+    });
+}
 
 /* ===============================
    HTML ESCAPING
@@ -76,6 +112,9 @@ async function apiFetch(url, options = {}) {
 }
 
 async function fetchShoeById(id) {
+    // Check in-memory list first — avoids the round-trip on edit
+    const local = allShoes.find(s => String(s.id) === String(id));
+    if (local) return local;
     return await apiFetch(`${FAST_API_URL}/shoe-management/shoes/${id}`);
 }
 
@@ -125,6 +164,10 @@ function renderShoes(shoesArray) {
             ? shoe.images[0].image_url
             : 'https://placehold.co/400';
 
+        const dateAdded = shoe.date_added
+            ? new Date(shoe.date_added).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
+            : '—';
+
         const col = document.createElement('div');
         col.className = 'col-12 col-md-6 col-lg-4';
         const hiddenBadge = shoe.is_visible ? '' : `<span class="badge bg-secondary mb-2">Hidden</span>`;
@@ -132,11 +175,12 @@ function renderShoes(shoesArray) {
         const toggleLabel = shoe.is_visible ? 'Hide' : 'Show';
         col.innerHTML = `
             <div class="card h-100 box-drop-shadow${shoe.is_visible ? '' : ' opacity-50'}">
-                <img src="${escapeHtml(primaryImage)}" class="card-img-top" alt="${escapeHtml(shoe.model_name)}">
+                <img src="${escapeHtml(primaryImage)}" class="card-img-top" alt="${escapeHtml(shoe.model_name)}" loading="lazy">
                 <div class="accent-bg card-body d-flex flex-column">
                     ${hiddenBadge}
                     <h5 class="card-title"><strong>${highlightQuery(shoe.model_name)}</strong></h5>
                     <p class="card-text flex-grow-1">${escapeHtml(String(shoe.price))}</p>
+                    <p class="card-text text-muted small mb-2">Added: ${escapeHtml(dateAdded)}</p>
 
                     <div class="d-flex flex-row gap-2">
                         <a class="btn btn-secondary w-33 toggle-visibility-btn" data-shoe-id="${shoe.id}" data-visible="${shoe.is_visible}">
@@ -190,8 +234,44 @@ function applySearchAndSort() {
     renderShoes(filtered);
 }
 
-searchInput.addEventListener('input', applySearchAndSort);
+function debounce(fn, delay) {
+    let timer;
+    return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); };
+}
+
+searchInput.addEventListener('input', debounce(applySearchAndSort, 150));
 sortSelect.addEventListener('change', applySearchAndSort);
+
+/* ===============================
+   INLINE ERROR HELPERS
+=============================== */
+function showOverlayError(msg) {
+    const el = document.getElementById('overlay-error-msg');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.remove('d-none');
+}
+
+function clearOverlayError() {
+    const el = document.getElementById('overlay-error-msg');
+    if (!el) return;
+    el.textContent = '';
+    el.classList.add('d-none');
+}
+
+function showPageError(msg) {
+    const el = document.getElementById('page-error-msg');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.remove('d-none');
+}
+
+function clearPageError() {
+    const el = document.getElementById('page-error-msg');
+    if (!el) return;
+    el.textContent = '';
+    el.classList.add('d-none');
+}
 
 /* ===============================
    OVERLAY HELPERS
@@ -206,6 +286,7 @@ function resetOverlayState() {
     existingImagesContainer.classList.add('d-none');
     existingImagesDiv.innerHTML = '';
     imagesToRemove = [];
+    clearOverlayError();
 }
 
 /* ===============================
@@ -281,6 +362,8 @@ function openOverlay(type, shoeData = {}) {
 
 function closeOverlay() {
     overlay.classList.add('d-none');
+    clearOverlayError();
+    enableAllCardButtons();
 }
 
 /* ===============================
@@ -302,7 +385,7 @@ existingImagesDiv.addEventListener('click', (e) => {
     const newFiles = imageInput.files ? imageInput.files.length : 0;
 
     if (remainingItems + newFiles < 1) {
-        alert('Shoe must have at least 1 image');
+        showOverlayError('Shoe must have at least 1 image. Please upload another image before removing this one.');
         return;
     }
 
@@ -312,25 +395,42 @@ existingImagesDiv.addEventListener('click', (e) => {
 
 // Validate file count on input change
 imageInput.addEventListener('change', () => {
+    clearOverlayError();
     const newFiles = imageInput.files ? imageInput.files.length : 0;
     const type = overlay.dataset.type;
 
     if (type === 'add') {
         if (newFiles > 5) {
-            alert('You can upload a maximum of 5 images');
+            showOverlayError('You can upload a maximum of 5 images');
             imageInput.value = '';
         }
     } else if (type === 'edit') {
         const remainingExisting = existingImagesDiv.querySelectorAll('.existing-image-item').length;
         if (remainingExisting + newFiles > 5) {
-            alert(`You can only have 5 images total. Currently ${remainingExisting} existing.`);
+            showOverlayError(`You can only have 5 images total. Currently ${remainingExisting} existing.`);
             imageInput.value = '';
         }
     }
 });
 
+/* ===============================
+   CARD BUTTON LOCKING
+=============================== */
+function disableAllCardButtons() {
+    document.getElementById('add-shoe-btn').disabled = true;
+    document.querySelectorAll('.edit-shoe-btn, .delete-shoe-btn, .toggle-visibility-btn')
+        .forEach(btn => { btn.disabled = true; });
+}
+
+function enableAllCardButtons() {
+    document.getElementById('add-shoe-btn').disabled = false;
+    document.querySelectorAll('.edit-shoe-btn, .delete-shoe-btn, .toggle-visibility-btn')
+        .forEach(btn => { btn.disabled = false; });
+}
+
 document.getElementById('add-shoe-btn').addEventListener('click', e => {
     e.preventDefault();
+    disableAllCardButtons();
     openOverlay('add');
 });
 
@@ -342,34 +442,44 @@ document.addEventListener('click', async e => {
     if (editBtn) {
         e.preventDefault();
         const id = editBtn.dataset.shoeId;
+        const originalHTML = editBtn.innerHTML;
+        disableAllCardButtons();
+        editBtn.innerHTML = '...';
         try {
             const shoe = await fetchShoeById(id);
             openOverlay('edit', shoe);
         } catch (err) {
             console.error(err);
+            showPageError('Failed to load shoe data');
+        } finally {
+            enableAllCardButtons();
+            editBtn.innerHTML = originalHTML;
         }
     }
 
     if (deleteBtn) {
         e.preventDefault();
         const id = deleteBtn.dataset.shoeId;
+        disableAllCardButtons();
         openOverlay('delete', { id });
     }
 
     if (toggleBtn) {
         e.preventDefault();
         const id = toggleBtn.dataset.shoeId;
-        toggleBtn.textContent = '...';
-        toggleBtn.style.pointerEvents = 'none';
+        clearPageError();
+        const originalHTML = toggleBtn.innerHTML;
+        disableAllCardButtons();
+        toggleBtn.innerHTML = '...';
         try {
             await apiFetch(`${FAST_API_URL}/shoe-management/shoes/${id}/visibility`, { method: 'PATCH' });
             clearCache();
             await loadShoes();
         } catch (err) {
             console.error(err);
-            alert('Failed to toggle visibility');
-            toggleBtn.textContent = toggleBtn.dataset.visible === 'true' ? 'Hide' : 'Show';
-            toggleBtn.style.pointerEvents = '';
+            showPageError('Failed to toggle visibility');
+            enableAllCardButtons();
+            toggleBtn.innerHTML = originalHTML;
         }
     }
 });
@@ -387,6 +497,8 @@ overlayConfirm.addEventListener('click', async () => {
     // Store original button text to restore on error
     const originalText = overlayConfirm.textContent;
 
+    clearOverlayError();
+
     try {
         // Disable buttons and show progress text
         overlayConfirm.disabled = true;
@@ -400,6 +512,15 @@ overlayConfirm.addEventListener('click', async () => {
         // ADD
         // =====================
         if (type === 'add') {
+            if (!name || !name.trim()) {
+                throw new Error('Shoe name is required');
+            }
+            if (!isValidInput(name.trim())) {
+                throw new Error('Shoe name must be 100 characters or fewer with no emojis');
+            }
+            if (!price || isNaN(parseFloat(price)) || parseFloat(price) < 0) {
+                throw new Error('Please enter a valid price');
+            }
             if (!newFiles || newFiles.length === 0) {
                 throw new Error('Please select at least 1 image');
             }
@@ -427,6 +548,16 @@ overlayConfirm.addEventListener('click', async () => {
         // EDIT
         // =====================
         if (type === 'edit') {
+            if (!name || !name.trim()) {
+                throw new Error('Shoe name is required');
+            }
+            if (!isValidInput(name.trim())) {
+                throw new Error('Shoe name must be 100 characters or fewer with no emojis');
+            }
+            if (!price || isNaN(parseFloat(price)) || parseFloat(price) < 0) {
+                throw new Error('Please enter a valid price');
+            }
+
             const remainingExisting = existingImagesDiv.querySelectorAll('.existing-image-item').length;
             const newCount = newFiles ? newFiles.length : 0;
 
@@ -474,14 +605,23 @@ overlayConfirm.addEventListener('click', async () => {
             });
         }
 
-        if (!response.ok) throw new Error(await response.text());
+        if (!response.ok) {
+            const text = await response.text();
+            let errMsg;
+            try {
+                errMsg = JSON.parse(text).detail || text;
+            } catch {
+                errMsg = text || `HTTP error: ${response.status}`;
+            }
+            throw new Error(errMsg);
+        }
 
         closeOverlay();
         clearCache();
         await loadShoes();
     } catch (err) {
         console.error(err);
-        alert(err.message || 'An error occurred');
+        showOverlayError(err.message || 'An error occurred');
     } finally {
         overlayConfirm.textContent = originalText;
         overlayConfirm.disabled = false;

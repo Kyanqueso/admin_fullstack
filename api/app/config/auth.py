@@ -1,6 +1,5 @@
 import os
 import sys
-import json
 import jwt
 from jwt import PyJWKClient
 from fastapi import HTTPException, Depends
@@ -24,16 +23,17 @@ print(f"DEBUG: Using JWKS URL: {JWKS_URL}", file=sys.stderr)
 
 security = HTTPBearer()
 
+# Module-level singleton — caches JWKS keys instead of re-fetching on every request
+jwks_client = PyJWKClient(JWKS_URL)
+
 def get_current_user(auth: HTTPBearer = Depends(security)):
     token = auth.credentials
-    
+
     print(f"\n--- NEW AUTH REQUEST ---", file=sys.stderr)
 
     try:
         header = jwt.get_unverified_header(token)
-        
-        jwks_client = PyJWKClient(JWKS_URL)
-        
+
         # Fetch the correct key
         # This connects to Supabase to find the Public Key matching the 'kid' in the header
         signing_key = jwks_client.get_signing_key_from_jwt(token)

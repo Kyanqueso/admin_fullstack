@@ -22,7 +22,7 @@ const successAlert = document.getElementById('success-alert');
 const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('password');
 const forgotPasswordLink = document.getElementById('forgot-password-link');
-const googleBtn = document.getElementById('google-btn');
+// const googleBtn = document.getElementById('google-btn'); // Google sign-in disabled for now
 
 // Forgot Password Modal
 const forgotModal = document.getElementById('forgotPasswordModal');
@@ -50,6 +50,36 @@ function hideModal() {
 }
 
 let resetEmail = '';
+
+// Block emojis on all text inputs in real time
+[emailInput, passwordInput, resetEmailInput, otpCodeInput,
+ document.getElementById('new-password'), document.getElementById('confirm-password')]
+    .forEach(el => blockEmojis(el));
+
+// ========== INPUT VALIDATION ==========
+const emojiRegex = /\p{Extended_Pictographic}/u;
+
+function isValidInput(value) {
+    return value.length <= 100
+        && !/[\x00-\x1F\x7F]/.test(value)
+        && !emojiRegex.test(value);
+}
+
+function blockEmojis(el) {
+    el.addEventListener('input', () => {
+        const original = el.value;
+        const cleaned = original.replace(/\p{Extended_Pictographic}/gu, '');
+        if (cleaned !== original) {
+            let pos = null;
+            try { pos = el.selectionStart; } catch {}
+            el.value = cleaned;
+            if (pos !== null) {
+                const newPos = Math.max(0, pos - (original.length - cleaned.length));
+                try { el.setSelectionRange(newPos, newPos); } catch {}
+            }
+        }
+    });
+}
 
 // ========== ALERT HELPERS ==========
 function showError(msg) {
@@ -131,10 +161,15 @@ loginBtn.addEventListener('click', async (e) => {
     clearAlerts();
 
     const email = emailInput.value.trim();
-    const password = passwordInput.value.trim();
+    const password = passwordInput.value;
 
     if (!email || !password) {
         showError("Please enter both email and password.");
+        return;
+    }
+
+    if (!isValidInput(email) || !isValidInput(password)) {
+        showError("Input must be 100 characters or fewer with no emojis.");
         return;
     }
 
@@ -190,6 +225,11 @@ sendCodeBtn.addEventListener('click', async () => {
         return;
     }
 
+    if (!isValidInput(resetEmail)) {
+        showModalError("Email must be 100 characters or fewer with no emojis.");
+        return;
+    }
+
     sendCodeBtn.disabled = true;
     sendCodeBtn.textContent = "Sending...";
 
@@ -220,6 +260,11 @@ verifyCodeBtn.addEventListener('click', async () => {
 
     if (!code || code.length !== 8) {
         showModalError("Please enter the 8-digit code.");
+        return;
+    }
+
+    if (!isValidInput(code)) {
+        showModalError("Code must not contain emojis or control characters.");
         return;
     }
 
@@ -268,6 +313,11 @@ updatePasswordBtn.addEventListener('click', async () => {
         return;
     }
 
+    if (!isValidInput(newPassword)) {
+        showModalError("Password must be 100 characters or fewer with no emojis.");
+        return;
+    }
+
     updatePasswordBtn.disabled = true;
     updatePasswordBtn.textContent = "Updating...";
 
@@ -278,9 +328,9 @@ updatePasswordBtn.addEventListener('click', async () => {
 
         showModalSuccess("Password updated! You can now log in.");
 
-        setTimeout(() => {
+        setTimeout(async () => {
             hideModal();
-            supabase.auth.signOut();
+            await supabase.auth.signOut();
         }, 2000);
 
     } catch (err) {
@@ -291,50 +341,50 @@ updatePasswordBtn.addEventListener('click', async () => {
     }
 });
 
-// ========== GOOGLE LOGIN ==========
-googleBtn.addEventListener('click', async () => {
-    clearAlerts();
-
-    // Check if running in Electron
-    if (window.electronAPI?.googleOAuth) {
-        googleBtn.disabled = true;
-        googleBtn.textContent = "Signing in...";
-
-        try {
-            const result = await window.electronAPI.googleOAuth();
-
-            if (!result?.access_token) {
-                googleBtn.disabled = false;
-                googleBtn.textContent = "Sign in with Google";
-                return; // User closed the popup
-            }
-
-            // Set the session in Supabase using the tokens
-            const { error } = await supabase.auth.setSession({
-                access_token: result.access_token,
-                refresh_token: result.refresh_token,
-            });
-
-            if (error) throw new Error(error.message);
-
-            localStorage.setItem('access_token', result.access_token);
-            await callBackend(true); // Check admin whitelist
-            window.location.href = '../../views/analytics/analytics.html';
-
-        } catch (err) {
-            console.error(err);
-            showError(err.message || "Google sign-in failed.");
-            await supabase.auth.signOut();
-            localStorage.removeItem('access_token');
-        } finally {
-            googleBtn.disabled = false;
-            googleBtn.textContent = "Sign in with Google";
-        }
-    } else {
-        // Fallback for non-Electron (e.g., browser testing)
-        const { error } = await supabase.auth.signInWithOAuth({
-            provider: 'google',
-        });
-        if (error) showError(error.message);
-    }
-});
+// ========== GOOGLE LOGIN (disabled for now) ==========
+// googleBtn.addEventListener('click', async () => {
+//     clearAlerts();
+//
+//     // Check if running in Electron
+//     if (window.electronAPI?.googleOAuth) {
+//         googleBtn.disabled = true;
+//         googleBtn.textContent = "Signing in...";
+//
+//         try {
+//             const result = await window.electronAPI.googleOAuth();
+//
+//             if (!result?.access_token) {
+//                 googleBtn.disabled = false;
+//                 googleBtn.textContent = "Sign in with Google";
+//                 return; // User closed the popup
+//             }
+//
+//             // Set the session in Supabase using the tokens
+//             const { error } = await supabase.auth.setSession({
+//                 access_token: result.access_token,
+//                 refresh_token: result.refresh_token,
+//             });
+//
+//             if (error) throw new Error(error.message);
+//
+//             localStorage.setItem('access_token', result.access_token);
+//             await callBackend(true); // Check admin whitelist
+//             window.location.href = '../../views/analytics/analytics.html';
+//
+//         } catch (err) {
+//             console.error(err);
+//             showError(err.message || "Google sign-in failed.");
+//             await supabase.auth.signOut();
+//             localStorage.removeItem('access_token');
+//         } finally {
+//             googleBtn.disabled = false;
+//             googleBtn.textContent = "Sign in with Google";
+//         }
+//     } else {
+//         // Fallback for non-Electron (e.g., browser testing)
+//         const { error } = await supabase.auth.signInWithOAuth({
+//             provider: 'google',
+//         });
+//         if (error) showError(error.message);
+//     }
+// });

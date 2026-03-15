@@ -118,8 +118,14 @@ async def upload_shoe_image(image: UploadFile) -> str:
     if file_ext not in allowed_ext:
         raise ValueError("Unsupported file type")
 
+    MAX_SIZE = 25 * 1024 * 1024  # 25 MB
+    if image.size and image.size > MAX_SIZE:
+        raise ValueError("Image must be 25 MB or smaller")
+
     # Read file content
     file_content = await image.read()
+    if len(file_content) > MAX_SIZE:
+        raise ValueError("Image must be 25 MB or smaller")
     original_size = len(file_content)  # Size in bytes
 
     # Compress and Resize Logic

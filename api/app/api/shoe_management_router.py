@@ -52,7 +52,8 @@ async def create_shoe(
     model_name: str = Form(...),
     price: float = Form(...),
     images: list[UploadFile] = File(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _user=Depends(get_current_user)
 ):
     # Validate image count (1-5)
     if len(images) < 1 or len(images) > 5:
@@ -87,7 +88,8 @@ async def update_shoe(
     price: float = Form(...),
     images: Optional[list[UploadFile]] = File(default=None),
     remove_image_ids: str = Form(default=""),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _user=Depends(get_current_user)
 ):
     shoe = shoe_catalog_service.get_shoe_catalog(db, shoe_id)
     if not shoe:
@@ -144,7 +146,7 @@ async def update_shoe(
 
 
 @router.delete("/shoes/{shoe_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_shoe(shoe_id: int, db: Session = Depends(get_db)):
+def delete_shoe(shoe_id: int, db: Session = Depends(get_db), _user=Depends(get_current_user)):
     success = shoe_catalog_service.delete_shoe_catalog(db, shoe_id)
     if not success:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shoe not found")

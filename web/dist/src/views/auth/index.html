@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login Page</title>
-  <script type="module" crossorigin src="../../../assets/login-UNoTRO_J.js"></script>
-  <link rel="modulepreload" crossorigin href="../../../assets/bootstrap.min-BB4Wbeoi.js">
-  <link rel="stylesheet" crossorigin href="../../../assets/bootstrap-B9K7SMpr.css">
+  <script type="module" crossorigin src="../../../assets/login-DbaM8hqR.js"></script>
+  <link rel="modulepreload" crossorigin href="../../../assets/bootstrap.min-DqAZQU_g.js">
+  <link rel="stylesheet" crossorigin href="../../../assets/bootstrap-i5DdYqZk.css">
   <link rel="stylesheet" crossorigin href="../../../assets/login-CvcT1TcX.css">
 </head>
 <body>
@@ -19,24 +19,26 @@
 
     <div class="mb-3">
       <label for="email" class="form-label">Email</label>
-      <input type="email" class="form-control" id="email" placeholder="Enter email">
+      <input type="email" class="form-control" id="email" placeholder="Enter email" maxlength="100">
     </div>
-    
+
     <div class="mb-4">
       <label for="password" class="form-label">Password</label>
-      <input type="password" class="form-control" id="password" placeholder="Enter password">
+      <input type="password" class="form-control" id="password" placeholder="Enter password" maxlength="100">
     </div>
 
     <a href="#" id="forgot-password-link" class="d-block mb-3 text-decoration-none">Forgot Password?</a>
     
     <button id="login-btn" type="submit" class="btn btn-primary w-100 fw-bold">Login</button>
 
+    <!-- Google sign-in disabled for now
     <div class="text-center my-3 text-muted">— or —</div>
 
     <button id="google-btn" type="button" class="btn btn-dark w-100">
-      <img id="google-icon" src="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20640%20640'%3e%3c!--!Font%20Awesome%20Free%207.2.0%20by%20@fontawesome%20-%20https://fontawesome.com%20License%20-%20https://fontawesome.com/license/free%20Copyright%202026%20Fonticons,%20Inc.--%3e%3cpath%20fill='rgba(255,%20255,%20255,%201.00)'%20d='M564%20325.8C564%20467.3%20467.1%20568%20324%20568C186.8%20568%2076%20457.2%2076%20320C76%20182.8%20186.8%2072%20324%2072C390.8%2072%20447%2096.5%20490.3%20136.9L422.8%20201.8C334.5%20116.6%20170.3%20180.6%20170.3%20320C170.3%20406.5%20239.4%20476.6%20324%20476.6C422.2%20476.6%20459%20406.2%20464.8%20369.7L324%20369.7L324%20284.4L560.1%20284.4C562.4%20297.1%20564%20309.3%20564%20325.8z'/%3e%3c/svg%3e" width="16" height="16">
+      <img id="google-icon" src="../../assets/icons/google-icon.svg" width="16" height="16">
       Sign in with Google
     </button>
+    -->
   </form>
   
   <!-- Forgot Password Modal -->
@@ -54,22 +56,22 @@
         <!-- Step 1: Enter email -->
         <div id="step-email">
           <p>Enter your email to receive a reset code.</p>
-          <input type="email" class="form-control mb-3" id="reset-email" placeholder="Enter email">
+          <input type="email" class="form-control mb-3" id="reset-email" placeholder="Enter email" maxlength="100">
           <button id="send-code-btn" type="button" class="btn btn-primary w-100 fw-bold">Send Code</button>
         </div>
 
         <!-- Step 2: Enter OTP code -->
         <div id="step-otp" class="d-none">
           <p>Enter the 8-digit code sent to your email.</p>
-          <input type="text" class="form-control mb-3" id="otp-code" placeholder="Enter 9-digit code" maxlength="8">
+          <input type="text" class="form-control mb-3" id="otp-code" placeholder="Enter 8-digit code" maxlength="8">
           <button id="verify-code-btn" type="button" class="btn btn-primary w-100 fw-bold">Verify Code</button>
         </div>
 
         <!-- Step 3: Set new password -->
         <div id="step-password" class="d-none">
           <p>Enter your new password.</p>
-          <input type="password" class="form-control mb-3" id="new-password" placeholder="New password">
-          <input type="password" class="form-control mb-3" id="confirm-password" placeholder="Confirm password">
+          <input type="password" class="form-control mb-3" id="new-password" placeholder="New password" maxlength="100">
+          <input type="password" class="form-control mb-3" id="confirm-password" placeholder="Confirm password" maxlength="100">
           <button id="update-password-btn" type="button" class="btn btn-primary w-100 fw-bold">Update Password</button>
         </div>
       </div>

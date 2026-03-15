@@ -6,11 +6,11 @@
     <!-- Import CSS Files and Local Bootstrap-->
 
     <title>Website Content Management Page</title>
-  <script type="module" crossorigin src="../../../assets/web_content-DYCBTJb_.js"></script>
-  <link rel="modulepreload" crossorigin href="../../../assets/bootstrap.min-BB4Wbeoi.js">
+  <script type="module" crossorigin src="../../../assets/web_content-DXqVgYB5.js"></script>
+  <link rel="modulepreload" crossorigin href="../../../assets/bootstrap.min-DqAZQU_g.js">
   <link rel="modulepreload" crossorigin href="../../../assets/apiCache-BsFi2VyI.js">
-  <link rel="stylesheet" crossorigin href="../../../assets/bootstrap-B9K7SMpr.css">
-  <link rel="stylesheet" crossorigin href="../../../assets/web_content-CxJWXwUR.css">
+  <link rel="stylesheet" crossorigin href="../../../assets/bootstrap-i5DdYqZk.css">
+  <link rel="stylesheet" crossorigin href="../../../assets/web_content--HqnXxR4.css">
 </head>
 <body>
     <!-- Logout button -->
@@ -43,7 +43,7 @@
                 <span class="input-group-text">
                     <img src="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20640%20640'%3e%3c!--!Font%20Awesome%20Free%207.1.0%20by%20@fontawesome%20-%20https://fontawesome.com%20License%20-%20https://fontawesome.com/license/free%20Copyright%202026%20Fonticons,%20Inc.--%3e%3cpath%20d='M480%20272C480%20317.9%20465.1%20360.3%20440%20394.7L566.6%20521.4C579.1%20533.9%20579.1%20554.2%20566.6%20566.7C554.1%20579.2%20533.8%20579.2%20521.3%20566.7L394.7%20440C360.3%20465.1%20317.9%20480%20272%20480C157.1%20480%2064%20386.9%2064%20272C64%20157.1%20157.1%2064%20272%2064C386.9%2064%20480%20157.1%20480%20272zM272%20416C351.5%20416%20416%20351.5%20416%20272C416%20192.5%20351.5%20128%20272%20128C192.5%20128%20128%20192.5%20128%20272C128%20351.5%20192.5%20416%20272%20416z'/%3e%3c/svg%3e" width="20">
                 </span>
-                <input type="text" class="form-control" placeholder="Search name">
+                <input type="text" class="form-control" placeholder="Search Shoe Name">
             </div>
         </div>
 
@@ -57,6 +57,8 @@
             </select>
         </div>
     </div>
+
+    <div id="page-error-msg" class="alert alert-danger d-none mx-5 mb-2 py-2 px-3" role="alert"></div>
 
     <div class="container my-4">
         <div id="shoe-grid" class="row g-4">
@@ -77,10 +79,10 @@
             <!-- Form for Add/Edit -->
             <form id="overlay-form" class="d-none mt-3">
                 <label class="form-label text-black">Shoe Name</label>
-                <input type="text" id="shoe-name" name="shoeName" class="form-control mb-2" placeholder="Shoe Name" required>
+                <input type="text" id="shoe-name" name="shoeName" class="form-control mb-2" placeholder="Shoe Name" maxlength="100" required>
 
                 <label class="form-label text-black">Price</label>
-                <input type="text" id="shoe-price" name="shoePrice" class="form-control mb-2" placeholder="Price" required>
+                <input type="number" id="shoe-price" name="shoePrice" class="form-control mb-2" placeholder="Price" min="0" step="0.01" required>
 
                 <!-- Existing images shown during edit -->
                 <div id="existing-images-container" class="d-none mb-2">
@@ -91,6 +93,9 @@
                 <label id="image-upload-label" class="form-label text-black">Upload Images (1-5 required)</label>
                 <input type="file" id="shoe-images" name="shoeImages" class="form-control mb-2" accept="image/*" multiple>
             </form>
+
+            <!-- Inline error message -->
+            <div id="overlay-error-msg" class="alert alert-danger d-none mt-3 mb-0 py-2 px-3" role="alert"></div>
 
             <!-- Buttons -->
             <div class="d-flex justify-content-end gap-2 mt-3">

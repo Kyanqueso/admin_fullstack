@@ -41,7 +41,7 @@
                 <span class="input-group-text">
                     <img src="../../assets/icons/search.svg" width="20">
                 </span>
-                <input type="text" class="form-control" placeholder="Search name">
+                <input type="text" class="form-control" placeholder="Search Shoe Name">
             </div>
         </div>
 
@@ -55,6 +55,8 @@
             </select>
         </div>
     </div>
+
+    <div id="page-error-msg" class="alert alert-danger d-none mx-5 mb-2 py-2 px-3" role="alert"></div>
 
     <div class="container my-4">
         <div id="shoe-grid" class="row g-4">
@@ -75,10 +77,10 @@
             <!-- Form for Add/Edit -->
             <form id="overlay-form" class="d-none mt-3">
                 <label class="form-label text-black">Shoe Name</label>
-                <input type="text" id="shoe-name" name="shoeName" class="form-control mb-2" placeholder="Shoe Name" required>
+                <input type="text" id="shoe-name" name="shoeName" class="form-control mb-2" placeholder="Shoe Name" maxlength="100" required>
 
                 <label class="form-label text-black">Price</label>
-                <input type="text" id="shoe-price" name="shoePrice" class="form-control mb-2" placeholder="Price" required>
+                <input type="number" id="shoe-price" name="shoePrice" class="form-control mb-2" placeholder="Price" min="0" step="0.01" required>
 
                 <!-- Existing images shown during edit -->
                 <div id="existing-images-container" class="d-none mb-2">
@@ -89,6 +91,9 @@
                 <label id="image-upload-label" class="form-label text-black">Upload Images (1-5 required)</label>
                 <input type="file" id="shoe-images" name="shoeImages" class="form-control mb-2" accept="image/*" multiple>
             </form>
+
+            <!-- Inline error message -->
+            <div id="overlay-error-msg" class="alert alert-danger d-none mt-3 mb-0 py-2 px-3" role="alert"></div>
 
             <!-- Buttons -->
             <div class="d-flex justify-content-end gap-2 mt-3">
