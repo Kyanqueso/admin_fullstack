@@ -96,12 +96,53 @@
     border-radius: 6px;
     overflow: hidden;
     border: 2px solid #ccc;
+    cursor: grab;
+    user-select: none;
+    transition: opacity 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.existing-image-item:hover {
+    border-color: #888;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.existing-image-item.dragging {
+    opacity: 0.3;
+    cursor: grabbing;
+}
+
+.existing-image-item.drag-over {
+    border-color: var(--color-btn-green);
+    border-style: dashed;
+    transform: scale(1.08);
+    box-shadow: 0 4px 14px rgba(0, 73, 31, 0.28);
 }
 
 .existing-image-item img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    pointer-events: none;
+}
+
+/* Position badge (bottom-left corner) */
+.order-badge {
+    position: absolute;
+    bottom: 3px;
+    left: 3px;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.62);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+    pointer-events: none;
+    line-height: 1;
 }
 
 .existing-image-item .remove-image-btn {

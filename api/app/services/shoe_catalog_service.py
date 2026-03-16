@@ -62,7 +62,8 @@ def update_shoe_catalog(
     shoe_id: int,
     shoe_data: ShoeCatalogUpdate,
     new_image_urls: list[str] | None = None,
-    remove_image_ids: list[int] | None = None
+    remove_image_ids: list[int] | None = None,
+    image_order: list[int] | None = None
 ):
     shoe = get_shoe_catalog(db, shoe_id)
     if not shoe:
@@ -81,11 +82,23 @@ def update_shoe_catalog(
                 delete_shoe_image(img.image_url)
                 db.delete(img)
 
-    # Add new images
+    # Apply custom display_order to remaining existing images
+    if image_order:
+        id_to_img = {img.id: img for img in shoe.images if img.id not in (remove_image_ids or [])}
+        for position, img_id in enumerate(image_order, start=1):
+            if img_id in id_to_img:
+                id_to_img[img_id].display_order = position
+        next_position = len(image_order) + 1
+    else:
+        next_position = max(
+            (img.display_order for img in shoe.images if img.id not in (remove_image_ids or [])),
+            default=0
+        ) + 1
+
+    # Add new images (appended after the reordered existing ones)
     if new_image_urls:
-        current_max = max((img.display_order for img in shoe.images if img.id not in (remove_image_ids or [])), default=0)
         for i, url in enumerate(new_image_urls):
-            img = ShoeImage(shoe_catalog_id=shoe.id, image_url=url, display_order=current_max + i + 1)
+            img = ShoeImage(shoe_catalog_id=shoe.id, image_url=url, display_order=next_position + i)
             db.add(img)
 
     db.commit()

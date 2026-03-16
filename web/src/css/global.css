@@ -59,30 +59,183 @@ body {
     width: 88%; /* Between w-75 and w-100*/
 }
 
-.nav-link{
-    border-top-left-radius: 12px;
-    border-top-right-radius: 12px;
+/* ============================================================
+   SITE HEADER — sticky frosted-glass top bar
+   ============================================================ */
+.site-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.05);
 }
 
-.nav-link.active {
-    background-color: var(--color-btn-green);
-    color: var(--color-white);
+.header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    height: 64px;
+    gap: 1rem;
 }
 
-.nav-link.active:hover {
-    color: var(--color-white); /* Overide bootstrap hover text color */
+.header-brand {
+    font-size: 1rem;
+    font-weight: 900;
+    color: var(--color-primary);
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    user-select: none;
 }
 
-.nav-link.inactive {
-    background-color: var(--color-accent);
+.header-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex: 1;
+    justify-content: center;
 }
 
-.nav-link.inactive:hover {
-    background-color: color-mix(
-        in srgb,
-        var(--color-accent) 85%,
-        black 15%
-    );
+.header-nav-link {
+    padding: 0.45rem 1.1rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #666;
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease;
+    white-space: nowrap;
+}
+
+.header-nav-link:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--color-black);
+}
+
+.header-nav-link.active {
+    background: var(--color-primary);
+    color: #fff;
+}
+
+.header-nav-link.active:hover {
+    background: var(--color-primary);
+    color: #fff;
+}
+
+.header-logout {
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 0.4rem 1.1rem;
+    border-radius: 8px;
+    background: transparent;
+    border: 1.5px solid var(--color-btn-red);
+    color: var(--color-btn-red);
+    transition: background 0.15s ease, color 0.15s ease;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.header-logout:hover {
+    background: var(--color-btn-red);
+    color: #fff;
+}
+
+@media (max-width: 640px) {
+    .header-inner {
+        flex-wrap: wrap;
+        height: auto;
+        padding: 0.75rem 1rem;
+    }
+
+    .header-nav {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+        padding-bottom: 0.25rem;
+    }
+}
+
+/* ============================================================
+   CLIENT SUB-TABS — horizontal pill tab bar
+   ============================================================ */
+.client-tabs-bar {
+    background: rgba(248, 248, 248, 0.97);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    padding: 0 0.5rem;
+    margin-bottom: 1.5rem;
+    /* bleed edge-to-edge over body px-4 */
+    margin-left: -1.5rem;
+    margin-right: -1.5rem;
+}
+
+.client-tabs-inner {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    height: 52px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.client-tabs-inner::-webkit-scrollbar {
+    display: none;
+}
+
+.client-tab-back {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #888;
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease;
+    white-space: nowrap;
+    margin-right: 0.25rem;
+}
+
+.client-tab-back:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--color-black);
+}
+
+.client-tab-divider {
+    width: 1px;
+    height: 22px;
+    background: rgba(0, 0, 0, 0.13);
+    margin: 0 0.4rem;
+    flex-shrink: 0;
+}
+
+.client-tab-link {
+    padding: 0.4rem 1rem;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #666;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.client-tab-link:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--color-black);
+}
+
+.client-tab-link.active {
+    background: var(--color-btn-green);
+    color: #fff;
+}
+
+.client-tab-link.active:hover {
+    color: #fff;
 }
 
 .box-drop-shadow{

@@ -302,15 +302,82 @@ function renderExistingImages(images) {
 
     existingImagesContainer.classList.remove('d-none');
 
-    images.forEach(img => {
+    // Render sorted by display_order so initial sequence is correct
+    const sorted = [...images].sort((a, b) => a.display_order - b.display_order);
+    sorted.forEach((img, index) => {
         const item = document.createElement('div');
         item.className = 'existing-image-item';
         item.dataset.imageId = img.id;
+        item.draggable = true;
         item.innerHTML = `
             <img src="${escapeHtml(img.image_url)}" alt="Image ${img.display_order}">
+            <span class="order-badge">${index + 1}</span>
             <button type="button" class="remove-image-btn" title="Remove image">&times;</button>
         `;
         existingImagesDiv.appendChild(item);
+    });
+}
+
+function updateOrderBadges() {
+    existingImagesDiv.querySelectorAll('.existing-image-item').forEach((item, i) => {
+        const badge = item.querySelector('.order-badge');
+        if (badge) badge.textContent = i + 1;
+    });
+}
+
+/* ===============================
+   IMAGE DRAG-AND-DROP (Edit mode)
+=============================== */
+function setupImageDragDrop() {
+    let dragSrc = null;
+
+    existingImagesDiv.addEventListener('dragstart', e => {
+        const item = e.target.closest('.existing-image-item');
+        if (!item) return;
+        dragSrc = item;
+        item.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+    });
+
+    existingImagesDiv.addEventListener('dragover', e => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        const target = e.target.closest('.existing-image-item');
+        if (!target || target === dragSrc) return;
+        existingImagesDiv.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        target.classList.add('drag-over');
+    });
+
+    existingImagesDiv.addEventListener('dragleave', e => {
+        if (!existingImagesDiv.contains(e.relatedTarget)) {
+            existingImagesDiv.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        }
+    });
+
+    existingImagesDiv.addEventListener('drop', e => {
+        e.preventDefault();
+        const target = e.target.closest('.existing-image-item');
+        if (!target || target === dragSrc || !dragSrc) return;
+
+        const allItems = [...existingImagesDiv.querySelectorAll('.existing-image-item')];
+        const srcIndex = allItems.indexOf(dragSrc);
+        const targetIndex = allItems.indexOf(target);
+
+        if (srcIndex < targetIndex) {
+            target.after(dragSrc);
+        } else {
+            target.before(dragSrc);
+        }
+
+        target.classList.remove('drag-over');
+        updateOrderBadges();
+    });
+
+    existingImagesDiv.addEventListener('dragend', () => {
+        existingImagesDiv.querySelectorAll('.dragging, .drag-over').forEach(el => {
+            el.classList.remove('dragging', 'drag-over');
+        });
+        dragSrc = null;
     });
 }
 
@@ -574,6 +641,13 @@ overlayConfirm.addEventListener('click', async () => {
             formData.append('model_name', name);
             formData.append('price', price);
 
+            // Append drag-reordered image IDs so backend applies new display_order
+            const orderedIds = [...existingImagesDiv.querySelectorAll('.existing-image-item')]
+                .map(item => item.dataset.imageId);
+            if (orderedIds.length > 0) {
+                formData.append('image_order', orderedIds.join(','));
+            }
+
             // Append new image files
             if (newFiles && newFiles.length > 0) {
                 for (const file of newFiles) {
@@ -633,4 +707,7 @@ overlayConfirm.addEventListener('click', async () => {
 /* ===============================
    INIT
 =============================== */
-window.addEventListener('DOMContentLoaded', loadShoes);
+window.addEventListener('DOMContentLoaded', () => {
+    loadShoes();
+    setupImageDragDrop();
+});

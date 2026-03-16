@@ -88,6 +88,7 @@ async def update_shoe(
     price: float = Form(...),
     images: Optional[list[UploadFile]] = File(default=None),
     remove_image_ids: str = Form(default=""),
+    image_order: str = Form(default=""),
     db: Session = Depends(get_db),
     _user=Depends(get_current_user)
 ):
@@ -102,6 +103,14 @@ async def update_shoe(
             ids_to_remove = [int(x.strip()) for x in remove_image_ids.split(",") if x.strip()]
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid remove_image_ids format")
+
+    # Parse image_order from comma-separated string
+    image_order_list = []
+    if image_order.strip():
+        try:
+            image_order_list = [int(x.strip()) for x in image_order.split(",") if x.strip()]
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid image_order format")
 
     # Calculate remaining images after removal
     remaining_count = len([img for img in shoe.images if img.id not in ids_to_remove])
@@ -139,7 +148,8 @@ async def update_shoe(
     updated_shoe = shoe_catalog_service.update_shoe_catalog(
         db, shoe_id, update_data,
         new_image_urls=new_image_urls if new_image_urls else None,
-        remove_image_ids=ids_to_remove if ids_to_remove else None
+        remove_image_ids=ids_to_remove if ids_to_remove else None,
+        image_order=image_order_list if image_order_list else None
     )
 
     return updated_shoe

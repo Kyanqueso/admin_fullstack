@@ -11,24 +11,20 @@
     <title>Analytics Page</title>
 </head>
 <body>
-    <!-- Logout button -->
-    <div class="d-flex justify-content-end">
-        <button id="logout-btn"
-                class="btn btn-danger my-3 me-2 me-md-5 fw-bold">
-            Logout
-        </button>
-    </div>
-
-    <nav id="navigation" class="w-75 d-flex flex-wrap mt-1 mb-4 mx-auto justify-content-center gap-4 text-center">
-        <a class="nav-link fs-4 p-3 p-lg-4 active">Analytics</a>
-        <a class="nav-link fs-4 p-3 p-lg-4 inactive" href="../companies/companies.html">Clients</a>
-        <a class="nav-link fs-4 p-3 p-lg-4 inactive" href="../web_content/web_content.html">Website Content</a>
-    </nav>
-
-    <hr class="w-75 mx-auto">
+    <header class="site-header">
+        <div class="header-inner">
+            <span class="header-brand">Theresa Shoes</span>
+            <nav class="header-nav">
+                <a class="header-nav-link active">Analytics</a>
+                <a class="header-nav-link" href="../companies/companies.html">Clients</a>
+                <a class="header-nav-link" href="../web_content/web_content.html">Website Content</a>
+            </nav>
+            <button id="logout-btn" class="header-logout">Logout</button>
+        </div>
+    </header>
 
     <!-- Main container: w-88 same as global.css-->
-    <div class="w-88 mx-auto mb-5">
+    <div class="w-88 mx-auto my-5">
 
         <!-- Analytics Overview title -->
         <h1 class="mb-3 fw-bold">Analytics Overview</h1>
