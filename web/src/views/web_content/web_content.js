@@ -160,37 +160,54 @@ function renderShoes(shoesArray) {
     }
 
     shoesArray.forEach(shoe => {
-        const primaryImage = shoe.images && shoe.images.length > 0
-            ? shoe.images[0].image_url
+        const sortedImages = shoe.images
+            ? [...shoe.images].sort((a, b) => a.display_order - b.display_order)
+            : [];
+        const primaryImage = sortedImages.length > 0
+            ? sortedImages[0].image_url
             : 'https://placehold.co/400';
 
         const dateAdded = shoe.date_added
             ? new Date(shoe.date_added).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
             : '—';
 
-        const col = document.createElement('div');
-        col.className = 'col-12 col-md-6 col-lg-4';
-        const hiddenBadge = shoe.is_visible ? '' : `<span class="badge bg-secondary mb-2">Hidden</span>`;
+        const formattedPrice = '₱' + Number(shoe.price).toLocaleString('en-PH', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+
+        const imageCount = sortedImages.length;
+        const imgCountBadge = imageCount > 1
+            ? `<span class="shoe-img-count">${imageCount} photos</span>`
+            : '';
+        const hiddenBadge = shoe.is_visible ? '' : `<span class="shoe-status-badge">Hidden</span>`;
         const toggleIcon = shoe.is_visible ? eyeSlashIcon : eyeIcon;
         const toggleLabel = shoe.is_visible ? 'Hide' : 'Show';
-        col.innerHTML = `
-            <div class="card h-100 box-drop-shadow${shoe.is_visible ? '' : ' opacity-50'}">
-                <img src="${escapeHtml(primaryImage)}" class="card-img-top" alt="${escapeHtml(shoe.model_name)}" loading="lazy">
-                <div class="accent-bg card-body d-flex flex-column">
-                    ${hiddenBadge}
-                    <h5 class="card-title"><strong>${highlightQuery(shoe.model_name)}</strong></h5>
-                    <p class="card-text flex-grow-1">${escapeHtml(String(shoe.price))}</p>
-                    <p class="card-text text-muted small mb-2">Added: ${escapeHtml(dateAdded)}</p>
 
-                    <div class="d-flex flex-row gap-2">
-                        <a class="btn btn-secondary w-33 toggle-visibility-btn" data-shoe-id="${shoe.id}" data-visible="${shoe.is_visible}">
-                            <img src="${toggleIcon}" width="16" height="16"> ${toggleLabel}
+        const col = document.createElement('div');
+        col.className = 'col-12 col-sm-6 col-lg-4';
+        col.innerHTML = `
+            <div class="shoe-card${shoe.is_visible ? '' : ' is-hidden'}">
+                <div class="shoe-card-img-wrap">
+                    <img src="${escapeHtml(primaryImage)}" alt="${escapeHtml(shoe.model_name)}" loading="lazy">
+                    ${hiddenBadge}
+                    ${imgCountBadge}
+                </div>
+                <div class="shoe-card-body">
+                    <div class="shoe-card-info">
+                        <p class="shoe-card-name">${highlightQuery(shoe.model_name)}</p>
+                        <p class="shoe-card-price">${escapeHtml(formattedPrice)}</p>
+                        <p class="shoe-card-date">Added ${escapeHtml(dateAdded)}</p>
+                    </div>
+                    <div class="shoe-card-actions">
+                        <a class="shoe-action-btn shoe-action-toggle toggle-visibility-btn" data-shoe-id="${shoe.id}" data-visible="${shoe.is_visible}">
+                            <img src="${toggleIcon}" width="14" height="14"> ${toggleLabel}
                         </a>
-                        <a class="btn w-33 edit-shoe-btn" data-shoe-id="${shoe.id}">
-                            <img src="${pencilIcon}" width="18" height="18"> Edit
+                        <a class="shoe-action-btn shoe-action-edit edit-shoe-btn" data-shoe-id="${shoe.id}">
+                            <img src="${pencilIcon}" width="14" height="14"> Edit
                         </a>
-                        <a class="btn btn-danger w-33 delete-shoe-btn" data-shoe-id="${shoe.id}">
-                            <img src="${trashIcon}" width="18" height="18"> Delete
+                        <a class="shoe-action-btn shoe-action-delete delete-shoe-btn" data-shoe-id="${shoe.id}">
+                            <img src="${trashIcon}" width="14" height="14"> Delete
                         </a>
                     </div>
                 </div>
