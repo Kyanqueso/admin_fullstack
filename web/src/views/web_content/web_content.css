@@ -33,8 +33,9 @@
     box-shadow: 0 16px 32px rgba(0, 0, 0, 0.13), 0 4px 8px rgba(0, 0, 0, 0.07);
 }
 
-.shoe-card.is-hidden {
-    opacity: 0.55;
+.shoe-card.is-hidden .shoe-card-img-wrap,
+.shoe-card.is-hidden .shoe-card-info {
+    opacity: 0.45;
 }
 
 /* Image area */
