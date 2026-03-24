@@ -6,11 +6,11 @@
     <!-- Import CSS Files and Local Bootstrap-->
 
     <title>Analytics Page</title>
-  <script type="module" crossorigin src="../../../assets/analytics-BZFHqnzD.js"></script>
+  <script type="module" crossorigin src="../../../assets/analytics-o4ZOZRS4.js"></script>
   <link rel="modulepreload" crossorigin href="../../../assets/bootstrap.min-MSA6jxXh.js">
   <link rel="modulepreload" crossorigin href="../../../assets/apiCache-BsFi2VyI.js">
   <link rel="stylesheet" crossorigin href="../../../assets/bootstrap-CPthri1E.css">
-  <link rel="stylesheet" crossorigin href="../../../assets/analytics-CeN7d2by.css">
+  <link rel="stylesheet" crossorigin href="../../../assets/analytics-BH3447ng.css">
 </head>
 <body>
     <header class="site-header">
@@ -85,6 +85,11 @@
 
                         <!-- Card Value: JS Api -->
                         <div id="uncollected-balance" class="card-value">---</div>
+
+                        <!-- View Customers w/Uncollected Balance Button-->
+                         <button id="view-uncollected-btn" class="btn btn-sm btn-outline-secondary mt-2 fw-bold">
+                            View Customers with Uncollected Balance
+                         </button>
                     </div>
 
                     <!-- Analytics Card 2: Annual Sales -->
@@ -153,6 +158,42 @@
             <div class="d-flex justify-content-center gap-3">
                 <button id="logout-no" class="btn btn-secondary px-4">No</button>
                 <button id="logout-yes" class="btn btn-danger px-4">Yes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Uncollected Balance Overlay -->
+    <div id="uncollected-overlay" class="overlay d-none">
+        <div class="overlay-content overlay-wide p-4 position-relative">
+            <button id="uncollected-overlay-close" class="overlay-close btn p-3 position-absolute top-0 end-0">
+                <img src="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20640%20640'%3e%3c!--!Font%20Awesome%20Free%207.1.0%20by%20@fontawesome%20-%20https://fontawesome.com%20License%20-%20https://fontawesome.com/license/free%20Copyright%202026%20Fonticons,%20Inc.--%3e%3cpath%20d='M504.6%20148.5C515.9%20134.9%20514.1%20114.7%20500.5%20103.4C486.9%2092.1%20466.7%2093.9%20455.4%20107.5L320%20270L184.6%20107.5C173.3%2093.9%20153.1%2092.1%20139.5%20103.4C125.9%20114.7%20124.1%20134.9%20135.4%20148.5L278.3%20320L135.4%20491.5C124.1%20505.1%20125.9%20525.3%20139.5%20536.6C153.1%20547.9%20173.3%20546.1%20184.6%20532.5L320%20370L455.4%20532.5C466.7%20546.1%20486.9%20547.9%20500.5%20536.6C514.1%20525.3%20515.9%20505.1%20504.6%20491.5L361.7%20320L504.6%20148.5z'/%3e%3c/svg%3e" alt="Close" width="24" height="24">
+            </button>
+            <h5 class="mb-3 fw-bold">Customers with Uncollected Balance</h5>
+            <div class="d-flex gap-2 mb-3">
+                <input type="text" id="uncollected-search" class="form-control" placeholder="Search by company, name, or contact number...">
+                <select id="uncollected-sort" class="form-select" style="max-width: 160px;">
+                    <option value="latest">Latest</option>
+                    <option value="earliest">Earliest</option>
+                </select>
+            </div>
+            <div class="table-responsive overlay-table-scroll">
+                <table class="table table-bordered table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Company</th>
+                            <th>Name</th>
+                            <th>Contact Number</th>
+                            <th>Order Date</th>
+                            <th>Price</th>
+                            <th>1st Pay</th>
+                            <th>2nd Pay</th>
+                            <th>3rd Pay</th>
+                            <th>Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody id="uncollected-table-body">
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
