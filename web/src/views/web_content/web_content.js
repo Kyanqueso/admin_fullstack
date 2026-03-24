@@ -500,21 +500,19 @@ imageInput.addEventListener('change', () => {
 /* ===============================
    CARD BUTTON LOCKING
 =============================== */
-function disableAllCardButtons() {
-    document.getElementById('add-shoe-btn').disabled = true;
+function disableCardButtonsOnly() {
     document.querySelectorAll('.edit-shoe-btn, .delete-shoe-btn, .toggle-visibility-btn')
         .forEach(btn => { btn.disabled = true; });
 }
 
-function enableAllCardButtons() {
-    document.getElementById('add-shoe-btn').disabled = false;
+function enableCardButtonsOnly() {
     document.querySelectorAll('.edit-shoe-btn, .delete-shoe-btn, .toggle-visibility-btn')
         .forEach(btn => { btn.disabled = false; });
 }
 
 document.getElementById('add-shoe-btn').addEventListener('click', e => {
     e.preventDefault();
-    disableAllCardButtons();
+    disableCardButtonsOnly();
     openOverlay('add');
 });
 
@@ -553,7 +551,7 @@ document.addEventListener('click', async e => {
         const id = toggleBtn.dataset.shoeId;
         clearPageError();
         const originalHTML = toggleBtn.innerHTML;
-        disableAllCardButtons();
+        disableCardButtonsOnly();
         toggleBtn.innerHTML = '...';
         try {
             await apiFetch(`${FAST_API_URL}/shoe-management/shoes/${id}/visibility`, { method: 'PATCH' });
@@ -562,7 +560,7 @@ document.addEventListener('click', async e => {
         } catch (err) {
             console.error(err);
             showPageError('Failed to toggle visibility');
-            enableAllCardButtons();
+            enableCardButtonsOnly();
             toggleBtn.innerHTML = originalHTML;
         }
     }
