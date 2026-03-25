@@ -59,7 +59,7 @@ const addNameInput = document.getElementById("addCompanyName");
 const editNameInput = document.getElementById("editCompanyName");
 
 let selectedCompanyId = null;
-let allCompanies = []; // cached for search + sort
+let allCompanies = [];
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -69,6 +69,96 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+/* ===============================
+   INPUT VALIDATION
+=============================== */
+
+// Matches emoji ranges (mirrors the Python schema)
+const EMOJI_REGEX = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2300}-\u{23FF}]/u;
+
+// Only letters, numbers, spaces, hyphens, apostrophes, ampersands, and periods
+const VALID_NAME_REGEX = /^[A-Za-z0-9\s\-'&.]+$/;
+
+function validateCompanyName(name) {
+  const trimmed = (name || "").trim();
+
+  if (!trimmed) {
+    throw new Error("Company name cannot be empty.");
+  }
+
+  if (trimmed.length < 2) {
+    throw new Error("Company name must be at least 2 characters.");
+  }
+
+  if (trimmed.length > 32) {
+    throw new Error("Company name must not exceed 32 characters.");
+  }
+
+  if (EMOJI_REGEX.test(trimmed)) {
+    throw new Error("Company name must not contain emojis or symbols.");
+  }
+
+  if (!VALID_NAME_REGEX.test(trimmed)) {
+    throw new Error(
+      "Company name may only contain letters, numbers, spaces, hyphens (-), apostrophes ('), ampersands (&), and periods (.)."
+    );
+  }
+
+  return trimmed; // ✅ ADD THIS
+}
+
+/* ===============================
+   LIVE INPUT GUARD — block emoji/invalid chars as the user types
+=============================== */
+function blockInvalidChars(e) {
+  // Strip emojis and disallowed characters in real-time
+  const before = e.target.value;
+  const after = before
+    .replace(EMOJI_REGEX, "")
+    .replace(/[^A-Za-z0-9\s\-'&.]/g, "");
+  if (before !== after) {
+    const cursor = e.target.selectionStart - (before.length - after.length);
+    e.target.value = after;
+    e.target.setSelectionRange(cursor, cursor);
+  }
+}
+
+addNameInput.addEventListener("input", blockInvalidChars);
+editNameInput.addEventListener("input", blockInvalidChars);
+
+/* ===============================
+   SHOW FIELD ERROR
+=============================== */
+function showFieldError(inputEl, message) {
+  clearFieldError(inputEl);
+
+  inputEl.classList.add("is-invalid");
+
+  const wrapper = inputEl.closest(".mb-3");
+  if (!wrapper) return; // ✅ ADD THIS
+
+  const feedback = document.createElement("div");
+  feedback.className = "invalid-feedback d-block";
+  feedback.textContent = message;
+
+  wrapper.appendChild(feedback);
+}
+
+function clearFieldError(inputEl) {
+  inputEl.classList.remove("is-invalid");
+
+  const wrapper = inputEl.closest(".mb-3");
+
+  if (!wrapper) return; // ✅ ADD THIS (CRITICAL)
+
+  const existing = wrapper.querySelectorAll(".invalid-feedback");
+  existing.forEach(el => {
+    if (el && typeof el.remove === "function") {
+      el.remove();
+    }
+  });
 }
 
 /* ===============================
@@ -90,6 +180,23 @@ async function apiFetch(url, options = {}) {
     localStorage.removeItem("access_token");
     window.location.href = "../auth/index.html";
     throw new Error("Unauthorized");
+  }
+
+  if (!response.ok) {
+    let errorMessage = `Request failed with status ${response.status}`;
+    try {
+      const errorData = await response.json();
+      if (errorData.detail) {
+        if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map(e => e.msg).join(", ");
+        } else {
+          errorMessage = errorData.detail;
+        }
+      }
+    } catch {
+      // Response body was not JSON; keep the default message
+    }
+    throw new Error(errorMessage);
   }
 
   return response;
@@ -125,7 +232,7 @@ async function loadCompanies() {
     loader.classList.add("d-none");
     grid.innerHTML = `
       <div class="col-12 text-danger text-center">
-        Failed to load companies
+        Failed to load companies: ${escapeHtml(error.message)}
       </div>
     `;
   }
@@ -143,6 +250,7 @@ function renderCompanies(companiesArray) {
         No companies found
       </div>
     `;
+    renderAddCompanyCard();
     return;
   }
 
@@ -263,8 +371,17 @@ sortSelect.addEventListener("change", applySearchAndSort);
 addForm.onsubmit = async (e) => {
   e.preventDefault();
 
+  // MODIFIED
   const name = addNameInput.value.trim();
-  if (!name) return;
+  clearFieldError(addNameInput);
+
+  let validName;
+  try {
+    validName = validateCompanyName(name);
+  } catch (error) {
+    showFieldError(addNameInput, error.message);
+    return;
+  }
 
   const submitBtn = addForm.querySelector('[type="submit"]');
   const cancelBtn = document.getElementById("cancelAddCompany");
@@ -279,16 +396,18 @@ addForm.onsubmit = async (e) => {
 
     await apiFetch(`${FAST_API_URL}/companies/`, {
       method: "POST",
-      body: JSON.stringify({ name })
+      body: JSON.stringify({ name: validName })
     });
 
     addOverlay.classList.add("d-none");
     addForm.reset();
+    clearFieldError(addNameInput);
     clearCache();
     loadCompanies();
 
-  } catch {
-    alert("Failed to add company");
+  } catch (error) {
+    console.error("Failed to add company:", error);
+    showFieldError(addNameInput, error.message);
   } finally {
     submitBtn.textContent = originalText;
     submitBtn.disabled = false;
@@ -303,16 +422,40 @@ addForm.onsubmit = async (e) => {
 async function openEditCompany(companyId) {
   selectedCompanyId = companyId;
 
-  const response = await apiFetch(`${FAST_API_URL}/companies/${companyId}`);
-  const company = await response.json();
+  try {
+    const response = await apiFetch(`${FAST_API_URL}/companies/${companyId}`);
 
-  editNameInput.value = company.name || "";
+    // MODIFIED
+    let company;
+    try {
+      company = await response.json();
+    } catch {
+      throw new Error("Invalid server response");
+    }
 
-  editOverlay.classList.remove("d-none");
+    editNameInput.value = company.name || "";
+    clearFieldError(editNameInput);
+    editOverlay.classList.remove("d-none");
+
+  } catch (error) {
+    console.error("Failed to load company for editing:", error);
+    alert(`Failed to load company: ${error.message}`);
+  }
 }
 
 editForm.onsubmit = async (e) => {
   e.preventDefault();
+
+  const name = editNameInput.value.trim();
+  clearFieldError(editNameInput);
+
+  let validName;
+  try {
+    validName = validateCompanyName(name);
+  } catch (error) {
+    showFieldError(editNameInput, error.message);
+    return;
+  }
 
   const submitBtn = editForm.querySelector('[type="submit"]');
   const cancelBtn = document.getElementById("cancelEditCompany");
@@ -327,17 +470,17 @@ editForm.onsubmit = async (e) => {
 
     await apiFetch(`${FAST_API_URL}/companies/${selectedCompanyId}`, {
       method: "PATCH",
-      body: JSON.stringify({
-        name: editNameInput.value.trim()
-      })
+      body: JSON.stringify({ name: validName })
     });
 
     editOverlay.classList.add("d-none");
+    clearFieldError(editNameInput);
     clearCache();
     loadCompanies();
 
-  } catch {
-    alert("Failed to update company");
+  } catch (error) {
+    console.error("Failed to update company:", error);
+    showFieldError(editNameInput, error.message);
   } finally {
     submitBtn.textContent = originalText;
     submitBtn.disabled = false;
@@ -369,8 +512,9 @@ document.getElementById("confirmDeleteCompany").onclick = async () => {
     clearCache();
     loadCompanies();
 
-  } catch {
-    alert("Failed to delete company");
+  } catch (error) {
+    console.error("Failed to delete company:", error);
+    alert(`Failed to delete company: ${error.message}`);
   } finally {
     confirmBtn.textContent = originalText;
     confirmBtn.disabled = false;
@@ -383,12 +527,16 @@ document.getElementById("confirmDeleteCompany").onclick = async () => {
    CLOSE BUTTONS
 =============================== */
 document.getElementById("closeAddCompany").onclick =
-  document.getElementById("cancelAddCompany").onclick = () =>
+  document.getElementById("cancelAddCompany").onclick = () => {
+    clearFieldError(addNameInput);
     addOverlay.classList.add("d-none");
+  };
 
 document.getElementById("closeEditCompany").onclick =
-  document.getElementById("cancelEditCompany").onclick = () =>
+  document.getElementById("cancelEditCompany").onclick = () => {
+    clearFieldError(editNameInput);
     editOverlay.classList.add("d-none");
+  };
 
 document.getElementById("closeDeleteCompany").onclick =
   document.getElementById("cancelDeleteCompany").onclick = () =>

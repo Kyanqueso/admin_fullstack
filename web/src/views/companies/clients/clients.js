@@ -3,6 +3,7 @@ import trashIcon from '../../../assets/icons/trashcan-black.svg';
 import { getFromCache, saveToCache, clearCache } from '../../../js/apiCache.js';
 
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("CLIENTS JS LOADED");
 
   /* ===============================
      CONFIG
@@ -27,6 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return token;
   }
 
+  // ERROR HANDLING
   async function apiFetch(url, options = {}) {
     const token = getAccessToken();
 
@@ -39,10 +41,35 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
+    // AUTH ERROR
     if (response.status === 401 || response.status === 403) {
       localStorage.removeItem("access_token");
       window.location.href = "../auth/index.html";
       throw new Error("Unauthorized");
+    }
+
+    // HANDLE OTHER ERRORS
+    if (!response.ok) {
+      let errorMsg = "Request failed";
+
+      try {
+        const errData = await response.json();
+
+        if (errData.detail) {
+          if (Array.isArray(errData.detail)) {
+            errorMsg = errData.detail.map(e => e.msg || JSON.stringify(e)).join(", ");
+          } else {
+            errorMsg = errData.detail;
+          }
+        } else {
+          errorMsg = JSON.stringify(errData);
+        }
+
+      } catch {
+        errorMsg = response.statusText || "Request failed";
+      }
+
+      throw new Error(errorMsg);
     }
 
     return response;
@@ -98,7 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let selectedClientId = null;
   let rowToDelete = null;
-  let allClients = []; // cached clients for search/sort
+  let allClients = [];
 
   function escapeHtml(str) {
     if (!str) return '';
@@ -110,8 +137,139 @@ document.addEventListener("DOMContentLoaded", () => {
       .replace(/'/g, '&#039;');
   }
 
+  /* ===============================
+     VALIDATION HELPERS
+  =============================== */
+  // ADDED (same as companies)
+  function showFieldError(inputEl, message) {
+    clearFieldError(inputEl);
+
+    inputEl.classList.add("is-invalid");
+
+    const wrapper = inputEl.closest(".mb-3") || inputEl.parentElement;
+    if (!wrapper) return;
+
+    const feedback = document.createElement("div");
+    feedback.className = "invalid-feedback d-block";
+    feedback.textContent = message;
+
+    wrapper.appendChild(feedback);
+  }
+
+  function clearFieldError(inputEl) {
+    inputEl.classList.remove("is-invalid");
+
+    const wrapper = inputEl.closest(".mb-3") || inputEl.parentElement;
+    if (!wrapper) return;
+
+    const existing = wrapper.querySelectorAll(".invalid-feedback");
+    existing.forEach(el => el.remove());
+  }
+  function hasEmoji(str) {
+    if (!str) return false;
+    const cleaned = str.replace(/[0-9A-Za-zÀ-ÿ\s.,\-#'":;!?@&()/\\]/g, "");
+    return /[\p{Extended_Pictographic}]/u.test(cleaned);
+  }
+
+  function isLettersOnly(str) {
+    return /^[A-Za-zÀ-ÿ\s'-]+$/.test(str) && str.trim().length > 0;
+  }
+
+  function isAlphanumeric(str) {
+    return /^[A-Za-z0-9À-ÿ\s,.\-#]+$/.test(str);
+  }
+
+  function isNumbersOnly(str) {
+    return /^[0-9]+$/.test(str);
+  }
+
+  /* ===============================
+     SHARED VALIDATION FUNCTION
+  =============================== */
+  function validateClientFields(firstName, lastName, address, contact, inputs) {
+
+    const [firstInput, lastInput, addressInput, contactInput] = inputs;
+
+    clearFieldError(firstInput);
+    clearFieldError(lastInput);
+    clearFieldError(addressInput);
+    clearFieldError(contactInput);
+
+    // FIRST NAME
+    if (!firstName) {
+      showFieldError(firstInput, "First name is required");
+      return false;
+    }
+
+    if (hasEmoji(firstName)) {
+      showFieldError(firstInput, "No emoji allowed");
+      return false;
+    }
+
+    if (!isLettersOnly(firstName)) {
+      showFieldError(firstInput, "Letters only");
+      return false;
+    }
+
+    // LAST NAME
+    if (!lastName) {
+      showFieldError(lastInput, "Last name is required");
+      return false;
+    }
+
+    if (hasEmoji(lastName)) {
+      showFieldError(lastInput, "No emoji allowed");
+      return false;
+    }
+
+    if (!isLettersOnly(lastName)) {
+      showFieldError(lastInput, "Letters only");
+      return false;
+    }
+
+    // ADDRESS
+    if (address && !isAlphanumeric(address)) {
+      showFieldError(addressInput, "Invalid address");
+      return false;
+    }
+
+    // CONTACT
+    // EMPTY CHECK
+    if (!contact) {
+      showFieldError(contactInput, "Contact number is required");
+      return false;
+    }
+
+    if (hasEmoji(contact)) {
+      showFieldError(contactInput, "No emoji allowed");
+      return false;
+    }
+
+    if (!isNumbersOnly(contact)) {
+      showFieldError(contactInput, "Numbers only");
+      return false;
+    }
+
+    if (contact.length !== 11) {
+      showFieldError(contactInput, "Must be 11 digits");
+      return false;
+    }
+    return true;
+  }
+
+  /* ===============================
+     CONTACT CLEANER
+  =============================== */
+  function cleanContact(contact) {
+    contact = contact.replace(/\s/g, "");
+    if (contact.startsWith("+63")) {
+      contact = "0" + contact.slice(3);
+    }
+    return contact;
+  }
+
   if (!COMPANY_ID) {
-    alert("No company selected.");
+    setTimeout(() => alert("No company selected."), 0);
     window.location.href = "../companies.html";
     return;
   }
@@ -121,10 +279,11 @@ document.addEventListener("DOMContentLoaded", () => {
   =============================== */
   openAddBtn.onclick = () => addOverlay.classList.remove("d-none");
   closeAddBtn.onclick =
-  cancelAddBtn.onclick = () => addOverlay.classList.add("d-none");
+    cancelAddBtn.onclick = () => addOverlay.classList.add("d-none");
 
   loadCompanyName();
   loadClients();
+
   /* ===============================
      LOAD CLIENTS
   =============================== */
@@ -161,11 +320,16 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const res = await apiFetch(url);
-      const clients = await res.json();
+
+      let clients = [];
+      try {
+        clients = await res.json();
+      } catch {
+        clients = [];
+      }
 
       saveToCache(API_URL, clients);
 
-      // FILTER CLIENTS BY COMPANY
       allClients = clients.filter(
         client => String(client.company_id) === String(COMPANY_ID)
       );
@@ -177,7 +341,7 @@ document.addEventListener("DOMContentLoaded", () => {
       tableBody.innerHTML = `
         <tr>
           <td colspan="7" class="text-danger text-center">
-            Failed to load clients
+            Failed to load clients: ${error.message}
           </td>
         </tr>
       `;
@@ -242,7 +406,6 @@ document.addEventListener("DOMContentLoaded", () => {
       `${client.first_name} ${client.last_name}`.toLowerCase().includes(query)
     );
 
-    // apply current sort
     const sortValue = sortSelect.value;
     filtered = sortClients(filtered, sortValue);
 
@@ -251,22 +414,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ===============================
      SORT FUNCTION
+     -- values match the HTML option values: az, za, recent, oldest
   =============================== */
   function sortClients(clientsArray, sortValue) {
     const arr = [...clientsArray];
-    if (sortValue === "name") {
+
+    if (sortValue === "az") {
       arr.sort((a, b) =>
         a.first_name.localeCompare(b.first_name) || a.last_name.localeCompare(b.last_name)
+      );
+    } else if (sortValue === "za") {
+      arr.sort((a, b) =>
+        b.first_name.localeCompare(a.first_name) || b.last_name.localeCompare(a.last_name)
       );
     } else if (sortValue === "recent") {
       arr.sort((a, b) => b.id - a.id);
     } else if (sortValue === "oldest") {
       arr.sort((a, b) => a.id - b.id);
-    } else if (sortValue === "alpha") {
-      arr.sort((a, b) =>
-        `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`)
-      );
     }
+
     return arr;
   }
 
@@ -285,16 +451,27 @@ document.addEventListener("DOMContentLoaded", () => {
   /* ===============================
      ADD CLIENT
   =============================== */
+  // MODIFIED (FIXED ORDER + CORRECT INPUTS)
   document.getElementById("overlay-form").onsubmit = async (e) => {
     e.preventDefault();
 
     const inputs = e.target.querySelectorAll("input");
 
+    let firstName = inputs[0].value.trim();
+    let lastName = inputs[1].value.trim();
+    let address = inputs[2].value.trim();
+    let contact = inputs[3].value.trim();
+
+    // CLEAN CONTACT BEFORE VALIDATION
+    contact = cleanContact(contact);
+
+    if (!validateClientFields(firstName, lastName, address, contact, inputs)) return;
+
     const payload = {
-      first_name: inputs[0].value.trim(),
-      last_name: inputs[1].value.trim(),
-      address: inputs[2].value.trim(),
-      viber_number: inputs[3].value.trim(),
+      first_name: firstName,
+      last_name: lastName,
+      address: address,
+      viber_number: contact,
       company_id: Number(COMPANY_ID)
     };
 
@@ -320,8 +497,8 @@ document.addEventListener("DOMContentLoaded", () => {
       loadCompanyName();
       loadClients();
 
-    } catch {
-      alert("Failed to add client");
+    } catch (error) {
+      setTimeout(() => alert(error.message || "Failed to add client"), 0);
     } finally {
       submitBtn.textContent = originalText;
       submitBtn.disabled = false;
@@ -340,11 +517,15 @@ document.addEventListener("DOMContentLoaded", () => {
       const row = notesBtn.closest("tr");
       selectedClientId = row.dataset.id;
 
-      const response = await apiFetch(`${API_URL}/${selectedClientId}`);
-      const client = await response.json();
+      try {
+        const response = await apiFetch(`${API_URL}/${selectedClientId}`);
+        const client = await response.json();
 
-      notesTextarea.value = client.notes || "";
-      notesOverlay.classList.remove("d-none");
+        notesTextarea.value = client.notes || "";
+        notesOverlay.classList.remove("d-none");
+      } catch (error) {
+        setTimeout(() => alert(error.message || "Failed to load client notes"), 0);
+      }
       return;
     }
 
@@ -353,15 +534,20 @@ document.addEventListener("DOMContentLoaded", () => {
       const row = editBtn.closest("tr");
       selectedClientId = row.dataset.id;
 
-      const response = await apiFetch(`${API_URL}/${selectedClientId}`);
-      const client = await response.json();
+      try {
+        const response = await apiFetch(`${API_URL}/${selectedClientId}`);
+        const client = await response.json();
 
-      editFirstName.value = client.first_name;
-      editLastName.value = client.last_name;
-      editAddress.value = client.address;
-      editViber.value = client.viber_number || "";
+        editFirstName.value = client.first_name;
+        editLastName.value = client.last_name;
+        editAddress.value = client.address;
+        editViber.value = client.viber_number || "";
 
-      editOverlay.classList.remove("d-none");
+        editOverlay.classList.remove("d-none");
+      } catch (error) {
+        setTimeout(() => alert(error.message || "Failed to load client data"), 0);
+
+      }
       return;
     }
 
@@ -379,6 +565,14 @@ document.addEventListener("DOMContentLoaded", () => {
   notesOverlay.querySelector("form").onsubmit = async (e) => {
     e.preventDefault();
 
+    const notesValue = notesTextarea.value.trim();
+
+    // EMOJI CHECK
+    if (hasEmoji(notesValue)) {
+      setTimeout(() => alert("Emoji not allowed in notes"), 0);
+      return;
+    }
+
     const submitBtn = e.target.querySelector('[type="submit"]');
     const closeBtn = document.getElementById("closeNotesOverlay");
     const originalText = submitBtn.textContent;
@@ -390,7 +584,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       await apiFetch(`${API_URL}/${selectedClientId}`, {
         method: "PATCH",
-        body: JSON.stringify({ notes: notesTextarea.value.trim() })
+        body: JSON.stringify({ notes: notesValue })
       });
 
       notesOverlay.classList.add("d-none");
@@ -398,8 +592,8 @@ document.addEventListener("DOMContentLoaded", () => {
       loadCompanyName();
       loadClients();
 
-    } catch {
-      alert("Failed to save notes");
+    } catch (error) {
+      setTimeout(() => alert(error.message || "Failed to save notes"), 0);
     } finally {
       submitBtn.textContent = originalText;
       submitBtn.disabled = false;
@@ -412,6 +606,23 @@ document.addEventListener("DOMContentLoaded", () => {
   =============================== */
   editOverlay.querySelector("form").onsubmit = async (e) => {
     e.preventDefault();
+
+    let firstName = editFirstName.value.trim();
+    let lastName = editLastName.value.trim();
+    let address = editAddress.value.trim();
+    let contact = editViber.value.trim();
+
+    // CLEAN CONTACT BEFORE VALIDATION
+    contact = cleanContact(contact);
+
+    // VALIDATE — stop here if invalid
+    // MODIFIED
+    const inputs = [editFirstName, editLastName, editAddress, editViber];
+
+    if (!validateClientFields(firstName, lastName, address, contact, inputs)) return;
+
+    // UPDATE FIELD WITH CLEANED VALUE BEFORE SEND
+    editViber.value = contact;
 
     const submitBtn = e.target.querySelector('[type="submit"]');
     const cancelBtn = document.getElementById("cancelEditOverlay");
@@ -427,10 +638,10 @@ document.addEventListener("DOMContentLoaded", () => {
       await apiFetch(`${API_URL}/${selectedClientId}`, {
         method: "PATCH",
         body: JSON.stringify({
-          first_name: editFirstName.value.trim(),
-          last_name: editLastName.value.trim(),
-          address: editAddress.value.trim(),
-          viber_number: editViber.value.trim()
+          first_name: firstName,
+          last_name: lastName,
+          address: address,
+          viber_number: contact
         })
       });
 
@@ -439,8 +650,8 @@ document.addEventListener("DOMContentLoaded", () => {
       loadCompanyName();
       loadClients();
 
-    } catch {
-      alert("Failed to update client");
+    } catch (error) {
+      setTimeout(() => alert(error.message || "Failed to update client"), 0);
     } finally {
       submitBtn.textContent = originalText;
       submitBtn.disabled = false;
@@ -472,8 +683,8 @@ document.addEventListener("DOMContentLoaded", () => {
       deleteOverlay.classList.add("d-none");
       clearCache();
 
-    } catch {
-      alert("Failed to delete client");
+    } catch (error) {
+      setTimeout(() => alert(error.message || "Failed to delete client"), 0);
     } finally {
       confirmBtn.textContent = originalText;
       confirmBtn.disabled = false;
@@ -494,5 +705,5 @@ document.addEventListener("DOMContentLoaded", () => {
       editOverlay.classList.add("d-none");
       deleteOverlay.classList.add("d-none");
     };
-    
+
 });

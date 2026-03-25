@@ -30,35 +30,36 @@ def get_all_client(
 
 @router.get("/{client_id}", response_model=ClientRead)
 def get_client(client_id: int, db: Session = Depends(get_db)):
-    client = client_service.get_client(db, client_id)
-    if not client:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
-
-    return client
+    try:
+        return client_service.get_client(db, client_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.post("/", response_model=ClientRead, status_code=status.HTTP_201_CREATED)
 def create_client(client_data: ClientCreate, db: Session = Depends(get_db)):
-    client = client_service.create_client(db, client_data)
-    if not client:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unable to create Client")
-
-    return client
+    try:
+        return client_service.create_client(db, client_data)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.patch("/{client_id}", response_model=ClientRead)
 def update_client(client_id: int, client_data: ClientUpdate, db: Session = Depends(get_db)):
-    client = client_service.update_client(db, client_id, client_data)
-    if not client:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
+    
+    if not client_data.model_dump(exclude_unset=True):
+        raise HTTPException(status_code=400, detail="No data provided for update")
 
-    return client
+    try:
+        return client_service.update_client(db, client_id, client_data)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.delete("/{client_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_client(client_id: int, db: Session = Depends(get_db)):
-    success = client_service.delete_client(db, client_id)
-    if not success:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
-
-    return None
+    try:
+        client_service.delete_client(db, client_id)
+        return None
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))

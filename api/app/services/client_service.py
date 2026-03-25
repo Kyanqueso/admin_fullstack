@@ -4,7 +4,20 @@ from app.schemas.client import ClientCreate, ClientUpdate
 from sqlalchemy import or_
 
 
+
+
 def create_client(db: Session, client_data: ClientCreate):
+
+    # CHECK FIRST
+    existing = db.query(Client).filter(
+        Client.first_name == client_data.first_name,
+        Client.last_name == client_data.last_name,
+        Client.company_id == client_data.company_id
+    ).first()
+
+    if existing:
+        raise ValueError("Client already exists")
+
     client = Client(**client_data.model_dump())
 
     db.add(client)
@@ -15,7 +28,12 @@ def create_client(db: Session, client_data: ClientCreate):
 
 
 def get_client(db: Session, client_id: int):
-    return db.query(Client).filter(Client.id == client_id).first()
+    client = db.query(Client).filter(Client.id == client_id).first()
+
+    if not client:
+        raise ValueError("Client not found")
+
+    return client
 
 
 def get_clients(
@@ -66,8 +84,7 @@ def get_clients(
 
 def update_client(db: Session, client_id: int, client_data: ClientUpdate):
     client = get_client(db, client_id)
-    if not client:
-        return None
+    
 
     client_updated_items = client_data.model_dump(exclude_unset=True).items()
     for key, value in client_updated_items:
@@ -81,8 +98,6 @@ def update_client(db: Session, client_id: int, client_data: ClientUpdate):
 
 def delete_client(db: Session, client_id: int):
     client = get_client(db, client_id)
-    if not client:
-        return None
 
     db.delete(client)
     db.commit()
