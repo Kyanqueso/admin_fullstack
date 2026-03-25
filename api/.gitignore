@@ -31,3 +31,7 @@ __pycache__/
 Thumbs.db
 
 # Alembic
+
+# Frontend build
+web/dist/
+dist/
