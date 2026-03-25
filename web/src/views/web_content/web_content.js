@@ -41,9 +41,24 @@ let imagesToRemove = []; // track image IDs to remove during edit
 [searchInput, document.getElementById('shoe-name')]
     .forEach(el => blockEmojis(el));
 
-// Prevent e, E, +, - on the price number input (browser allows these by default)
-document.getElementById('shoe-price').addEventListener('keydown', e => {
+// Price input: enforce digits-only, max 5 integer digits, max 2 decimal places
+const priceInput = document.getElementById('shoe-price');
+
+priceInput.addEventListener('keydown', e => {
     if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault();
+});
+
+priceInput.addEventListener('input', () => {
+    let val = priceInput.value.replace(/[^0-9.]/g, '');
+    const dotIndex = val.indexOf('.');
+    if (dotIndex !== -1) {
+        const intPart = val.slice(0, dotIndex).slice(0, 7);
+        const decPart = val.slice(dotIndex + 1).replace(/\./g, '').slice(0, 2);
+        val = intPart + '.' + decPart;
+    } else {
+        val = val.slice(0, 7);
+    }
+    priceInput.value = val;
 });
 
 /* ===============================
@@ -52,7 +67,7 @@ document.getElementById('shoe-price').addEventListener('keydown', e => {
 const emojiRegex = /\p{Extended_Pictographic}/u;
 
 function isValidInput(value) {
-    return value.length <= 100
+    return value.length <= 50
         && !/[\x00-\x1F\x7F]/.test(value)
         && !emojiRegex.test(value);
 }
@@ -510,6 +525,14 @@ function enableCardButtonsOnly() {
         .forEach(btn => { btn.disabled = false; });
 }
 
+function disableAllCardButtons() {
+    disableCardButtonsOnly();
+}
+
+function enableAllCardButtons() {
+    enableCardButtonsOnly();
+}
+
 document.getElementById('add-shoe-btn').addEventListener('click', e => {
     e.preventDefault();
     disableCardButtonsOnly();
@@ -598,10 +621,10 @@ overlayConfirm.addEventListener('click', async () => {
                 throw new Error('Shoe name is required');
             }
             if (!isValidInput(name.trim())) {
-                throw new Error('Shoe name must be 100 characters or fewer with no emojis');
+                throw new Error('Shoe name must be 50 characters or fewer with no emojis');
             }
-            if (!price || isNaN(parseFloat(price)) || parseFloat(price) < 0) {
-                throw new Error('Please enter a valid price');
+            if (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 1) {
+                throw new Error('Price must be greater than 1');
             }
             if (!newFiles || newFiles.length === 0) {
                 throw new Error('Please select at least 1 image');
@@ -634,10 +657,10 @@ overlayConfirm.addEventListener('click', async () => {
                 throw new Error('Shoe name is required');
             }
             if (!isValidInput(name.trim())) {
-                throw new Error('Shoe name must be 100 characters or fewer with no emojis');
+                throw new Error('Shoe name must be 50 characters or fewer with no emojis');
             }
-            if (!price || isNaN(parseFloat(price)) || parseFloat(price) < 0) {
-                throw new Error('Please enter a valid price');
+            if (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 1) {
+                throw new Error('Price must be greater than 1');
             }
 
             const remainingExisting = existingImagesDiv.querySelectorAll('.existing-image-item').length;

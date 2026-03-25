@@ -74,10 +74,10 @@
             <!-- Form for Add/Edit -->
             <form id="overlay-form" class="d-none mt-3">
                 <label class="form-label text-black">Shoe Name</label>
-                <input type="text" id="shoe-name" name="shoeName" class="form-control mb-2" placeholder="Shoe Name" maxlength="100" required>
+                <input type="text" id="shoe-name" name="shoeName" class="form-control mb-2" placeholder="Shoe Name" maxlength="50" required>
 
                 <label class="form-label text-black">Price</label>
-                <input type="number" id="shoe-price" name="shoePrice" class="form-control mb-2" placeholder="Price" min="0" step="0.01" required>
+                <input type="text" inputmode="decimal" id="shoe-price" name="shoePrice" class="form-control mb-2" placeholder="Price (e.g. 1999.99)" required>
 
                 <!-- Existing images shown during edit -->
                 <div id="existing-images-container" class="d-none mb-2">
