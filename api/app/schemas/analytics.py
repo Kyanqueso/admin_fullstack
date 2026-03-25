@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from decimal import Decimal
 from typing import List
-
+from datetime import datetime
 
 class AnalyticsRead(BaseModel):
     total_balance: Decimal
@@ -20,3 +20,15 @@ class MonthSales(BaseModel):
 class AnnualSalesBreakdownRead(BaseModel):
     year_number: int
     monthly_data: List[MonthSales]
+    
+
+class UncollectedBalanceItem(BaseModel):
+    company: str
+    name: str
+    contact_number: str
+    order_date: datetime
+    price: Decimal
+    first_pay: Decimal
+    second_pay: Decimal
+    third_pay: Decimal
+    balance: Decimal

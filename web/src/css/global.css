@@ -230,7 +230,7 @@ body {
 }
 
 .client-tab-link.active {
-    background: var(--color-btn-green);
+    background: var(--color-primary);
     color: #fff;
 }
 

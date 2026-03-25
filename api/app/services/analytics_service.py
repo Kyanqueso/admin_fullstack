@@ -60,3 +60,36 @@ def get_annual_sales_breakdown(db: Session, year_number: int = None):
         ))
 
     return AnnualSalesBreakdownRead(year_number=year_number, monthly_data=monthly_data)
+
+def get_uncollected_balance(db: Session):
+    from app.schemas.analytics import UncollectedBalanceItem
+
+    summaries = (
+        db.query(PaymentSummary)
+        .filter(PaymentSummary.remaining_balance > 0)
+        .all()
+    )
+
+    items = []
+    for ps in summaries:
+        order = ps.client_order
+        client = order.client
+        company = client.company
+
+        pays = {}
+        for tx in ps.payment_transactions:
+            pays[tx.payment_number] = tx.paid_amount
+
+        items.append(UncollectedBalanceItem(
+            company=company.name,
+            name=f"{client.first_name} {client.last_name}",
+            contact_number=client.viber_number,
+            order_date=order.order_date,
+            price=order.price,
+            first_pay=pays.get(1, Decimal(0)),
+            second_pay=pays.get(2, Decimal(0)),
+            third_pay=pays.get(3, Decimal(0)),
+            balance=ps.remaining_balance
+        ))
+
+    return items

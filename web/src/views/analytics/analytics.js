@@ -1,6 +1,7 @@
 import { getFromCache, saveToCache } from '../../js/apiCache.js';
 
 const FAST_API_URL = import.meta.env.VITE_BACKEND_URL;
+let uncollectedData = [];
 
 console.log("Checking API URL:", FAST_API_URL);
 if (!FAST_API_URL) {
@@ -92,6 +93,37 @@ async function fetchAnnualBreakdown(year = null) {
 
     } catch (error) {
         console.error('Error fetching annual breakdown:', error);
+        return null;
+    }
+}
+
+async function fetchUncollectedBalances() {
+    const url = `${FAST_API_URL}/analytics/uncollected-balances`;
+    const cached = getFromCache(url);
+    if (cached) return cached;
+
+    try {
+        const token = localStorage.getItem('access_token');
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.status === 401 || response.status === 403) {
+            window.location.href = "../auth/index.html";
+            return;
+        }
+
+        if (!response.ok) throw new Error('Failed to fetch uncollected balances');
+
+        const data = await response.json();
+        saveToCache(url, data);
+        return data;
+    } catch (error) {
+        console.error('Error fetching uncollected balances:', error);
         return null;
     }
 }
@@ -282,6 +314,74 @@ document.getElementById('logout-no').addEventListener('click', () => logoutOverl
 document.getElementById('logout-yes').addEventListener('click', () => {
     localStorage.clear();
     window.location.href = "../auth/index.html";
+});
+
+// Uncollected Balance Popup Overlay
+const uncollectedOverlay = document.getElementById('uncollected-overlay');
+document.getElementById('uncollected-overlay-close').addEventListener('click', () => uncollectedOverlay.classList.add('d-none'));
+
+document.getElementById('view-uncollected-btn').addEventListener('click', async () => {
+    uncollectedOverlay.classList.remove('d-none');
+    const tbody = document.getElementById('uncollected-table-body');
+    document.getElementById('uncollected-search').value = '';
+
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">Loading...</td></tr>';
+
+    const data = await fetchUncollectedBalances();
+    uncollectedData = data || [];
+    document.getElementById('uncollected-sort').value = 'latest';
+
+    renderUncollectedTable(getFilteredAndSortedData());
+});
+
+function renderUncollectedTable(data) {
+    const tbody = document.getElementById('uncollected-table-body');
+
+    if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">No uncollected balances found.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = data.map(item => `
+        <tr>
+            <td>${item.company}</td>
+            <td>${item.name}</td>
+            <td>${item.contact_number}</td>
+            <td>${new Date(item.order_date).toLocaleDateString('en-PH')}</td>
+            <td>${formatCurrencyToPhp(item.price)}</td>
+            <td>${formatCurrencyToPhp(item.first_pay)}</td>
+            <td>${formatCurrencyToPhp(item.second_pay)}</td>
+            <td>${formatCurrencyToPhp(item.third_pay)}</td>
+            <td class="text-danger fw-bold">${formatCurrencyToPhp(item.balance)}</td>
+        </tr>
+    `).join('');
+}
+
+function getFilteredAndSortedData() {
+    const query = document.getElementById('uncollected-search').value.toLowerCase();
+    const sortOrder = document.getElementById('uncollected-sort').value;
+
+    let result = uncollectedData.filter(item =>
+        item.company.toLowerCase().includes(query) ||
+        item.name.toLowerCase().includes(query) ||
+        item.contact_number.toLowerCase().includes(query)
+    );
+
+    result.sort((a, b) => {
+        const dateA = new Date(a.order_date);
+        const dateB = new Date(b.order_date);
+        return sortOrder === 'latest' ? dateB - dateA : dateA - dateB;
+    });
+
+    return result;
+}
+
+document.getElementById('uncollected-search').addEventListener('input', () => {
+    renderUncollectedTable(getFilteredAndSortedData());
+});
+
+document.getElementById('uncollected-sort').addEventListener('change', () => {
+    renderUncollectedTable(getFilteredAndSortedData());
 });
 
 // Run initAnalytics when DOM is fully loaded
