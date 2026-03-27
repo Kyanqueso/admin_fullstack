@@ -1,6 +1,6 @@
 import { getFromCache, saveToCache } from '../../js/apiCache.js';
 
-const FAST_API_URL = import.meta.env.VITE_BACKEND_URL;
+const FAST_API_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
 let uncollectedData = [];
 
 console.log("Checking API URL:", FAST_API_URL);

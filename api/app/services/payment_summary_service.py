@@ -3,6 +3,8 @@ from sqlalchemy import func
 from app.db.models import PaymentSummary, PaymentTransaction
 from app.schemas.payment_summary import PaymentSummaryCreate, PaymentSummaryUpdate
 from decimal import Decimal
+from app.db.models import CompletedOrder
+from app.db.models import ClientOrder
 
 
 def create_payment_summary(db: Session, payment_summary_data: PaymentSummaryCreate):
@@ -67,6 +69,8 @@ def get_payment_summary_by_order(db: Session, client_order_id: int):
     return db.query(PaymentSummary).filter(PaymentSummary.client_order_id == client_order_id).first()
 
 
+# MODIFIED: recalculate_payment_summary now ONLY computes totals.
+# All order completion / deletion logic has been moved to payment_transaction_service.
 def recalculate_payment_summary(db: Session, payment_summary_id: int):
     payment_summary = get_payment_summary(db, payment_summary_id)
     if not payment_summary:
@@ -76,13 +80,22 @@ def recalculate_payment_summary(db: Session, payment_summary_id: int):
         PaymentTransaction.payment_summary_id == payment_summary_id
     ).scalar() or Decimal(0)
 
-    order = payment_summary.client_order
-    # Expire the order to clear any stale session-level state before reading/writing
-    db.expire(order)
-    order_total = Decimal(order.price) * Decimal(order.quantity)
+    from app.db.models import ClientOrder
 
-    # Prevent overpayment effect
-    if total_paid >= order_total:
+    order = db.query(ClientOrder).filter(
+        ClientOrder.id == payment_summary.client_order_id
+    ).first()
+
+    if not order:
+        return payment_summary
+
+    order_total = order.price * order.quantity
+
+    print("DEBUG:",
+          "total_paid=", total_paid,
+          "order_total=", order_total)
+
+    if abs(total_paid - order_total) < Decimal("0.01") or total_paid > order_total:
         payment_summary.paid_amount = order_total
         payment_summary.remaining_balance = Decimal(0)
         order.is_zero_balance = True

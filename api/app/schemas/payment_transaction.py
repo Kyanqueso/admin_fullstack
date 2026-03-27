@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, ConfigDict
 from decimal import Decimal
 from datetime import date
@@ -5,9 +6,9 @@ from datetime import date
 
 class PaymentTransactionCreate(BaseModel):
     payment_summary_id: int
-    payment_number: int
+    payment_number: Optional[int] = None
     paid_amount: Decimal
-    payment_date: date | None = None
+    payment_date: date
 
 
 class PaymentTransactionRead(BaseModel):

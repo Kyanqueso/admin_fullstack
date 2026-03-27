@@ -23,7 +23,10 @@ def create_client_order(db: Session, client_order_data: ClientOrderCreate):
 
 
 def get_client_order(db: Session, client_order_id: int):
-    return db.query(ClientOrder).filter(ClientOrder.id == client_order_id).first()
+    client_order = db.query(ClientOrder).filter(ClientOrder.id == client_order_id).first()
+    if not client_order:
+        raise ValueError(f"Client order with ID {client_order_id} not found.")
+    return client_order
 
 
 def get_client_orders(
@@ -45,15 +48,16 @@ def get_client_orders(
     return query.all()
 
 
-# For Later: get_all_client_orders_of client by_client_id
-
 def update_client_order(db: Session, client_order_id: int, client_order_data: ClientOrderUpdate):
-    client_order = get_client_order(db, client_order_id)
+    client_order = db.query(ClientOrder).filter(ClientOrder.id == client_order_id).first()
     if not client_order:
-        return None
+        raise ValueError(f"Client order with ID {client_order_id} not found.")
 
-    # Check if price or quantity is being updated
     update_data = client_order_data.model_dump(exclude_unset=True)
+
+    if not update_data:
+        raise ValueError("No fields provided for update.")
+
     price_or_quantity_changed = "price" in update_data or "quantity" in update_data
 
     for key, value in update_data.items():
@@ -72,9 +76,9 @@ def update_client_order(db: Session, client_order_id: int, client_order_data: Cl
 
 
 def delete_client_order(db: Session, client_order_id: int):
-    client_order = get_client_order(db, client_order_id)
+    client_order = db.query(ClientOrder).filter(ClientOrder.id == client_order_id).first()
     if not client_order:
-        return None
+        raise ValueError(f"Client order with ID {client_order_id} not found.")
 
     db.delete(client_order)
     db.commit()

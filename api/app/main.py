@@ -12,7 +12,7 @@ from app.api.payment_summary_router import router as payment_summary_router
 from app.api.payment_transaction_router import router as payment_transaction_router
 from app.api.analytics_router import router as analytics_router
 from app.api.shoe_management_router import router as shoe_management_router
-
+from app.api.completed_order_router import router as completed_order_router
 from app.api.test_routes import router as test_router
 
 
@@ -53,7 +53,7 @@ app.include_router(client_order_router, dependencies=[Depends(get_current_user)]
 app.include_router(payment_summary_router, dependencies=[Depends(get_current_user)])
 app.include_router(payment_transaction_router, dependencies=[Depends(get_current_user)])
 app.include_router(analytics_router, dependencies=[Depends(get_current_user)])
-
+app.include_router(completed_order_router, dependencies=[Depends(get_current_user)])
 # Does not require authentication
 app.include_router(shoe_management_router)
 app.include_router(test_router)

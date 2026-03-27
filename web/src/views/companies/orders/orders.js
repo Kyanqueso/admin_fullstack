@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   /* ===============================
      CONFIG
   =============================== */
-  const FAST_API_URL = import.meta.env.VITE_BACKEND_URL;
+  const FAST_API_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
   const ORDERS_URL = `${FAST_API_URL}/client-orders`;
   const CLIENTS_URL = `${FAST_API_URL}/clients`;
   const COMPANY_ID = localStorage.getItem("activeCompanyId");
@@ -46,6 +46,23 @@ document.addEventListener("DOMContentLoaded", async () => {
       localStorage.removeItem("access_token");
       window.location.href = "../../auth/index.html";
       throw new Error("Unauthorized");
+    }
+
+    if (!response.ok) {
+      let errorMessage = `Request failed with status ${response.status}`;
+      try {
+        const errorData = await response.json();
+        if (errorData.detail) {
+          if (Array.isArray(errorData.detail)) {
+            errorMessage = errorData.detail.map(e => e.msg).join(", ");
+          } else {
+            errorMessage = errorData.detail;
+          }
+        }
+      } catch {
+        // Response body was not JSON; keep default message
+      }
+      throw new Error(errorMessage);
     }
 
     return response;
@@ -92,6 +109,227 @@ document.addEventListener("DOMContentLoaded", async () => {
   let selectedOrderId = null;
   let allOrders = [];
   let clientMap = {};
+
+  /* ===============================
+     VALIDATION HELPERS
+  =============================== */
+  const EMOJI_REGEX = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2300}-\u{23FF}]/u;
+
+  function blockEmoji(inputEl) {
+    inputEl.addEventListener("input", () => {
+      const before = inputEl.value;
+      const after = before.replace(EMOJI_REGEX, "").replace(/[^\w\s\-'&.,#/()]/gu, "");
+      if (before !== after) {
+        const cursor = inputEl.selectionStart - (before.length - after.length);
+        inputEl.value = after;
+        inputEl.setSelectionRange(cursor, cursor);
+      }
+    });
+  }
+
+  // Attach emoji blocking to all free-text inputs
+  ["addStyle", "addColor", "addHeelSize", "editModel", "editColor", "editHeelSize"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) blockEmoji(el);
+  });
+
+  // Size inputs: only allow digits and one decimal point
+  ["addSize", "editSize"].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener("input", () => {
+      // Keep only digits and at most one decimal
+      let val = el.value.replace(/[^0-9.]/g, "");
+      const parts = val.split(".");
+      if (parts.length > 2) val = parts[0] + "." + parts.slice(1).join("");
+      el.value = val;
+    });
+  });
+
+  // Quantity and Price: only allow digits and decimal
+  ["addQuantity", "addPrice", "editQuantity", "editPrice"].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener("input", () => {
+      let val = el.value.replace(/[^0-9.]/g, "");
+      const parts = val.split(".");
+      if (parts.length > 2) val = parts[0] + "." + parts.slice(1).join("");
+      el.value = val;
+    });
+  });
+
+  /* ===============================
+     BOOTSTRAP FIELD ERROR HELPERS
+  =============================== */
+  function showFieldError(inputEl, message) {
+    clearFieldError(inputEl);
+    inputEl.classList.add("is-invalid");
+    const feedback = document.createElement("div");
+    feedback.className = "invalid-feedback";
+    feedback.textContent = message;
+    inputEl.parentNode.appendChild(feedback);
+  }
+
+  function clearFieldError(inputEl) {
+    inputEl.classList.remove("is-invalid");
+    const existing = inputEl.parentNode.querySelector(".invalid-feedback");
+    if (existing) existing.remove();
+  }
+
+  function showFormError(formEl, message) {
+    clearFormError(formEl);
+    const alert = document.createElement("div");
+    alert.className = "alert alert-danger mt-2 form-error-banner";
+    alert.role = "alert";
+    alert.textContent = message;
+    formEl.prepend(alert);
+  }
+
+  function clearFormError(formEl) {
+    const existing = formEl.querySelector(".form-error-banner");
+    if (existing) existing.remove();
+  }
+
+  function clearAllErrors(formEl) {
+    clearFormError(formEl);
+    formEl.querySelectorAll(".is-invalid").forEach(el => clearFieldError(el));
+  }
+
+  /* ===============================
+     VALIDATE ORDER FORM
+     Returns true if valid, false + shows errors if not
+  =============================== */
+  function validateOrderForm(prefix) {
+    const isAdd = prefix === "add";
+    let valid = true;
+
+    // Customer (add only — edit is disabled)
+    if (isAdd) {
+      const customerEl = document.getElementById("addCustomerId");
+      if (!customerEl.value) {
+        showFieldError(customerEl, "Please select a customer.");
+        valid = false;
+      } else {
+        clearFieldError(customerEl);
+      }
+    }
+
+    // Style / Model
+    const styleId = isAdd ? "addStyle" : "editModel";
+    const styleEl = document.getElementById(styleId);
+    const styleVal = styleEl.value.trim();
+    if (!styleVal) {
+      showFieldError(styleEl, "Style cannot be empty.");
+      valid = false;
+    } else if (EMOJI_REGEX.test(styleVal)) {
+      showFieldError(styleEl, "Style must not contain emojis.");
+      valid = false;
+    } else if (styleVal.length > 64) {
+      showFieldError(styleEl, "Style must not exceed 64 characters.");
+      valid = false;
+    } else {
+      clearFieldError(styleEl);
+    }
+
+    // MODIFIED — added max limit check
+    const sizeEl = document.getElementById(isAdd ? "addSize" : "editSize");
+    const sizeRaw = sizeEl.value.trim();
+    const sizeNum = parseFloat(sizeRaw);
+
+    if (!sizeRaw || isNaN(sizeNum) || sizeNum <= 0) {
+      showFieldError(sizeEl, "Size must be a positive number.");
+      valid = false;
+
+    } else if (sizeNum > 99.99) { // ✅ ADDED
+      showFieldError(sizeEl, "Size is too large.");
+      valid = false;
+
+    } else if ((sizeNum * 10) % 5 !== 0) {
+      showFieldError(sizeEl, "Size must end in .0 or .5 (e.g. 5.0, 5.5).");
+      valid = false;
+
+    } else {
+      clearFieldError(sizeEl);
+    }
+
+    // Material
+    const materialEl = document.getElementById(isAdd ? "addMaterial" : "editMaterial");
+    if (!materialEl.value) {
+      showFieldError(materialEl, "Please select a material.");
+      valid = false;
+    } else {
+      clearFieldError(materialEl);
+    }
+
+    // Color
+    const colorEl = document.getElementById(isAdd ? "addColor" : "editColor");
+    const colorVal = colorEl.value.trim();
+    if (!colorVal) {
+      showFieldError(colorEl, "Color cannot be empty.");
+      valid = false;
+    } else if (EMOJI_REGEX.test(colorVal)) {
+      showFieldError(colorEl, "Color must not contain emojis.");
+      valid = false;
+    } else {
+      clearFieldError(colorEl);
+    }
+
+    // Heel Type
+    const heelTypeEl = document.getElementById(isAdd ? "addHeelType" : "editHeelType");
+    if (!heelTypeEl.value) {
+      showFieldError(heelTypeEl, "Please select a heel type.");
+      valid = false;
+    } else {
+      clearFieldError(heelTypeEl);
+    }
+
+    // Heel Size — must be numeric, ≥ 0, in .5 increments
+    // MODIFIED
+    const heelSizeEl = document.getElementById(isAdd ? "addHeelSize" : "editHeelSize");
+
+    if (!heelSizeEl.value) {
+      showFieldError(heelSizeEl, "Please select a heel size.");
+      valid = false;
+    } else {
+      clearFieldError(heelSizeEl);
+    }
+
+    // Mold Type
+    const moldEl = document.getElementById(isAdd ? "addMoldType" : "editMold");
+    if (!moldEl.value) {
+      showFieldError(moldEl, "Please select a mold type.");
+      valid = false;
+    } else {
+      clearFieldError(moldEl);
+    }
+
+    // Quantity
+    const qtyEl = document.getElementById(isAdd ? "addQuantity" : "editQuantity");
+    const qtyRaw = qtyEl.value.trim();
+    const qtyNum = parseInt(qtyRaw, 10);
+    if (!qtyRaw || isNaN(qtyNum) || qtyNum <= 0) {
+      showFieldError(qtyEl, "Quantity must be a positive whole number.");
+      valid = false;
+    } else if (!Number.isInteger(Number(qtyRaw))) {
+      showFieldError(qtyEl, "Quantity must be a whole number.");
+      valid = false;
+    } else {
+      clearFieldError(qtyEl);
+    }
+
+    // Price
+    const priceEl = document.getElementById(isAdd ? "addPrice" : "editPrice");
+    const priceRaw = priceEl.value.trim();
+    const priceNum = parseFloat(priceRaw);
+    if (!priceRaw || isNaN(priceNum) || priceNum <= 0) {
+      showFieldError(priceEl, "Price must be a positive number.");
+      valid = false;
+    } else {
+      clearFieldError(priceEl);
+    }
+
+    return valid;
+  }
 
   /* ===============================
      LOAD CLIENTS (for dropdowns & name display)
@@ -162,7 +400,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (err) {
       console.error("Failed to load orders:", err);
       tableBody.innerHTML = `
-        <tr><td colspan="17" class="text-danger text-center">Failed to load orders</td></tr>
+        <tr><td colspan="17" class="text-danger text-center">Failed to load orders: ${escapeHtml(err.message)}</td></tr>
       `;
     }
   }
@@ -190,11 +428,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         <td>${order.id}</td>
         <td>${escapeHtml(clientMap[order.client_id] || String(order.client_id))}</td>
         <td>${escapeHtml(order.model)}</td>
-        <td>${order.size}</td>
+        <td>${Number(order.size).toFixed(1)}</td>
         <td>${escapeHtml(order.material)}</td>
         <td>${escapeHtml(order.color)}</td>
         <td>${escapeHtml(order.heel_type)}</td>
-        <td>${order.heel_size}</td>
+        <td>${escapeHtml(order.heel_size)}</td>
         <td>${escapeHtml(order.mold)}</td>
         <td>${order.has_buckle ? "Yes" : "No"}</td>
         <td>${order.has_slingback ? "Yes" : "No"}</td>
@@ -260,43 +498,45 @@ document.addEventListener("DOMContentLoaded", async () => {
      ADD ORDER
   =============================== */
   document.getElementById("openOverlay")?.addEventListener("click", () => {
+    const form = document.getElementById("addOrderForm");
+    clearAllErrors(form);
     addOverlay.classList.remove("d-none");
   });
 
   document.getElementById("closeAddOrder")?.addEventListener("click", () => {
+    clearAllErrors(document.getElementById("addOrderForm"));
     addOverlay.classList.add("d-none");
   });
 
   document.getElementById("cancelAddOrder")?.addEventListener("click", () => {
+    clearAllErrors(document.getElementById("addOrderForm"));
     addOverlay.classList.add("d-none");
   });
 
   document.getElementById("addOrderForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
+    const form = e.target;
+    clearFormError(form);
 
-    const clientId = document.getElementById("addCustomerId").value;
-    if (!clientId) {
-      alert("Please select a customer");
-      return;
-    }
+    if (!validateOrderForm("add")) return;
 
     const payload = {
-      client_id: Number(clientId),
+      client_id: Number(document.getElementById("addCustomerId").value),
       model: document.getElementById("addStyle").value.trim(),
-      size: Number(document.getElementById("addSize").value) || 0,
+      size: parseFloat(document.getElementById("addSize").value),
       material: document.getElementById("addMaterial").value,
       color: document.getElementById("addColor").value.trim(),
       heel_type: document.getElementById("addHeelType").value,
-      heel_size: Number(document.getElementById("addHeelSize").value) || 0,
+      heel_size: document.getElementById("addHeelSize").value,
       mold: document.getElementById("addMoldType").value,
       has_buckle: document.querySelector("input[name='addBuckle']:checked")?.value === "true",
       has_slingback: document.querySelector("input[name='addSling']:checked")?.value === "true",
       has_platform: document.querySelector("input[name='addPlatform']:checked")?.value === "true",
-      quantity: Number(document.getElementById("addQuantity").value) || 1,
-      price: Number(document.getElementById("addPrice").value) || 0,
+      quantity: parseInt(document.getElementById("addQuantity").value, 10),
+      price: parseFloat(document.getElementById("addPrice").value),
     };
 
-    const submitBtn = e.target.querySelector('[type="submit"]');
+    const submitBtn = form.querySelector('[type="submit"]');
     const cancelBtn = document.getElementById("cancelAddOrder");
     const closeBtn = document.getElementById("closeAddOrder");
     const originalText = submitBtn.textContent;
@@ -313,12 +553,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
 
       addOverlay.classList.add("d-none");
-      e.target.reset();
+      form.reset();
+      clearAllErrors(form);
       clearCache();
       await loadOrders();
     } catch (err) {
       console.error("Failed to add order:", err);
-      alert("Failed to add order");
+      showFormError(form, err.message);
     } finally {
       submitBtn.textContent = originalText;
       submitBtn.disabled = false;
@@ -328,78 +569,107 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   /* ===============================
-     EDIT ORDER (open overlay on row button click)
+     EDIT ORDER (open overlay)
   =============================== */
-  document.addEventListener("click", async (e) => {
-    const editBtn = e.target.closest(".edit-order-btn");
-    if (editBtn) {
-      const orderId = editBtn.dataset.id;
-      selectedOrderId = orderId;
+document.addEventListener("click", async (e) => {
 
-      try {
-        const res = await apiFetch(`${ORDERS_URL}/${orderId}`);
-        const order = await res.json();
+  /* ================= EDIT BUTTON ================= */
+  const editBtn = e.target.closest(".edit-order-btn");
+  if (editBtn) {
+    const orderId = editBtn.dataset.id;
+    selectedOrderId = orderId;
 
-        document.getElementById("editCustomerId").value = order.client_id;
-        document.getElementById("editModel").value = order.model;
-        document.getElementById("editSize").value = order.size;
-        document.getElementById("editMaterial").value = order.material;
-        document.getElementById("editColor").value = order.color;
-        document.getElementById("editHeelType").value = order.heel_type;
-        document.getElementById("editHeelSize").value = order.heel_size;
-        document.getElementById("editMold").value = order.mold;
-        document.getElementById("editQuantity").value = order.quantity;
-        document.getElementById("editPrice").value = order.price;
+    try {
+      const res = await apiFetch(`${ORDERS_URL}/${orderId}`);
+      const order = await res.json();
 
-        const buckleVal = order.has_buckle ? "true" : "false";
-        const slingVal = order.has_slingback ? "true" : "false";
-        const platformVal = order.has_platform ? "true" : "false";
+      document.getElementById("editCustomerId").value = order.client_id;
+      document.getElementById("editModel").value = order.model;
+      document.getElementById("editSize").value = Number(order.size).toFixed(1);
+      document.getElementById("editMaterial").value = order.material;
+      document.getElementById("editColor").value = order.color;
+      document.getElementById("editHeelType").value = order.heel_type;
+      document.getElementById("editHeelSize").value = order.heel_size;
+      document.getElementById("editMold").value = order.mold;
+      document.getElementById("editQuantity").value = order.quantity;
+      document.getElementById("editPrice").value = order.price;
 
-        const buckleRadio = document.querySelector(`input[name="editBuckle"][value="${buckleVal}"]`);
-        const slingRadio = document.querySelector(`input[name="editSlingback"][value="${slingVal}"]`);
-        const platformRadio = document.querySelector(`input[name="editPlatform"][value="${platformVal}"]`);
+      const buckleVal = order.has_buckle ? "true" : "false";
+      const slingVal = order.has_slingback ? "true" : "false";
+      const platformVal = order.has_platform ? "true" : "false";
 
-        if (buckleRadio) buckleRadio.checked = true;
-        if (slingRadio) slingRadio.checked = true;
-        if (platformRadio) platformRadio.checked = true;
+      const buckleRadio = document.querySelector(`input[name="editBuckle"][value="${buckleVal}"]`);
+      const slingRadio = document.querySelector(`input[name="editSlingback"][value="${slingVal}"]`);
+      const platformRadio = document.querySelector(`input[name="editPlatform"][value="${platformVal}"]`);
 
-        editOverlay.classList.remove("d-none");
-      } catch (err) {
-        console.error("Failed to load order for edit", err);
+      if (buckleRadio) buckleRadio.checked = true;
+      if (slingRadio) slingRadio.checked = true;
+      if (platformRadio) platformRadio.checked = true;
+
+      clearAllErrors(document.getElementById("editOrderForm"));
+      editOverlay.classList.remove("d-none");
+
+    } catch (err) {
+      console.error("Failed to load order for edit:", err);
+
+      if (err.message.toLowerCase().includes("not found")) {
+        clearCache();
+        await loadOrders();
+
+        const banner = document.createElement("div");
+        banner.className = "alert alert-success alert-dismissible fade show mx-0 mt-2";
+        banner.innerHTML = `Order already completed.
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+        document.querySelector("h2").insertAdjacentElement("afterend", banner);
+
+        return;
       }
-      return;
+
+      const banner = document.createElement("div");
+      banner.className = "alert alert-danger alert-dismissible fade show mx-0 mt-2";
+      banner.innerHTML = `Failed to load order: ${escapeHtml(err.message)}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+      document.querySelector("h2").insertAdjacentElement("afterend", banner);
     }
 
-    /* DELETE BUTTON - open overlay */
-    const deleteBtn = e.target.closest(".delete-btn");
-    if (deleteBtn) {
-      selectedOrderId = deleteBtn.dataset.id;
-      deleteOverlay.classList.remove("d-none");
-    }
-  });
+    return; // ✅ IMPORTANT FIX
+  }
 
+  /* ================= DELETE BUTTON ================= */
+  const deleteBtn = e.target.closest(".delete-btn");
+  if (deleteBtn) {
+    selectedOrderId = deleteBtn.dataset.id;
+    deleteOverlay.classList.remove("d-none");
+    return;
+  }
+
+});
   /* ===============================
      EDIT ORDER (form submit)
   =============================== */
   document.getElementById("editOrderForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
+    const form = e.target;
+    clearFormError(form);
+
+    if (!validateOrderForm("edit")) return;
 
     const payload = {
       model: document.getElementById("editModel").value.trim(),
-      size: Number(document.getElementById("editSize").value) || 0,
+      size: parseFloat(document.getElementById("editSize").value),
       material: document.getElementById("editMaterial").value,
       color: document.getElementById("editColor").value.trim(),
       heel_type: document.getElementById("editHeelType").value,
-      heel_size: Number(document.getElementById("editHeelSize").value) || 0,
+      heel_size: document.getElementById("editHeelSize").value,
       mold: document.getElementById("editMold").value,
       has_buckle: document.querySelector("input[name='editBuckle']:checked")?.value === "true",
       has_slingback: document.querySelector("input[name='editSlingback']:checked")?.value === "true",
       has_platform: document.querySelector("input[name='editPlatform']:checked")?.value === "true",
-      quantity: parseInt(document.getElementById("editQuantity").value),
-      price: Number(document.getElementById("editPrice").value),
+      quantity: parseInt(document.getElementById("editQuantity").value, 10),
+      price: parseFloat(document.getElementById("editPrice").value),
     };
 
-    const submitBtn = e.target.querySelector('[type="submit"]');
+    const submitBtn = form.querySelector('[type="submit"]');
     const cancelBtn = document.getElementById("cancelEditOrder");
     const closeBtn = document.getElementById("closeEditOrder");
     const originalText = submitBtn.textContent;
@@ -416,11 +686,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
 
       editOverlay.classList.add("d-none");
+      clearAllErrors(form);
       clearCache();
       await loadOrders();
     } catch (err) {
       console.error("Failed to update order:", err);
-      alert("Failed to update order");
+      showFormError(form, err.message);
     } finally {
       submitBtn.textContent = originalText;
       submitBtn.disabled = false;
@@ -433,10 +704,12 @@ document.addEventListener("DOMContentLoaded", async () => {
      EDIT / DELETE OVERLAY CLOSE BUTTONS
   =============================== */
   document.getElementById("closeEditOrder")?.addEventListener("click", () => {
+    clearAllErrors(document.getElementById("editOrderForm"));
     editOverlay.classList.add("d-none");
   });
 
   document.getElementById("cancelEditOrder")?.addEventListener("click", () => {
+    clearAllErrors(document.getElementById("editOrderForm"));
     editOverlay.classList.add("d-none");
   });
 
@@ -474,13 +747,29 @@ document.addEventListener("DOMContentLoaded", async () => {
       await loadOrders();
     } catch (err) {
       console.error("Failed to delete order:", err);
-      alert("Failed to delete order");
+      // Show error inside the delete overlay itself
+      const overlay = document.getElementById("deleteOrderOverlay");
+      let banner = overlay.querySelector(".delete-error-banner");
+      if (!banner) {
+        banner = document.createElement("div");
+        banner.className = "alert alert-danger mt-3 delete-error-banner";
+        overlay.querySelector(".overlay-content").appendChild(banner);
+      }
+      banner.textContent = err.message;
     } finally {
       confirmBtn.textContent = originalText;
       confirmBtn.disabled = false;
       cancelBtn.disabled = false;
       closeBtn.disabled = false;
     }
+  });
+
+  // Clear delete error when overlay is closed
+  ["closeDeleteOrder", "cancelDeleteOrder"].forEach(id => {
+    document.getElementById(id)?.addEventListener("click", () => {
+      const banner = document.querySelector(".delete-error-banner");
+      if (banner) banner.remove();
+    });
   });
 
   /* ===============================

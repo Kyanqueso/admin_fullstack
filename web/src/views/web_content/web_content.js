@@ -4,7 +4,7 @@ import eyeIcon from '../../assets/icons/eye.svg';
 import eyeSlashIcon from '../../assets/icons/eye-slash.svg';
 import { getFromCache, saveToCache, clearCache } from '../../js/apiCache.js';
 
-const FAST_API_URL = import.meta.env.VITE_BACKEND_URL;
+const FAST_API_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
 
 // Logout confirmation overlay
 const logoutOverlay = document.getElementById('logout-overlay');

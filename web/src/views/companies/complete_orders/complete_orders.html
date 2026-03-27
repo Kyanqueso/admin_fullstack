@@ -22,10 +22,10 @@
                 Back
             </a>
             <span class="client-tab-divider"></span>
-            <a href="../clients/clients.html" class="client-tab-link">Customer List</a>
-            <a href="../orders/orders.html" class="client-tab-link">Orders</a>
-            <a href="../payments/payments.html" class="client-tab-link">Payment</a>
-            <a href="../complete_orders/complete_orders.html" class="client-tab-link active">Completed Order</a>
+            <a href="../clients/clients.html" class="client-tab-link">Client List</a>
+            <a href="../orders/orders.html" class="client-tab-link">Current Orders</a>
+            <a href="../payments/payments.html" class="client-tab-link">Payments</a>
+            <a href="../complete_orders/complete_orders.html" class="client-tab-link active">Completed Orders</a>
         </div>
     </div>
 
@@ -56,11 +56,10 @@
             </select>
         </div>
 
-
-
     </div>
 
     <!-- Table -->
+    <!-- MODIFIED: added Payment History column -->
     <div class="table-responsive">
         <table class="table align-middle">
 
@@ -82,6 +81,8 @@
                     <th>Quantity</th>
                     <th>Price</th>
                     <th>Total Amount</th>
+                    <th>Payment History</th>
+                    <th class="action-col"></th>
                 </tr>
             </thead>
 
@@ -89,6 +90,44 @@
             <tbody id="completedOrdersTableBody">
             </tbody>
         </table>
+    </div>
+
+
+    <!-- ============================= -->
+    <!-- ADDED: Payment History Overlay -->
+    <!-- ============================= -->
+    <div class="overlay d-none" id="completedPaymentHistoryOverlay">
+        <div class="overlay-content p-4">
+
+            <button class="overlay-close" id="closeCompletedHistoryOverlay">✕</button>
+
+            <h5 class="mb-3">Payment History</h5>
+
+            <!-- Order summary info -->
+            <div class="transaction-summary mb-3">
+                <div><strong>Customer:</strong> <span id="completedHistoryCustomerName"></span></div>
+                <div><strong>Total Amount:</strong> <span id="completedHistoryTotalPrice"></span></div>
+                <div class="balance"><strong>Status:</strong> <span class="text-success fw-semibold">Fully Paid</span></div>
+            </div>
+
+            <table class="table transaction-table mt-3">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Payment Amount</th>
+                        <th>Payment Date</th>
+                    </tr>
+                </thead>
+                <tbody id="completedHistoryTransactionsBody">
+                    <!-- Rendered dynamically -->
+                </tbody>
+            </table>
+
+            <button class="btn transaction-close-btn mt-3" id="closeCompletedHistoryBtn">
+                Close
+            </button>
+
+        </div>
     </div>
 
 

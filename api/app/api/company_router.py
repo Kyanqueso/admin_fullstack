@@ -34,13 +34,27 @@ def get_company(company_id: int, db: Session = Depends(get_db)):
     return company
 
 
+from fastapi import HTTPException
+
 @router.post("/", response_model=CompanyRead, status_code=status.HTTP_201_CREATED)
 def create_company(company_data: CompanyCreate, db: Session = Depends(get_db)):
-    company = company_service.create_company(db, company_data)
-    if not company:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unable to create Company")
+    try:
+        company = company_service.create_company(db, company_data)
 
-    return company
+        if not company:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Unable to create Company"
+            )
+
+        return company
+
+    # ADDED — handle duplicate error
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
 
 
 @router.patch("/{company_id}", response_model=CompanyRead)

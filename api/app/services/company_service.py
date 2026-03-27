@@ -4,6 +4,15 @@ from app.schemas.company import CompanyCreate, CompanyUpdate
 
 
 def create_company(db: Session, company_data: CompanyCreate):
+
+    # ADDED
+    existing = db.query(Company).filter(
+        Company.name.ilike(company_data.name.strip())
+    ).first()
+
+    if existing:
+        raise ValueError("Company already exists")
+
     company = Company(**company_data.model_dump())
 
     db.add(company)

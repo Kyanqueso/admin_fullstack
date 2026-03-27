@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   /* ===============================
      CONFIG
   =============================== */
-  const FAST_API_URL = import.meta.env.VITE_BACKEND_URL;
+  const FAST_API_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
   const API_URL = `${FAST_API_URL}/clients`;
 
   console.log("Clients API URL:", API_URL);
