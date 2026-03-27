@@ -52,11 +52,12 @@
     </div>
 
     <!-- LOADING -->
-    <div id="dashboard-loader" class="d-flex flex-column align-items-center justify-content-center" style="min-height: 50vh;">
-        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-        <p class="mt-2 text-muted fw-bold">Loading Companies...</p>
+    <div id="dashboard-loader" class="d-flex flex-column align-items-center justify-content-center"
+      style="min-height: 50vh;">
+      <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mt-2 text-muted fw-bold">Loading Companies...</p>
     </div>
 
     <!-- GRID -->
@@ -73,7 +74,7 @@
 
       <h5 class="mb-3">Add New Company</h5>
 
-      <form id="addCompanyForm">
+      <form id="addCompanyForm" novalidate>
         <div class="mb-3">
           <label class="form-label">Company Name</label>
           <input type="text" class="form-control" id="addCompanyName" required>
@@ -98,7 +99,7 @@
 
       <h4 class="mb-4">Edit Existing Company</h4>
 
-      <form id="editCompanyForm">
+      <form id="editCompanyForm" novalidate>
         <div class="mb-3">
           <label class="form-label">Company Name</label>
           <input type="text" class="form-control" id="editCompanyName" required>
