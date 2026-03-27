@@ -13,7 +13,6 @@ class Company(Base):
     clients = relationship("Client", back_populates="company", cascade="all, delete-orphan")
 
 
-# Superclass for Admin and Client
 class Person(Base):
     __tablename__ = "persons"
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -21,18 +20,14 @@ class Person(Base):
     last_name = Column(String(30), nullable=False)
     role = Column(String(10), nullable=False)
 
-    __mapper_args__ = {
-        "polymorphic_on": role
-    }
+    __mapper_args__ = {"polymorphic_on": role}
 
 
 class Admin(Person):
     __tablename__ = "admins"
     id = Column(Integer, ForeignKey("persons.id"), primary_key=True)
     account = Column(String(50), nullable=False, unique=True)
-    __mapper_args__ = {
-        "polymorphic_identity": "admin"
-    }
+    __mapper_args__ = {"polymorphic_identity": "admin"}
 
 
 class Client(Person):
@@ -42,12 +37,11 @@ class Client(Person):
     address = Column(String(255), nullable=True)
     viber_number = Column(String(15), nullable=False)
     notes = Column(String(255), nullable=True)
-    __mapper_args__ = {
-        "polymorphic_identity": "client"
-    }
+    __mapper_args__ = {"polymorphic_identity": "client"}
 
     company = relationship("Company", back_populates="clients")
     client_orders = relationship("ClientOrder", back_populates="client", cascade="all, delete-orphan")
+    completed_orders = relationship("CompletedOrder", back_populates="client")
 
 
 class ClientOrder(Base):
@@ -60,8 +54,8 @@ class ClientOrder(Base):
     material = Column(String(20), nullable=False)
     color = Column(String(20), nullable=False)
     mold = Column(String(20), nullable=False)
-    heel_size = Column(Numeric(10, 2), nullable=False)
-    heel_type = Column(String(5), nullable=False, default="h1")
+    heel_size = Column(String(5), nullable=False)
+    heel_type = Column(String(15), nullable=False)
     has_platform = Column(Boolean, nullable=False, default=False)
     has_slingback = Column(Boolean, nullable=False, default=False)
     has_buckle = Column(Boolean, nullable=False, default=False)
@@ -70,27 +64,50 @@ class ClientOrder(Base):
     is_zero_balance = Column(Boolean, nullable=False, default=False)
 
     client = relationship("Client", back_populates="client_orders")
-    payment_summary = relationship("PaymentSummary", back_populates="client_order", uselist=False,
-                                   cascade="all, delete-orphan")
+
+    # NO "delete" cascade — PaymentSummary must survive after ClientOrder
+    # is deleted so transaction history stays accessible.
+    payment_summary = relationship(
+        "PaymentSummary",
+        back_populates="client_order",
+        uselist=False,
+        cascade="save-update, merge"
+    )
 
 
 class PaymentSummary(Base):
     __tablename__ = "payment_summaries"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    client_order_id = Column(Integer, ForeignKey("client_orders.id"), nullable=False)
+
+    # nullable=True + SET NULL: when ClientOrder is deleted this becomes NULL
+    # but the row (and its transactions) survive for history lookup.
+    client_order_id = Column(
+        Integer,
+        ForeignKey("client_orders.id", ondelete="SET NULL"),
+        nullable=True
+    )
+
+    # Stores the original client_order.id permanently — used by the
+    # /payment-transactions/by-order/{id} endpoint to look up history
+    # even after client_order_id has been SET NULL.
+    original_order_id = Column(Integer, nullable=True)
+
     paid_amount = Column(Numeric(10, 2), nullable=False, default=0)
     remaining_balance = Column(Numeric(10, 2), nullable=False)
 
     client_order = relationship("ClientOrder", back_populates="payment_summary")
-    payment_transactions = relationship("PaymentTransaction", back_populates="payment_summary",
-                                        cascade="all, delete-orphan")
+    payment_transactions = relationship(
+        "PaymentTransaction",
+        back_populates="payment_summary",
+        cascade="all, delete-orphan"
+    )
 
 
 class PaymentTransaction(Base):
     __tablename__ = "payment_transactions"
     id = Column(Integer, primary_key=True, autoincrement=True)
     payment_summary_id = Column(Integer, ForeignKey("payment_summaries.id"), nullable=False)
-    payment_number = Column(Integer, nullable=False)  # 1st pay/2nd pay/3rd pay
+    payment_number = Column(Integer, nullable=False)
     paid_amount = Column(Numeric(10, 2), nullable=False)
     payment_date = Column(Date, nullable=False, default=date.today)
 
@@ -125,3 +142,33 @@ class ShoeImage(Base):
     display_order = Column(Integer, nullable=False, default=1)
 
     shoe_catalog = relationship("ShoeCatalog", back_populates="images")
+
+
+class CompletedOrder(Base):
+    __tablename__ = "completed_orders"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
+    order_date = Column(DateTime, nullable=False)
+
+    model = Column(String(50), nullable=False)
+    size = Column(Numeric(4, 2), nullable=False)
+    material = Column(String(20), nullable=False)
+    color = Column(String(20), nullable=False)
+    mold = Column(String(20), nullable=False)
+
+    heel_size = Column(String(5), nullable=False)
+    heel_type = Column(String(15), nullable=False)
+
+    has_platform = Column(Boolean, nullable=False, default=False)
+    has_slingback = Column(Boolean, nullable=False, default=False)
+    has_buckle = Column(Boolean, nullable=False, default=False)
+
+    quantity = Column(Integer, nullable=False, default=1)
+    price = Column(Numeric(10, 2), nullable=False)
+
+    # Points to the original client_order.id — used to find PaymentSummary
+    # via payment_summaries.original_order_id for history lookup.
+    original_order_id = Column(Integer, nullable=True)
+
+    client = relationship("Client", back_populates="completed_orders")

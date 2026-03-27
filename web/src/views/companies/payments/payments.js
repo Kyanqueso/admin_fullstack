@@ -1,7 +1,7 @@
 import pencilIcon from '../../../assets/icons/pencil-dark.svg';
 import { getFromCache, saveToCache, clearCache } from '../../../js/apiCache.js';
 
-const FAST_API_URL = import.meta.env.VITE_BACKEND_URL;
+const FAST_API_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
 const COMPANY_ID = localStorage.getItem("activeCompanyId");
 
 let clientsMap = {};
@@ -147,6 +147,16 @@ async function loadPaymentSummaries() {
   const res = await apiFetch(`${FAST_API_URL}/payment-summaries/`);
   paymentSummaries = await res.json();
 
+  // MODIFIED: also refresh ordersMap so stale deleted orders don't persist
+  const ordersRes = await apiFetch(`${FAST_API_URL}/client-orders/`);
+  const freshOrders = await ordersRes.json();
+  ordersMap = {};
+  freshOrders
+    .filter(order => clientsMap[order.client_id] !== undefined)
+    .forEach(order => {
+      ordersMap[order.id] = order;
+    });
+
   renderPaymentRows(paymentSummaries);
 }
 
@@ -158,6 +168,7 @@ function renderPaymentRows(summaries) {
   const tbody = document.getElementById("paymentsTableBody");
   tbody.innerHTML = "";
 
+  // MODIFIED: filter out summaries whose order has already been completed (deleted from client_orders)
   const visible = summaries.filter(s => ordersMap[s.client_order_id]);
 
   if (visible.length === 0) {
@@ -280,7 +291,15 @@ function attachDynamicHandlers() {
 
       const summaryId = btn.dataset.summaryId;
       const summary = paymentSummaries.find(s => s.id == summaryId);
+
+      // ADDED: guard — order may have been completed and removed from ordersMap
       const order = ordersMap[summary.client_order_id];
+      if (!order) {
+        await loadPaymentSummaries();
+        showOrderCompletedBanner();
+        return;
+      }
+
       const clientName = clientsMap[order.client_id];
       const totalPrice = Number(order.price) * Number(order.quantity);
 
@@ -327,8 +346,33 @@ function attachDynamicHandlers() {
 
   /* OPEN EDIT OVERLAY */
   document.querySelectorAll(".edit-payment-btn").forEach(btn => {
-    btn.addEventListener("click", () => openEditOverlay(btn.dataset.summaryId));
+    btn.addEventListener("click", async () => {
+      const summaryId = btn.dataset.summaryId;
+      const summary = paymentSummaries.find(s => s.id == summaryId);
+
+      // ADDED: guard — if order was just completed and removed, refresh instead of opening edit
+      if (!ordersMap[summary?.client_order_id]) {
+        await loadPaymentSummaries();
+        showOrderCompletedBanner();
+        return;
+      }
+
+      openEditOverlay(summaryId);
+    });
   });
+}
+
+
+// ADDED: helper banner shown when an order was completed between renders
+function showOrderCompletedBanner() {
+  const existing = document.querySelector(".order-completed-banner");
+  if (existing) return;
+
+  const banner = document.createElement("div");
+  banner.className = "alert alert-success alert-dismissible fade show mx-0 mt-2 order-completed-banner";
+  banner.innerHTML = `Order has been completed and moved to Completed Orders.
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+  document.querySelector("h2").insertAdjacentElement("afterend", banner);
 }
 
 
@@ -340,6 +384,14 @@ async function openEditOverlay(summaryId) {
   if (!summary) return;
 
   const order = ordersMap[summary.client_order_id];
+
+  // ADDED: guard — order may have been completed already
+  if (!order) {
+    await loadPaymentSummaries();
+    showOrderCompletedBanner();
+    return;
+  }
+
   const clientName = clientsMap[order.client_id];
   const totalPrice = Number(order.price) * Number(order.quantity);
 
@@ -502,6 +554,14 @@ function setupOverlayControls() {
 
         const summaryId = editOverlay.dataset.summaryId;
         const fresh = paymentSummaries.find(s => s.id == summaryId);
+
+        // ADDED: if order was completed by this deletion (edge case), close overlay
+        if (!fresh || !ordersMap[fresh.client_order_id]) {
+          editOverlay.classList.add("d-none");
+          showOrderCompletedBanner();
+          return;
+        }
+
         if (fresh) {
           document.getElementById("editCurrentBalance").innerText =
             "₱" + Number(fresh.remaining_balance).toLocaleString();
@@ -535,6 +595,14 @@ function setupOverlayControls() {
 
       const summary = paymentSummaries.find(s => s.id == summaryId);
       if (!summary) return;
+
+      // ADDED: guard — if order is already gone, abort and refresh
+      if (!ordersMap[summary.client_order_id]) {
+        editOverlay.classList.add("d-none");
+        await loadPaymentSummaries();
+        showOrderCompletedBanner();
+        return;
+      }
 
       const newRows = Array.from(
         document.querySelectorAll("#transactionsContainer .transaction-row-new")
@@ -590,38 +658,58 @@ function setupOverlayControls() {
         addBtn.disabled = true;
         saveBtn.textContent = "Saving...";
 
-        for (let i = 0; i < newRows.length; i++) {
-          const amountInput = newRows[i].querySelector("input[type='number']");
-          const dateInput = newRows[i].querySelector("input[type='date']");
-          const amount = parseFloat(amountInput.value);
-          const paymentDate = dateInput.value;
+      for (let i = 0; i < newRows.length; i++) {
+        const amountInput = newRows[i].querySelector("input[type='number']");
+        const dateInput = newRows[i].querySelector("input[type='date']");
+        const amount = parseFloat(amountInput.value);
+        const paymentDate = dateInput.value;
 
-          // Use maxPaymentNumber to avoid collisions with existing records
-          const response = await apiFetch(`${FAST_API_URL}/payment-transactions/`, {
-            method: "POST",
-            body: JSON.stringify({
-              payment_summary_id: parseInt(summaryId),
-              payment_number: maxPaymentNumber + i + 1,
-              paid_amount: amount,
-              payment_date: paymentDate
-            })
-          });
+        const response = await apiFetch(`${FAST_API_URL}/payment-transactions/`, {
+          method: "POST",
+          body: JSON.stringify({
+            payment_summary_id: parseInt(summaryId),
+            // ✅ REMOVED payment_number (backend handles it now)
+            paid_amount: amount,
+            payment_date: paymentDate
+          })
+        });
 
-          if (!response.ok) {
-            const errorData = await response.json();
-            showEditError(errorData.detail || "Failed to save payment.");
-            amountInput.focus();
-            return;
-          }
+        if (!response.ok) {
+          let message = "Failed to save payment.";
+
+          try {
+            const text = await response.text(); // ✅ SAFE (fixes JSON crash)
+
+            try {
+              const json = JSON.parse(text);
+              message = json.detail || message;
+            } catch {
+              message = text; // fallback for "Internal Server Error"
+            }
+
+          } catch {}
+
+          showEditError(message);
+          amountInput.focus();
+          return;
         }
+      }
 
-        // Success — refresh table and close overlay
+        // MODIFIED: refresh table and close overlay; order may now be in completed_orders
         await loadPaymentSummaries();
         editOverlay.classList.add("d-none");
 
       } catch (err) {
         console.error("Failed to save transactions:", err);
-        showEditError("Failed to save transactions. Please try again.");
+
+        let message = "Failed to save transactions. Please try again.";
+
+        // ✅ extract backend error (FastAPI)
+        if (err?.message) {
+          message = err.message;
+        }
+
+        showEditError(message);
       } finally {
         saveBtn.textContent = originalText;
         saveBtn.disabled = false;

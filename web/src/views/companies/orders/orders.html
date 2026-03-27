@@ -21,10 +21,10 @@
                 Back
             </a>
             <span class="client-tab-divider"></span>
-            <a href="../clients/clients.html" class="client-tab-link">Customer List</a>
-            <a href="../orders/orders.html" class="client-tab-link active">Orders</a>
-            <a href="../payments/payments.html" class="client-tab-link">Payment</a>
-            <a href="../complete_orders/complete_orders.html" class="client-tab-link">Completed Order</a>
+            <a href="../clients/clients.html" class="client-tab-link">Client List</a>
+            <a href="../orders/orders.html" class="client-tab-link active">Current Orders</a>
+            <a href="../payments/payments.html" class="client-tab-link">Payments</a>
+            <a href="../complete_orders/complete_orders.html" class="client-tab-link">Completed Orders</a>
         </div>
     </div>
 
@@ -163,7 +163,19 @@
                     </div>
                     <div class="col-4">
                         <label class="form-label">Heel Size</label>
-                        <input class="form-control" placeholder="Enter Heel Size" id="addHeelSize">
+                        <select class="form-select" id="addHeelSize">
+                        <option value="" selected disabled hidden>Select Heel Size</option>
+                        <option>h1</option>
+                        <option>h2</option>
+                        <option>h3</option>
+                        <option>h4</option>
+                        <option>h5</option>
+                        <option>h6</option>
+                        <option>h7</option>
+                        <option>h8</option>
+                        <option>h9</option>
+                        <option>h10</option>
+                        </select>
                     </div>
                     <div class="col-4">
                         <label class="form-label">Mold Type</label>
@@ -307,7 +319,19 @@
                     </div>
                     <div class="col-4">
                         <label class="form-label">Heel Size</label>
-                        <input class="form-control" id="editHeelSize">
+                        <select class="form-select" id="editHeelSize">
+                        <option value="" selected disabled hidden>Select Heel Size</option>
+                        <option value="h1">h1</option>
+                        <option value="h2">h2</option>
+                        <option value="h3">h3</option>
+                        <option value="h4">h4</option>
+                        <option value="h5">h5</option>
+                        <option value="h6">h6</option>
+                        <option value="h7">h7</option>
+                        <option value="h8">h8</option>
+                        <option value="h9">h9</option>
+                        <option value="h10">h10</option>
+                        </select>
                     </div>
                     <div class="col-4">
                         <label class="form-label">Mold Type</label>

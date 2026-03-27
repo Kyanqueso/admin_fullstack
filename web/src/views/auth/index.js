@@ -7,7 +7,7 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 // ========== CLEAR SESSION ON LOGIN PAGE LOAD ==========
 // Only clear session if NOT an OAuth callback (to allow Google login to complete)
 const hasOAuthToken = window.location.hash.includes('access_token') ||
-                      window.location.search.includes('code');
+    window.location.search.includes('code');
 
 if (!hasOAuthToken) {
     await supabase.auth.signOut();
@@ -53,7 +53,7 @@ let resetEmail = '';
 
 // Block emojis on all text inputs in real time
 [emailInput, passwordInput, resetEmailInput, otpCodeInput,
- document.getElementById('new-password'), document.getElementById('confirm-password')]
+    document.getElementById('new-password'), document.getElementById('confirm-password')]
     .forEach(el => blockEmojis(el));
 
 // ========== INPUT VALIDATION ==========
@@ -71,11 +71,11 @@ function blockEmojis(el) {
         const cleaned = original.replace(/\p{Extended_Pictographic}/gu, '');
         if (cleaned !== original) {
             let pos = null;
-            try { pos = el.selectionStart; } catch {}
+            try { pos = el.selectionStart; } catch { }
             el.value = cleaned;
             if (pos !== null) {
                 const newPos = Math.max(0, pos - (original.length - cleaned.length));
-                try { el.setSelectionRange(newPos, newPos); } catch {}
+                try { el.setSelectionRange(newPos, newPos); } catch { }
             }
         }
     });
@@ -121,8 +121,8 @@ function clearModalAlerts() {
 // ========== BACKEND VERIFICATION ==========
 async function callBackend(checkAdmin = false) {
     const token = localStorage.getItem('access_token');
-    const backendUrl = import.meta.env.VITE_BACKEND_URL;
-
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
+    console.log("Backend URL:", backendUrl);
     // Use different endpoint for OAuth (Google) that checks admin table
     const endpoint = checkAdmin ? '/protected/oauth' : '/protected';
 

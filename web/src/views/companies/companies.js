@@ -3,7 +3,7 @@ import { getFromCache, saveToCache, clearCache } from '../../js/apiCache.js';
 /* ===============================
    CONFIG
 =============================== */
-const FAST_API_URL = import.meta.env.VITE_BACKEND_URL;
+const FAST_API_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
 
 /* ===============================
    LOGOUT
@@ -244,15 +244,22 @@ async function loadCompanies() {
 function renderCompanies(companiesArray) {
   grid.innerHTML = "";
 
-  if (companiesArray.length === 0) {
-    grid.innerHTML = `
-      <div class="col text-center text-muted">
-        No companies found
+if (companiesArray.length === 0) {
+  grid.innerHTML = `
+    <div class="col-12 d-flex flex-column align-items-center justify-content-center text-center" style="min-height: 250px;">
+      
+      <p class="text-muted mb-3">No companies found</p>
+
+      <div id="addCompanyCard"
+           class="border border-2 d-flex justify-content-center align-items-center"
+           style="width: 180px; height: 120px; cursor:pointer; border-radius:12px;">
+        <span class="fs-1 fw-bold">+</span>
       </div>
-    `;
-    renderAddCompanyCard();
-    return;
-  }
+
+    </div>
+  `;
+  return;
+}
 
   companiesArray.forEach(renderCompanyCard);
   renderAddCompanyCard();
@@ -272,8 +279,8 @@ function renderCompanyCard(company) {
         <button class="btn btn-sm btn-danger delete-company" data-id="${company.id}">🗑</button>
       </div>
 
-      <div class="card-body d-flex justify-content-center align-items-center">
-        <strong class="fs-3">${escapeHtml(company.name)}</strong>
+      <div class="card-body d-flex justify-content-center align-items-center text-center">
+        <strong class="fs-3 company-name">${escapeHtml(company.name)}</strong>
       </div>
     </div>
   `;
@@ -281,7 +288,7 @@ function renderCompanyCard(company) {
   grid.appendChild(col);
 }
 
-function renderAddCompanyCard() {
+function renderAddCompanyCard(containerId = null) {
   const col = document.createElement("div");
   col.className = "col";
 
