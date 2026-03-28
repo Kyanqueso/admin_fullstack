@@ -16,6 +16,7 @@ def get_all_client(
     sort: Optional[str] = Query(None),
     skip: int = 0,
     limit: int = 10000,
+    archived: bool = False,
     db: Session = Depends(get_db)
 ):
     return client_service.get_clients(
@@ -24,7 +25,8 @@ def get_all_client(
         search=search,
         sort=sort,
         skip=skip,
-        limit=limit
+        limit=limit,
+        archived=archived
     )
 
 
@@ -54,6 +56,25 @@ def update_client(client_id: int, client_data: ClientUpdate, db: Session = Depen
         return client_service.update_client(db, client_id, client_data)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.patch("/{client_id}/restore", response_model=ClientRead)
+def restore_client(client_id: int, db: Session = Depends(get_db)):
+    try:
+        return client_service.restore_client(db, client_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.delete("/{client_id}/permanent", status_code=status.HTTP_204_NO_CONTENT)
+def hard_delete_client(client_id: int, db: Session = Depends(get_db)):
+    try:
+        client_service.hard_delete_client(db, client_id)
+        return None
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
 @router.delete("/{client_id}", status_code=status.HTTP_204_NO_CONTENT)

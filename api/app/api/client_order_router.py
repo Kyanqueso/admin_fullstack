@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 from app.config.database import get_db
 from app.schemas.client_order import ClientOrderCreate, ClientOrderRead, ClientOrderUpdate
 from app.services import client_order_service
-from app.db.models import CompletedOrder
 
 router = APIRouter(prefix="/client-orders", tags=["Client Orders"])
 
@@ -13,6 +12,7 @@ def get_all_client_order(
         skip: int = 0,
         limit: int = 10000,
         completed: bool | None = None,
+        archived: bool = False,
         db: Session = Depends(get_db)
 ):
     try:
@@ -20,7 +20,8 @@ def get_all_client_order(
             db,
             skip=skip,
             limit=limit,
-            completed=completed
+            completed=completed,
+            archived=archived
         )
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
@@ -59,8 +60,19 @@ def update_client_order(client_order_id: int, client_order_data: ClientOrderUpda
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
+@router.patch("/{client_order_id}/restore", response_model=ClientOrderRead)
+def restore_client_order(client_order_id: int, db: Session = Depends(get_db)):
+    try:
+        return client_order_service.restore_client_order(db, client_order_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
 @router.delete("/{client_order_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_client_order(client_order_id: int, db: Session = Depends(get_db)):
+    """Soft delete — archives the order. Summary and transactions are preserved."""
     try:
         client_order_service.delete_client_order(db, client_order_id)
         return None
@@ -69,3 +81,14 @@ def delete_client_order(client_order_id: int, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
+
+@router.delete("/{client_order_id}/permanent", status_code=status.HTTP_204_NO_CONTENT)
+def hard_delete_client_order(client_order_id: int, db: Session = Depends(get_db)):
+    """Permanent delete — removes the order, summary, and all transactions."""
+    try:
+        client_order_service.hard_delete_client_order(db, client_order_id)
+        return None
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

@@ -159,6 +159,8 @@ class ClientOrderRead(BaseModel):
     quantity: int
     price: Decimal
     is_zero_balance: bool
+    isCompleted: bool
+    dateCompleted: datetime | None
 
 
 class ClientOrderUpdate(BaseModel):

@@ -1,4 +1,4 @@
-import { getFromCache, saveToCache, clearCache } from '../../js/apiCache.js';
+import { clearCache } from '../../js/apiCache.js';
 
 /* ===============================
    CONFIG
@@ -60,6 +60,8 @@ const editNameInput = document.getElementById("editCompanyName");
 
 let selectedCompanyId = null;
 let allCompanies = [];
+let currentTab = 'active';
+let isPermanentDelete = false;
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -106,7 +108,7 @@ function validateCompanyName(name) {
     );
   }
 
-  return trimmed; // ✅ ADD THIS
+  return trimmed;
 }
 
 /* ===============================
@@ -137,7 +139,7 @@ function showFieldError(inputEl, message) {
   inputEl.classList.add("is-invalid");
 
   const wrapper = inputEl.closest(".mb-3");
-  if (!wrapper) return; // ✅ ADD THIS
+  if (!wrapper) return;
 
   const feedback = document.createElement("div");
   feedback.className = "invalid-feedback d-block";
@@ -151,7 +153,7 @@ function clearFieldError(inputEl) {
 
   const wrapper = inputEl.closest(".mb-3");
 
-  if (!wrapper) return; // ✅ ADD THIS (CRITICAL)
+  if (!wrapper) return;
 
   const existing = wrapper.querySelectorAll(".invalid-feedback");
   existing.forEach(el => {
@@ -206,14 +208,8 @@ async function apiFetch(url, options = {}) {
    LOAD COMPANIES
 =============================== */
 async function loadCompanies() {
-  const url = `${FAST_API_URL}/companies/`;
-  const cached = getFromCache(url);
-  if (cached) {
-    allCompanies = cached;
-    loader.classList.add("d-none");
-    renderCompanies(allCompanies);
-    return;
-  }
+  const archived = currentTab === 'archive';
+  const url = `${FAST_API_URL}/companies/?archived=${archived}`;
 
   loader.classList.remove("d-none");
   grid.innerHTML = "";
@@ -222,7 +218,6 @@ async function loadCompanies() {
     const res = await apiFetch(url);
     const companies = await res.json();
 
-    saveToCache(url, companies);
     allCompanies = companies;
     loader.classList.add("d-none");
     renderCompanies(allCompanies);
@@ -244,51 +239,74 @@ async function loadCompanies() {
 function renderCompanies(companiesArray) {
   grid.innerHTML = "";
 
-if (companiesArray.length === 0) {
-  grid.innerHTML = `
-    <div class="col-12 d-flex flex-column align-items-center justify-content-center text-center" style="min-height: 250px;">
-      
-      <p class="text-muted mb-3">No companies found</p>
+  if (companiesArray.length === 0) {
+    const emptyMsg = currentTab === 'archive'
+      ? 'No archived companies found'
+      : 'No companies found';
 
-      <div id="addCompanyCard"
-           class="border border-2 d-flex justify-content-center align-items-center"
-           style="width: 180px; height: 120px; cursor:pointer; border-radius:12px;">
-        <span class="fs-1 fw-bold">+</span>
+    grid.innerHTML = `
+      <div class="col-12 d-flex flex-column align-items-center justify-content-center text-center" style="min-height: 250px;">
+        <p class="text-muted mb-3">${emptyMsg}</p>
+        ${currentTab === 'active' ? `
+        <div id="addCompanyCard"
+             class="border border-2 d-flex justify-content-center align-items-center"
+             style="width: 180px; height: 120px; cursor:pointer; border-radius:12px;">
+          <span class="fs-1 fw-bold">+</span>
+        </div>
+        ` : ''}
       </div>
-
-    </div>
-  `;
-  return;
-}
+    `;
+    return;
+  }
 
   companiesArray.forEach(renderCompanyCard);
-  renderAddCompanyCard();
+
+  if (currentTab === 'active') {
+    renderAddCompanyCard();
+  }
 }
 
 function renderCompanyCard(company) {
   const col = document.createElement("div");
   col.className = "col";
 
-  col.innerHTML = `
-    <div class="company-card card h-100 position-relative py-4"
-         data-company-id="${company.id}"
-         style="cursor:pointer;">
+  if (currentTab === 'archive') {
+    col.innerHTML = `
+      <div class="company-card card h-100 position-relative py-4"
+           data-company-id="${company.id}">
 
-      <div class="position-absolute top-0 end-0 p-1 d-flex gap-2">
-        <button class="btn btn-sm btn-success edit-company" data-id="${company.id}">✎</button>
-        <button class="btn btn-sm btn-danger delete-company" data-id="${company.id}">🗑</button>
-      </div>
+        <div class="position-absolute top-0 end-0 p-1 d-flex gap-2">
+          <button class="btn btn-sm btn-warning restore-company" data-id="${company.id}">Restore</button>
+          <button class="btn btn-sm btn-danger perm-delete-company" data-id="${company.id}">Delete</button>
+        </div>
 
-      <div class="card-body d-flex justify-content-center align-items-center text-center">
-        <strong class="fs-3 company-name">${escapeHtml(company.name)}</strong>
+        <div class="card-body d-flex justify-content-center align-items-center text-center">
+          <strong class="fs-3 company-name">${escapeHtml(company.name)}</strong>
+        </div>
       </div>
-    </div>
-  `;
+    `;
+  } else {
+    col.innerHTML = `
+      <div class="company-card card h-100 position-relative py-4"
+           data-company-id="${company.id}"
+           style="cursor:pointer;">
+
+        <div class="position-absolute top-0 end-0 p-1 d-flex gap-2">
+          <button class="btn btn-sm btn-success edit-company" data-id="${company.id}">✎</button>
+          <button class="btn btn-sm btn-danger delete-company" data-id="${company.id}">🗑</button>
+        </div>
+
+        <div class="card-body d-flex justify-content-center align-items-center text-center">
+          <strong class="fs-3 company-name">${escapeHtml(company.name)}</strong>
+        </div>
+      </div>
+    `;
+  }
 
   grid.appendChild(col);
 }
 
-function renderAddCompanyCard(containerId = null) {
+function renderAddCompanyCard() {
   const col = document.createElement("div");
   col.className = "col";
 
@@ -304,6 +322,44 @@ function renderAddCompanyCard(containerId = null) {
 }
 
 /* ===============================
+   TAB SETUP
+=============================== */
+function setTabUI(tab) {
+  const activeBtn = document.getElementById('activeTabBtn');
+  const archiveBtn = document.getElementById('archiveTabBtn');
+  activeBtn.className = tab === 'active' ? 'btn btn-dark btn-sm' : 'btn btn-outline-secondary btn-sm';
+  archiveBtn.className = tab === 'archive' ? 'btn btn-dark btn-sm' : 'btn btn-outline-secondary btn-sm';
+}
+
+document.getElementById('activeTabBtn')?.addEventListener('click', () => {
+  if (currentTab === 'active') return;
+  currentTab = 'active';
+  setTabUI('active');
+  loadCompanies();
+});
+
+document.getElementById('archiveTabBtn')?.addEventListener('click', () => {
+  if (currentTab === 'archive') return;
+  currentTab = 'archive';
+  setTabUI('archive');
+  loadCompanies();
+});
+
+/* ===============================
+   RESTORE COMPANY
+=============================== */
+async function restoreCompany(id) {
+  try {
+    await apiFetch(`${FAST_API_URL}/companies/${id}/restore`, { method: "PATCH" });
+    clearCache();
+    loadCompanies();
+  } catch (error) {
+    console.error("Failed to restore company:", error);
+    alert(`Failed to restore company: ${error.message}`);
+  }
+}
+
+/* ===============================
    CLICK HANDLING
 =============================== */
 document.addEventListener("click", async (e) => {
@@ -313,7 +369,27 @@ document.addEventListener("click", async (e) => {
     return;
   }
 
-  /* EDIT COMPANY */
+  /* RESTORE COMPANY (archive tab) */
+  const restoreBtn = e.target.closest(".restore-company");
+  if (restoreBtn) {
+    e.stopPropagation();
+    await restoreCompany(restoreBtn.dataset.id);
+    return;
+  }
+
+  /* PERMANENT DELETE COMPANY (archive tab) */
+  const permDeleteBtn = e.target.closest(".perm-delete-company");
+  if (permDeleteBtn) {
+    e.stopPropagation();
+    selectedCompanyId = permDeleteBtn.dataset.id;
+    isPermanentDelete = true;
+    document.querySelector("#deleteCompanyOverlay h5").innerHTML =
+      "Permanently delete this company?<br>This cannot be undone.";
+    deleteOverlay.classList.remove("d-none");
+    return;
+  }
+
+  /* EDIT COMPANY (active tab) */
   const editBtn = e.target.closest(".edit-company");
   if (editBtn) {
     e.stopPropagation();
@@ -321,18 +397,21 @@ document.addEventListener("click", async (e) => {
     return;
   }
 
-  /* DELETE COMPANY */
+  /* DELETE COMPANY (soft, active tab) */
   const deleteBtn = e.target.closest(".delete-company");
   if (deleteBtn) {
     e.stopPropagation();
     selectedCompanyId = deleteBtn.dataset.id;
+    isPermanentDelete = false;
+    document.querySelector("#deleteCompanyOverlay h5").innerHTML =
+      "Are you sure you want to<br>delete this company?";
     deleteOverlay.classList.remove("d-none");
     return;
   }
 
-  /* OPEN COMPANY → CLIENTS */
+  /* OPEN COMPANY → CLIENTS (active tab only) */
   const card = e.target.closest(".company-card");
-  if (card) {
+  if (card && currentTab === 'active') {
     localStorage.setItem("activeCompanyId", card.dataset.companyId);
     window.location.href = "./clients/clients.html";
   }
@@ -378,7 +457,6 @@ sortSelect.addEventListener("change", applySearchAndSort);
 addForm.onsubmit = async (e) => {
   e.preventDefault();
 
-  // MODIFIED
   const name = addNameInput.value.trim();
   clearFieldError(addNameInput);
 
@@ -432,7 +510,6 @@ async function openEditCompany(companyId) {
   try {
     const response = await apiFetch(`${FAST_API_URL}/companies/${companyId}`);
 
-    // MODIFIED
     let company;
     try {
       company = await response.json();
@@ -509,11 +586,13 @@ document.getElementById("confirmDeleteCompany").onclick = async () => {
     confirmBtn.disabled = true;
     cancelBtn.disabled = true;
     closeBtn.disabled = true;
-    confirmBtn.textContent = "Deleting...";
+    confirmBtn.textContent = isPermanentDelete ? "Deleting..." : "Deleting...";
 
-    await apiFetch(`${FAST_API_URL}/companies/${selectedCompanyId}`, {
-      method: "DELETE"
-    });
+    const url = isPermanentDelete
+      ? `${FAST_API_URL}/companies/${selectedCompanyId}/permanent`
+      : `${FAST_API_URL}/companies/${selectedCompanyId}`;
+
+    await apiFetch(url, { method: "DELETE" });
 
     deleteOverlay.classList.add("d-none");
     clearCache();
@@ -527,6 +606,7 @@ document.getElementById("confirmDeleteCompany").onclick = async () => {
     confirmBtn.disabled = false;
     cancelBtn.disabled = false;
     closeBtn.disabled = false;
+    isPermanentDelete = false;
   }
 };
 
@@ -546,8 +626,12 @@ document.getElementById("closeEditCompany").onclick =
   };
 
 document.getElementById("closeDeleteCompany").onclick =
-  document.getElementById("cancelDeleteCompany").onclick = () =>
+  document.getElementById("cancelDeleteCompany").onclick = () => {
     deleteOverlay.classList.add("d-none");
+    isPermanentDelete = false;
+    document.querySelector("#deleteCompanyOverlay h5").innerHTML =
+      "Are you sure you want to<br>delete this company?";
+  };
 
 /* ===============================
    INIT

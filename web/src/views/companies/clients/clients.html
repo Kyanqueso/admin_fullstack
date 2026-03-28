@@ -32,6 +32,12 @@
     <!-- Page Title -->
     <h2 class="mb-2 mt-2" id="companyTitle">Client List</h2>
 
+    <!-- Active/Archive Tabs -->
+    <div class="d-flex justify-content-center gap-2 mb-2">
+        <button class="btn btn-dark btn-sm" id="activeTabBtn">Active</button>
+        <button class="btn btn-outline-secondary btn-sm" id="archiveTabBtn">Archive</button>
+    </div>
+
     <!-- Search / Sort / Add -->
     <div class="row align-items-end mb-4">
         <div class="col-12 col-md-4 mb-2">
@@ -113,7 +119,7 @@
 
                     <div class="col-md-6">
                         <label class="form-label">Viber</label>
-                        <input type="text" class="form-control" placeholder="+63 *** *** ****">
+                        <input type="text" class="form-control" placeholder="09... (must be 11 digits)">
                     </div>
                 </div>
 
@@ -210,6 +216,16 @@
                 <button class="btn btn-danger px-4" id="cancelDelete">No</button>
                 <button class="btn btn-green px-4" id="confirmDelete">Yes</button>
             </div>
+        </div>
+    </div>
+
+    <!-- RESTORE ERROR OVERLAY -->
+    <div class="overlay d-none" id="restoreErrorOverlay">
+        <div class="overlay-content p-4 text-center" style="max-width: 380px;">
+            <button class="overlay-close" id="closeRestoreError">✕</button>
+            <h5 class="mb-3">Cannot Restore</h5>
+            <p id="restoreErrorMessage" class="text-muted mb-4"></p>
+            <button class="btn btn-dark px-4" id="dismissRestoreError">OK</button>
         </div>
     </div>
 

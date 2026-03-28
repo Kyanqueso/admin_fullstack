@@ -1,5 +1,5 @@
 import pencilIcon from '../../../assets/icons/pencil-dark.svg';
-import { getFromCache, saveToCache, clearCache } from '../../../js/apiCache.js';
+import { getFromCache, saveToCache } from '../../../js/apiCache.js';
 
 const FAST_API_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
 const COMPANY_ID = localStorage.getItem("activeCompanyId");
@@ -7,7 +7,7 @@ const COMPANY_ID = localStorage.getItem("activeCompanyId");
 let clientsMap = {};
 let ordersMap = {};
 let paymentSummaries = [];
-let maxPaymentNumber = 0; // tracks highest payment_number for the open summary
+let currentTab = 'active';
 
 
 /* ===============================
@@ -69,6 +69,17 @@ async function loadCompanyName() {
 
 
 /* ===============================
+   TAB SETUP
+=============================== */
+function setTabUI(tab) {
+  const activeBtn = document.getElementById('activeTabBtn');
+  const archiveBtn = document.getElementById('archiveTabBtn');
+  activeBtn.className = tab === 'active' ? 'btn btn-dark btn-sm' : 'btn btn-outline-secondary btn-sm';
+  archiveBtn.className = tab === 'archive' ? 'btn btn-dark btn-sm' : 'btn btn-outline-secondary btn-sm';
+}
+
+
+/* ===============================
    INIT
 =============================== */
 document.addEventListener("DOMContentLoaded", async () => {
@@ -89,27 +100,63 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   setupSearchAndSort();
   setupOverlayControls();
+
+  // Tab wiring
+  document.getElementById('activeTabBtn')?.addEventListener('click', async () => {
+    if (currentTab === 'active') return;
+    currentTab = 'active';
+    setTabUI('active');
+    await loadClients();
+    await loadOrders();
+    await loadPaymentSummaries();
+  });
+
+  document.getElementById('archiveTabBtn')?.addEventListener('click', async () => {
+    if (currentTab === 'archive') return;
+    currentTab = 'archive';
+    setTabUI('archive');
+    await loadClients(true);
+    await loadOrders();
+    await loadPaymentSummaries();
+  });
 });
 
 
 /* ===============================
    LOAD CLIENTS
 =============================== */
-async function loadClients() {
-  const url = `${FAST_API_URL}/clients/`;
-  let clients = getFromCache(url);
+async function loadClients(archived = false) {
+  if (archived) {
+    // For archive tab: load both active AND archived clients for name display
+    try {
+      const [res1, res2] = await Promise.all([
+        apiFetch(`${FAST_API_URL}/clients/?company_id=${COMPANY_ID}`),
+        apiFetch(`${FAST_API_URL}/clients/?company_id=${COMPANY_ID}&archived=true`)
+      ]);
+      const [active, archivedClients] = await Promise.all([res1.json(), res2.json()]);
+      clientsMap = {};
+      [...active, ...archivedClients].forEach(client => {
+        clientsMap[client.id] = `${client.first_name} ${client.last_name}`;
+      });
+    } catch (err) {
+      console.error("Failed to load clients:", err);
+    }
+  } else {
+    // Active tab: load only active clients for this company
+    const url = `${FAST_API_URL}/clients/?company_id=${COMPANY_ID}`;
+    let clients = getFromCache(url);
 
-  if (!clients) {
-    const res = await apiFetch(url);
-    clients = await res.json();
-    saveToCache(url, clients);
-  }
+    if (!clients) {
+      const res = await apiFetch(url);
+      clients = await res.json();
+      saveToCache(url, clients);
+    }
 
-  clients
-    .filter(c => String(c.company_id) === String(COMPANY_ID))
-    .forEach(client => {
+    clientsMap = {};
+    clients.forEach(client => {
       clientsMap[client.id] = `${client.first_name} ${client.last_name}`;
     });
+  }
 }
 
 
@@ -117,15 +164,23 @@ async function loadClients() {
    LOAD ORDERS
 =============================== */
 async function loadOrders() {
-  const url = `${FAST_API_URL}/client-orders/`;
-  let orders = getFromCache(url);
+  let url;
+  if (currentTab === 'archive') {
+    url = `${FAST_API_URL}/client-orders/?archived=true&completed=false`;
+  } else {
+    url = `${FAST_API_URL}/client-orders/?completed=false`;
+  }
+
+  const cached = currentTab === 'active' ? getFromCache(url) : null;
+  let orders = cached;
 
   if (!orders) {
     const res = await apiFetch(url);
     orders = await res.json();
-    saveToCache(url, orders);
+    if (currentTab === 'active') saveToCache(url, orders);
   }
 
+  ordersMap = {};
   orders
     .filter(order => clientsMap[order.client_id] !== undefined)
     .forEach(order => {
@@ -144,11 +199,22 @@ async function loadPaymentSummaries() {
     <tr><td colspan="8" class="text-center"><div class="spinner-border"></div></td></tr>
   `;
 
-  const res = await apiFetch(`${FAST_API_URL}/payment-summaries/`);
+  let summariesUrl = `${FAST_API_URL}/payment-summaries/`;
+  if (currentTab === 'archive') {
+    summariesUrl = `${FAST_API_URL}/payment-summaries/?archived=true`;
+  }
+
+  const res = await apiFetch(summariesUrl);
   paymentSummaries = await res.json();
 
-  // MODIFIED: also refresh ordersMap so stale deleted orders don't persist
-  const ordersRes = await apiFetch(`${FAST_API_URL}/client-orders/`);
+  // Also refresh ordersMap so stale deleted orders don't persist
+  let ordersUrl;
+  if (currentTab === 'archive') {
+    ordersUrl = `${FAST_API_URL}/client-orders/?archived=true&completed=false`;
+  } else {
+    ordersUrl = `${FAST_API_URL}/client-orders/?completed=false`;
+  }
+  const ordersRes = await apiFetch(ordersUrl);
   const freshOrders = await ordersRes.json();
   ordersMap = {};
   freshOrders
@@ -168,12 +234,13 @@ function renderPaymentRows(summaries) {
   const tbody = document.getElementById("paymentsTableBody");
   tbody.innerHTML = "";
 
-  // MODIFIED: filter out summaries whose order has already been completed (deleted from client_orders)
+  // filter out summaries whose order has already been completed (deleted from ordersMap)
   const visible = summaries.filter(s => ordersMap[s.client_order_id]);
 
   if (visible.length === 0) {
+    const label = currentTab === 'archive' ? 'archived payments' : 'payments';
     tbody.innerHTML = `
-      <tr><td colspan="8" class="text-center text-muted">No payments found</td></tr>
+      <tr><td colspan="8" class="text-center text-muted">No ${label} found</td></tr>
     `;
     return;
   }
@@ -188,34 +255,58 @@ function renderPaymentRows(summaries) {
       : "-";
 
     const balanceClearedDate =
-      summary.remaining_balance == 0
-        ? new Date().toLocaleDateString()
+      summary.remaining_balance == 0 && order.dateCompleted
+        ? new Date(order.dateCompleted).toLocaleDateString()
         : "-";
 
     const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${order.id}</td>
-      <td>${clientName}</td>
-      <td>₱${totalAmount.toLocaleString()}</td>
-      <td>${orderDate}</td>
-      <td class="${summary.remaining_balance > 0 ? 'text-danger' : 'text-success'}">
-        ₱${Number(summary.remaining_balance).toLocaleString()}
-      </td>
-      <td>${balanceClearedDate}</td>
-      <td>
-        <button class="btn btn-sm text-white view-transaction-btn"
-          data-summary-id="${summary.id}"
-          style="background-color: var(--color-primary);">
-          👁 View
-        </button>
-      </td>
-      <td>
-        <button class="btn btn-sm edit-payment-btn"
-          data-summary-id="${summary.id}">
-          <img src="${pencilIcon}" width="18">
-        </button>
-      </td>
-    `;
+
+    if (currentTab === 'archive') {
+      // Archive tab: show view button only, no edit button
+      row.innerHTML = `
+        <td>${order.id}</td>
+        <td>${clientName}</td>
+        <td>₱${totalAmount.toLocaleString()}</td>
+        <td>${orderDate}</td>
+        <td class="${summary.remaining_balance > 0 ? 'text-danger' : 'text-success'}">
+          ₱${Number(summary.remaining_balance).toLocaleString()}
+        </td>
+        <td>${balanceClearedDate}</td>
+        <td>
+          <button class="btn btn-sm text-white view-transaction-btn"
+            data-summary-id="${summary.id}"
+            style="background-color: var(--color-primary);">
+            👁 View
+          </button>
+        </td>
+        <td>-</td>
+      `;
+    } else {
+      // Active tab: show view + edit buttons
+      row.innerHTML = `
+        <td>${order.id}</td>
+        <td>${clientName}</td>
+        <td>₱${totalAmount.toLocaleString()}</td>
+        <td>${orderDate}</td>
+        <td class="${summary.remaining_balance > 0 ? 'text-danger' : 'text-success'}">
+          ₱${Number(summary.remaining_balance).toLocaleString()}
+        </td>
+        <td>${balanceClearedDate}</td>
+        <td>
+          <button class="btn btn-sm text-white view-transaction-btn"
+            data-summary-id="${summary.id}"
+            style="background-color: var(--color-primary);">
+            👁 View
+          </button>
+        </td>
+        <td>
+          <button class="btn btn-sm edit-payment-btn"
+            data-summary-id="${summary.id}">
+            <img src="${pencilIcon}" width="18">
+          </button>
+        </td>
+      `;
+    }
 
     tbody.appendChild(row);
   });
@@ -292,7 +383,7 @@ function attachDynamicHandlers() {
       const summaryId = btn.dataset.summaryId;
       const summary = paymentSummaries.find(s => s.id == summaryId);
 
-      // ADDED: guard — order may have been completed and removed from ordersMap
+      // guard — order may have been completed and removed from ordersMap
       const order = ordersMap[summary.client_order_id];
       if (!order) {
         await loadPaymentSummaries();
@@ -344,13 +435,13 @@ function attachDynamicHandlers() {
   });
 
 
-  /* OPEN EDIT OVERLAY */
+  /* OPEN EDIT OVERLAY (active tab only) */
   document.querySelectorAll(".edit-payment-btn").forEach(btn => {
     btn.addEventListener("click", async () => {
       const summaryId = btn.dataset.summaryId;
       const summary = paymentSummaries.find(s => s.id == summaryId);
 
-      // ADDED: guard — if order was just completed and removed, refresh instead of opening edit
+      // guard — if order was just completed and removed, refresh instead of opening edit
       if (!ordersMap[summary?.client_order_id]) {
         await loadPaymentSummaries();
         showOrderCompletedBanner();
@@ -363,7 +454,7 @@ function attachDynamicHandlers() {
 }
 
 
-// ADDED: helper banner shown when an order was completed between renders
+// helper banner shown when an order was completed between renders
 function showOrderCompletedBanner() {
   const existing = document.querySelector(".order-completed-banner");
   if (existing) return;
@@ -385,7 +476,7 @@ async function openEditOverlay(summaryId) {
 
   const order = ordersMap[summary.client_order_id];
 
-  // ADDED: guard — order may have been completed already
+  // guard — order may have been completed already
   if (!order) {
     await loadPaymentSummaries();
     showOrderCompletedBanner();
@@ -418,9 +509,6 @@ async function openEditOverlay(summaryId) {
   const res = await apiFetch(`${FAST_API_URL}/payment-transactions/`);
   const transactions = await res.json();
   const filtered = transactions.filter(t => t.payment_summary_id == summaryId);
-
-  // Track highest payment_number to avoid conflicts when adding new ones
-  maxPaymentNumber = filtered.reduce((max, t) => Math.max(max, t.payment_number ?? 0), 0);
 
   container.innerHTML = "";
 
@@ -555,7 +643,7 @@ function setupOverlayControls() {
         const summaryId = editOverlay.dataset.summaryId;
         const fresh = paymentSummaries.find(s => s.id == summaryId);
 
-        // ADDED: if order was completed by this deletion (edge case), close overlay
+        // if order was completed by this deletion (edge case), close overlay
         if (!fresh || !ordersMap[fresh.client_order_id]) {
           editOverlay.classList.add("d-none");
           showOrderCompletedBanner();
@@ -596,7 +684,7 @@ function setupOverlayControls() {
       const summary = paymentSummaries.find(s => s.id == summaryId);
       if (!summary) return;
 
-      // ADDED: guard — if order is already gone, abort and refresh
+      // guard — if order is already gone, abort and refresh
       if (!ordersMap[summary.client_order_id]) {
         editOverlay.classList.add("d-none");
         await loadPaymentSummaries();
@@ -668,7 +756,6 @@ function setupOverlayControls() {
           method: "POST",
           body: JSON.stringify({
             payment_summary_id: parseInt(summaryId),
-            // ✅ REMOVED payment_number (backend handles it now)
             paid_amount: amount,
             payment_date: paymentDate
           })
@@ -678,13 +765,13 @@ function setupOverlayControls() {
           let message = "Failed to save payment.";
 
           try {
-            const text = await response.text(); // ✅ SAFE (fixes JSON crash)
+            const text = await response.text();
 
             try {
               const json = JSON.parse(text);
               message = json.detail || message;
             } catch {
-              message = text; // fallback for "Internal Server Error"
+              message = text;
             }
 
           } catch {}
@@ -695,7 +782,7 @@ function setupOverlayControls() {
         }
       }
 
-        // MODIFIED: refresh table and close overlay; order may now be in completed_orders
+        // refresh table and close overlay; order may now be in completed_orders
         await loadPaymentSummaries();
         editOverlay.classList.add("d-none");
 
@@ -704,7 +791,6 @@ function setupOverlayControls() {
 
         let message = "Failed to save transactions. Please try again.";
 
-        // ✅ extract backend error (FastAPI)
         if (err?.message) {
           message = err.message;
         }

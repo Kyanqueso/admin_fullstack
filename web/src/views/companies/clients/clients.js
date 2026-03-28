@@ -120,12 +120,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const searchInput = document.querySelector('input[placeholder="Search name"]');
   const sortSelect = document.querySelector(".form-select");
+  const addBtn = document.getElementById("openOverlay");
 
   const COMPANY_ID = localStorage.getItem("activeCompanyId");
 
   let selectedClientId = null;
   let rowToDelete = null;
   let allClients = [];
+  let currentTab = 'active';
+  let isPermanentDelete = false;
 
   function escapeHtml(str) {
     if (!str) return '';
@@ -140,7 +143,6 @@ document.addEventListener("DOMContentLoaded", () => {
   /* ===============================
      VALIDATION HELPERS
   =============================== */
-  // ADDED (same as companies)
   function showFieldError(inputEl, message) {
     clearFieldError(inputEl);
 
@@ -285,18 +287,50 @@ document.addEventListener("DOMContentLoaded", () => {
   loadClients();
 
   /* ===============================
+     TAB SETUP
+  =============================== */
+  function setTabUI(tab) {
+    const activeBtn = document.getElementById('activeTabBtn');
+    const archiveBtn = document.getElementById('archiveTabBtn');
+    activeBtn.className = tab === 'active' ? 'btn btn-dark btn-sm' : 'btn btn-outline-secondary btn-sm';
+    archiveBtn.className = tab === 'archive' ? 'btn btn-dark btn-sm' : 'btn btn-outline-secondary btn-sm';
+
+    // Update table headers
+    const ths = document.querySelectorAll('thead th');
+    if (tab === 'archive') {
+      if (ths[4]) ths[4].textContent = '-';
+      if (ths[5]) ths[5].textContent = 'Restore';
+      if (ths[6]) ths[6].textContent = 'Delete';
+    } else {
+      if (ths[4]) ths[4].textContent = 'Notes';
+      if (ths[5]) ths[5].textContent = 'Edit';
+      if (ths[6]) ths[6].textContent = 'Delete';
+    }
+
+    // Show/hide Add button
+    if (addBtn) {
+      addBtn.style.display = tab === 'active' ? '' : 'none';
+    }
+  }
+
+  document.getElementById('activeTabBtn')?.addEventListener('click', () => {
+    if (currentTab === 'active') return;
+    currentTab = 'active';
+    setTabUI('active');
+    loadClients();
+  });
+
+  document.getElementById('archiveTabBtn')?.addEventListener('click', () => {
+    if (currentTab === 'archive') return;
+    currentTab = 'archive';
+    setTabUI('archive');
+    loadClients();
+  });
+
+  /* ===============================
      LOAD CLIENTS
   =============================== */
   async function loadClients() {
-    const cached = getFromCache(API_URL);
-    if (cached) {
-      allClients = cached.filter(
-        client => String(client.company_id) === String(COMPANY_ID)
-      );
-      renderClientRows(allClients);
-      return;
-    }
-
     tableBody.innerHTML = `
       <tr>
         <td colspan="7" class="text-center">
@@ -307,6 +341,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       let url = `${API_URL}?company_id=${COMPANY_ID}`;
+
+      if (currentTab === 'archive') {
+        url += `&archived=true`;
+      }
 
       const searchValue = document.querySelector("input[placeholder='Search name']")?.value.trim();
       const sortValue = document.querySelector("select.form-select")?.value;
@@ -328,11 +366,7 @@ document.addEventListener("DOMContentLoaded", () => {
         clients = [];
       }
 
-      saveToCache(API_URL, clients);
-
-      allClients = clients.filter(
-        client => String(client.company_id) === String(COMPANY_ID)
-      );
+      allClients = clients;
 
       renderClientRows(allClients);
 
@@ -355,10 +389,11 @@ document.addEventListener("DOMContentLoaded", () => {
     tableBody.innerHTML = "";
 
     if (clientsArray.length === 0) {
+      const label = currentTab === 'archive' ? 'archived clients' : 'clients';
       tableBody.innerHTML = `
         <tr>
           <td colspan="7" class="text-center text-muted">
-            No clients found
+            No ${label} found
           </td>
         </tr>
       `;
@@ -372,27 +407,47 @@ document.addEventListener("DOMContentLoaded", () => {
     const tr = document.createElement("tr");
     tr.dataset.id = client.id;
 
-    tr.innerHTML = `
-      <td>${escapeHtml(client.first_name)}</td>
-      <td>${escapeHtml(client.last_name)}</td>
-      <td>${escapeHtml(client.address)}</td>
-      <td>${escapeHtml(client.viber_number) || "-"}</td>
-      <td>
-        <button class="btn btn-sm btn-outline-dark view-notes">
-          View Notes
-        </button>
-      </td>
-      <td>
-        <button class="btn btn-sm edit-btn">
-          <img src="${pencilIcon}" width="18">
-        </button>
-      </td>
-      <td>
-        <button class="btn btn-sm delete-btn">
-          <img src="${trashIcon}" width="18">
-        </button>
-      </td>
-    `;
+    if (currentTab === 'archive') {
+      tr.innerHTML = `
+        <td>${escapeHtml(client.first_name)}</td>
+        <td>${escapeHtml(client.last_name)}</td>
+        <td>${escapeHtml(client.address)}</td>
+        <td>${escapeHtml(client.viber_number) || "-"}</td>
+        <td>-</td>
+        <td>
+          <button class="btn btn-sm btn-warning restore-btn" data-id="${client.id}">
+            Restore
+          </button>
+        </td>
+        <td>
+          <button class="btn btn-sm btn-danger perm-delete-btn" data-id="${client.id}">
+            Delete
+          </button>
+        </td>
+      `;
+    } else {
+      tr.innerHTML = `
+        <td>${escapeHtml(client.first_name)}</td>
+        <td>${escapeHtml(client.last_name)}</td>
+        <td>${escapeHtml(client.address)}</td>
+        <td>${escapeHtml(client.viber_number) || "-"}</td>
+        <td>
+          <button class="btn btn-sm btn-outline-dark view-notes">
+            View Notes
+          </button>
+        </td>
+        <td>
+          <button class="btn btn-sm edit-btn">
+            <img src="${pencilIcon}" width="18">
+          </button>
+        </td>
+        <td>
+          <button class="btn btn-sm delete-btn">
+            <img src="${trashIcon}" width="18">
+          </button>
+        </td>
+      `;
+    }
 
     tableBody.appendChild(tr);
   }
@@ -451,7 +506,6 @@ document.addEventListener("DOMContentLoaded", () => {
   /* ===============================
      ADD CLIENT
   =============================== */
-  // MODIFIED (FIXED ORDER + CORRECT INPUTS)
   document.getElementById("overlay-form").onsubmit = async (e) => {
     e.preventDefault();
 
@@ -508,9 +562,40 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   /* ===============================
-     TABLE ACTIONS (VIEW, EDIT, DELETE)
+     TABLE ACTIONS (VIEW, EDIT, DELETE, RESTORE, PERM DELETE)
   =============================== */
   document.addEventListener("click", async (e) => {
+
+    // RESTORE CLIENT (archive tab)
+    const restoreBtn = e.target.closest(".restore-btn");
+    if (restoreBtn) {
+      const id = restoreBtn.dataset.id;
+      try {
+        restoreBtn.disabled = true;
+        restoreBtn.textContent = "Restoring...";
+        await apiFetch(`${API_URL}/${id}/restore`, { method: "PATCH" });
+        clearCache();
+        loadClients();
+      } catch (error) {
+        document.getElementById("restoreErrorMessage").textContent = error.message;
+        document.getElementById("restoreErrorOverlay").classList.remove("d-none");
+        restoreBtn.disabled = false;
+        restoreBtn.textContent = "Restore";
+      }
+      return;
+    }
+
+    // PERMANENT DELETE (archive tab) — open overlay
+    const permDeleteBtn = e.target.closest(".perm-delete-btn");
+    if (permDeleteBtn) {
+      rowToDelete = permDeleteBtn.closest("tr");
+      selectedClientId = permDeleteBtn.dataset.id;
+      isPermanentDelete = true;
+      document.querySelector("#deleteClientOverlay h5").innerHTML =
+        "Permanently delete this client?<br>This cannot be undone.";
+      deleteOverlay.classList.remove("d-none");
+      return;
+    }
 
     const notesBtn = e.target.closest(".view-notes");
     if (notesBtn) {
@@ -555,6 +640,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (deleteBtn) {
       rowToDelete = deleteBtn.closest("tr");
       selectedClientId = rowToDelete.dataset.id;
+      isPermanentDelete = false;
+      document.querySelector("#deleteClientOverlay h5").innerHTML =
+        "Are you sure you want to<br>delete this client?";
       deleteOverlay.classList.remove("d-none");
     }
   });
@@ -616,7 +704,6 @@ document.addEventListener("DOMContentLoaded", () => {
     contact = cleanContact(contact);
 
     // VALIDATE — stop here if invalid
-    // MODIFIED
     const inputs = [editFirstName, editLastName, editAddress, editViber];
 
     if (!validateClientFields(firstName, lastName, address, contact, inputs)) return;
@@ -675,13 +762,15 @@ document.addEventListener("DOMContentLoaded", () => {
       closeBtn.disabled = true;
       confirmBtn.textContent = "Deleting...";
 
-      await apiFetch(`${API_URL}/${selectedClientId}`, {
-        method: "DELETE"
-      });
+      if (isPermanentDelete) {
+        await apiFetch(`${API_URL}/${selectedClientId}/permanent`, { method: "DELETE" });
+      } else {
+        await apiFetch(`${API_URL}/${selectedClientId}`, { method: "DELETE" });
+      }
 
-      rowToDelete.remove();
       deleteOverlay.classList.add("d-none");
       clearCache();
+      loadClients();
 
     } catch (error) {
       setTimeout(() => alert(error.message || "Failed to delete client"), 0);
@@ -690,6 +779,7 @@ document.addEventListener("DOMContentLoaded", () => {
       confirmBtn.disabled = false;
       cancelBtn.disabled = false;
       closeBtn.disabled = false;
+      isPermanentDelete = false;
     }
   };
 
@@ -704,6 +794,14 @@ document.addEventListener("DOMContentLoaded", () => {
       notesOverlay.classList.add("d-none");
       editOverlay.classList.add("d-none");
       deleteOverlay.classList.add("d-none");
+      isPermanentDelete = false;
+      document.querySelector("#deleteClientOverlay h5").innerHTML =
+        "Are you sure you want to<br>delete this client?";
     };
+
+  const closeRestoreError = () =>
+    document.getElementById("restoreErrorOverlay").classList.add("d-none");
+  document.getElementById("closeRestoreError").onclick = closeRestoreError;
+  document.getElementById("dismissRestoreError").onclick = closeRestoreError;
 
 });

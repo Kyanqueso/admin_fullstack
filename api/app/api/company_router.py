@@ -14,6 +14,7 @@ def get_all_company(
     sort: Optional[str] = Query(None),
     skip: int = 0,
     limit: int = 10000,
+    archived: bool = False,
     db: Session = Depends(get_db)
 ):
     return company_service.get_companies(
@@ -21,7 +22,8 @@ def get_all_company(
         search=search,
         sort=sort,
         skip=skip,
-        limit=limit
+        limit=limit,
+        archived=archived
     )
 
 
@@ -64,6 +66,25 @@ def update_company(company_id: int, company_data: CompanyUpdate, db: Session = D
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
 
     return company
+
+
+@router.patch("/{company_id}/restore", response_model=CompanyRead)
+def restore_company(company_id: int, db: Session = Depends(get_db)):
+    try:
+        return company_service.restore_company(db, company_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.delete("/{company_id}/permanent", status_code=status.HTTP_204_NO_CONTENT)
+def hard_delete_company(company_id: int, db: Session = Depends(get_db)):
+    try:
+        company_service.hard_delete_company(db, company_id)
+        return None
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
 @router.delete("/{company_id}", status_code=status.HTTP_204_NO_CONTENT)

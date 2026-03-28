@@ -36,6 +36,8 @@
   max-width: 800px;
   width: 95%;
   position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow:
     0 24px 48px rgba(0, 0, 0, 0.28),
     0 8px 16px rgba(0, 0, 0, 0.16);

@@ -224,10 +224,12 @@ body {
 .client-tabs-inner {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.2rem;
     height: 52px;
     overflow-x: auto;
     scrollbar-width: none;
+    position: relative;
 }
 
 .client-tabs-inner::-webkit-scrollbar {
@@ -246,7 +248,12 @@ body {
     text-decoration: none;
     transition: background 0.15s ease, color 0.15s ease;
     white-space: nowrap;
-    margin-right: 0.25rem;
+    position: absolute;
+    left: 0.5rem;
+}
+
+.client-tab-divider {
+    display: none;
 }
 
 .client-tab-back:hover {
@@ -254,13 +261,6 @@ body {
     color: var(--color-black);
 }
 
-.client-tab-divider {
-    width: 1px;
-    height: 22px;
-    background: rgba(0, 0, 0, 0.13);
-    margin: 0 0.4rem;
-    flex-shrink: 0;
-}
 
 .client-tab-link {
     padding: 0.4rem 1rem;

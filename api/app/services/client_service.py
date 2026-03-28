@@ -1,25 +1,28 @@
 from sqlalchemy.orm import Session
-from app.db.models import Client
+from app.db.models import Client, Company
 from app.schemas.client import ClientCreate, ClientUpdate
 from sqlalchemy import or_
 
 
-
-
 def create_client(db: Session, client_data: ClientCreate):
+    company = db.query(Company).filter(
+        Company.id == client_data.company_id,
+        Company.isDeleted == False
+    ).first()
+    if not company:
+        raise ValueError("Company not found or is archived.")
 
-    # CHECK FIRST
     existing = db.query(Client).filter(
         Client.first_name == client_data.first_name,
         Client.last_name == client_data.last_name,
-        Client.company_id == client_data.company_id
+        Client.company_id == client_data.company_id,
+        Client.isDeleted == False
     ).first()
 
     if existing:
         raise ValueError("Client already exists")
 
     client = Client(**client_data.model_dump())
-
     db.add(client)
     db.commit()
     db.refresh(client)
@@ -28,7 +31,10 @@ def create_client(db: Session, client_data: ClientCreate):
 
 
 def get_client(db: Session, client_id: int):
-    client = db.query(Client).filter(Client.id == client_id).first()
+    client = db.query(Client).filter(
+        Client.id == client_id,
+        Client.isDeleted == False
+    ).first()
 
     if not client:
         raise ValueError("Client not found")
@@ -42,15 +48,14 @@ def get_clients(
     search: str | None = None,
     sort: str | None = None,
     skip: int = 0,
-    limit: int | None = 10000
+    limit: int | None = 10000,
+    archived: bool = False
 ):
-    query = db.query(Client)
+    query = db.query(Client).filter(Client.isDeleted == archived)
 
-    # Filter by company
     if company_id is not None:
         query = query.filter(Client.company_id == company_id)
 
-    # Search by first OR last name
     if search:
         query = query.filter(
             or_(
@@ -61,19 +66,15 @@ def get_clients(
             )
         )
 
-    # Sorting
     if sort == "az":
         query = query.order_by(Client.first_name.asc())
-
     elif sort == "za":
         query = query.order_by(Client.first_name.desc())
-
     elif sort == "recent":
         query = query.order_by(Client.id.desc())
-
     elif sort == "oldest":
         query = query.order_by(Client.id.asc())
-        
+
     query = query.offset(skip)
 
     if limit is not None:
@@ -84,10 +85,8 @@ def get_clients(
 
 def update_client(db: Session, client_id: int, client_data: ClientUpdate):
     client = get_client(db, client_id)
-    
 
-    client_updated_items = client_data.model_dump(exclude_unset=True).items()
-    for key, value in client_updated_items:
+    for key, value in client_data.model_dump(exclude_unset=True).items():
         setattr(client, key, value)
 
     db.commit()
@@ -95,10 +94,71 @@ def update_client(db: Session, client_id: int, client_data: ClientUpdate):
 
     return client
 
+# Un-archive a client and all its orders as well
+def restore_client(db: Session, client_id: int):
+    client = db.query(Client).filter(
+        Client.id == client_id,
+        Client.isDeleted == True
+    ).first()
 
+    if not client:
+        raise ValueError("Archived client not found")
+
+    duplicate = db.query(Client).filter(
+        Client.first_name == client.first_name,
+        Client.last_name == client.last_name,
+        Client.company_id == client.company_id,
+        Client.isDeleted == False
+    ).first()
+    if duplicate:
+        raise ValueError("An active client with this name already exists.")
+
+    for order in client.client_orders:
+        if order.payment_summary:
+            for tx in order.payment_summary.payment_transactions:
+                tx.isDeleted = False
+            order.payment_summary.isDeleted = False
+        order.isDeleted = False
+
+    client.isDeleted = False
+    db.commit()
+
+    return client
+
+# Soft Delete: client and all their orders are marked as deleted but remain in the database
 def delete_client(db: Session, client_id: int):
     client = get_client(db, client_id)
 
+    for order in client.client_orders:
+        if order.payment_summary:
+            for tx in order.payment_summary.payment_transactions:
+                tx.isDeleted = True
+            order.payment_summary.isDeleted = True
+        order.isDeleted = True
+
+    client.isDeleted = True
+    db.commit()
+
+    return True
+
+# Hard Delete: client, all their orders, payment summaries, and transactions are permanently removed from the database.
+def hard_delete_client(db: Session, client_id: int):
+    client = db.query(Client).filter(Client.id == client_id).first()
+
+    if not client:
+        raise ValueError("Client not found")
+
+    # First delete all orders under this client, along with their payment summaries and transactions, due to foreign key constraints. Then delete the client itself.
+    for order in client.client_orders:
+        if order.payment_summary:
+            for tx in order.payment_summary.payment_transactions:
+                db.delete(tx)
+            db.flush()
+            db.delete(order.payment_summary)
+            db.flush()
+        db.delete(order)
+
+    db.flush()
     db.delete(client)
     db.commit()
 

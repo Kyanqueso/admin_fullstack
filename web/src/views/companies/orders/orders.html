@@ -31,6 +31,12 @@
     <!-- Page Title -->
     <h2 class="mb-2 mt-2" id="companyTitle">Client Order List</h2>
 
+    <!-- Active/Archive Tabs -->
+    <div class="d-flex justify-content-center gap-2 mb-2">
+        <button class="btn btn-dark btn-sm" id="activeTabBtn">Active</button>
+        <button class="btn btn-outline-secondary btn-sm" id="archiveTabBtn">Archive</button>
+    </div>
+
     <!-- Search / Sort / Add -->
     <div class="row align-items-end mb-4">
 
@@ -114,12 +120,15 @@
 
             <form class="w-100" id="addOrderForm">
 
-                <!-- Customer -->
-                <div class="mb-3">
+                <!-- Customer (searchable) -->
+                <div class="mb-3 position-relative">
                     <label class="form-label">Customer Name</label>
-                    <select class="form-select" required id="addCustomerId">
-                        <option value="" selected disabled hidden>Select Customer</option>
-                    </select>
+                    <input type="text" class="form-control" id="addCustomerSearch"
+                        placeholder="Type to search customer..." autocomplete="off">
+                    <div id="addCustomerDropdown"
+                        style="display:none;position:absolute;z-index:1050;background:#fff;border:1px solid #dee2e6;border-radius:6px;max-height:180px;overflow-y:auto;width:100%;box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+                    </div>
+                    <input type="hidden" id="addCustomerId">
                 </div>
 
                 <!-- Style / Size / Material / Color -->

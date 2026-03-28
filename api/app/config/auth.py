@@ -29,6 +29,10 @@ jwks_client = PyJWKClient(JWKS_URL)
 def get_current_user(auth: HTTPBearer = Depends(security)):
     token = auth.credentials
 
+    # Token to enter on HTTP Bearer Authentication in Swagger UI:
+    if os.getenv("DEV_MODE") == "true" and token == "dev-only":
+        return {"sub": "dev-user", "email": "dev@local.dev", "role": "authenticated"}
+
     print(f"\n--- NEW AUTH REQUEST ---", file=sys.stderr)
 
     try:

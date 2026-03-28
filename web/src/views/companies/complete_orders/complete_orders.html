@@ -32,6 +32,12 @@
     <!-- Page Title -->
     <h2 class="mb-2 mt-2" id="companyTitle">Completed Orders</h2>
 
+    <!-- Active/Archive Tabs -->
+    <div class="d-flex justify-content-center gap-2 mb-2">
+        <button class="btn btn-dark btn-sm" id="activeTabBtn">Active</button>
+        <button class="btn btn-outline-secondary btn-sm" id="archiveTabBtn">Archive</button>
+    </div>
+
     <!-- Search / Sort / Add -->
     <div class="row align-items-end mb-4">
 
@@ -130,6 +136,18 @@
         </div>
     </div>
 
+
+    <!-- Delete / Archive Order Overlay -->
+    <div class="overlay d-none" id="deleteCompletedOverlay">
+        <div class="overlay-content p-4 text-center">
+            <button class="overlay-close" id="closeDeleteCompleted">✕</button>
+            <h5 class="mb-4">Are you sure?</h5>
+            <div class="d-flex justify-content-center gap-3">
+                <button class="btn btn-danger px-4" id="cancelDeleteCompleted">No</button>
+                <button class="btn btn-green px-4" id="confirmDeleteCompleted">Yes</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Scripts -->
     <script type="module" src="complete_orders.js"></script>

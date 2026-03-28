@@ -105,10 +105,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   const addOverlay = document.getElementById("addOrderOverlay");
   const editOverlay = document.getElementById("editOrderOverlay");
   const deleteOverlay = document.getElementById("deleteOrderOverlay");
+  const addOrderBtn = document.getElementById("openOverlay");
 
   let selectedOrderId = null;
   let allOrders = [];
   let clientMap = {};
+  let currentTab = 'active';
+  let isPermanentDelete = false;
 
   /* ===============================
      VALIDATION HELPERS
@@ -205,12 +208,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Customer (add only — edit is disabled)
     if (isAdd) {
-      const customerEl = document.getElementById("addCustomerId");
-      if (!customerEl.value) {
-        showFieldError(customerEl, "Please select a customer.");
+      const customerSearchEl = document.getElementById("addCustomerSearch");
+      const customerHiddenEl = document.getElementById("addCustomerId");
+      if (!customerHiddenEl.value) {
+        showFieldError(customerSearchEl, "Please select a customer from the list.");
         valid = false;
       } else {
-        clearFieldError(customerEl);
+        clearFieldError(customerSearchEl);
       }
     }
 
@@ -231,17 +235,16 @@ document.addEventListener("DOMContentLoaded", async () => {
       clearFieldError(styleEl);
     }
 
-    // MODIFIED — added max limit check
     const sizeEl = document.getElementById(isAdd ? "addSize" : "editSize");
     const sizeRaw = sizeEl.value.trim();
     const sizeNum = parseFloat(sizeRaw);
 
-    if (!sizeRaw || isNaN(sizeNum) || sizeNum <= 0) {
-      showFieldError(sizeEl, "Size must be a positive number.");
+    if (!sizeRaw || isNaN(sizeNum)) {
+      showFieldError(sizeEl, "Size is required.");
       valid = false;
 
-    } else if (sizeNum > 99.99) { // ✅ ADDED
-      showFieldError(sizeEl, "Size is too large.");
+    } else if (sizeNum < -1 || sizeNum > 10) {
+      showFieldError(sizeEl, "Size must be between -1 and 10.");
       valid = false;
 
     } else if ((sizeNum * 10) % 5 !== 0) {
@@ -283,8 +286,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       clearFieldError(heelTypeEl);
     }
 
-    // Heel Size — must be numeric, ≥ 0, in .5 increments
-    // MODIFIED
+    // Heel Size
     const heelSizeEl = document.getElementById(isAdd ? "addHeelSize" : "editHeelSize");
 
     if (!heelSizeEl.value) {
@@ -321,8 +323,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     const priceEl = document.getElementById(isAdd ? "addPrice" : "editPrice");
     const priceRaw = priceEl.value.trim();
     const priceNum = parseFloat(priceRaw);
-    if (!priceRaw || isNaN(priceNum) || priceNum <= 0) {
+    if (!priceRaw || isNaN(priceNum) || priceNum < 0.01) {
       showFieldError(priceEl, "Price must be a positive number.");
+      valid = false;
+    } else if ((priceRaw.split(".")[1] || "").length > 2) {
+      showFieldError(priceEl, "Price cannot have more than 2 decimal places.");
       valid = false;
     } else {
       clearFieldError(priceEl);
@@ -332,69 +337,163 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   /* ===============================
+     TAB SETUP
+  =============================== */
+  function setTabUI(tab) {
+    const activeBtn = document.getElementById('activeTabBtn');
+    const archiveBtn = document.getElementById('archiveTabBtn');
+    activeBtn.className = tab === 'active' ? 'btn btn-dark btn-sm' : 'btn btn-outline-secondary btn-sm';
+    archiveBtn.className = tab === 'archive' ? 'btn btn-dark btn-sm' : 'btn btn-outline-secondary btn-sm';
+
+    // Update table headers for last 2 columns
+    const ths = document.querySelectorAll('thead th');
+    if (tab === 'archive') {
+      if (ths[15]) ths[15].textContent = 'Restore';
+      if (ths[16]) ths[16].textContent = 'Delete';
+    } else {
+      if (ths[15]) ths[15].textContent = 'Edit';
+      if (ths[16]) ths[16].textContent = 'Delete';
+    }
+
+    // Show/hide Add button
+    if (addOrderBtn) {
+      addOrderBtn.style.display = tab === 'active' ? '' : 'none';
+    }
+  }
+
+  document.getElementById('activeTabBtn')?.addEventListener('click', async () => {
+    if (currentTab === 'active') return;
+    currentTab = 'active';
+    setTabUI('active');
+    await loadOrders();
+  });
+
+  document.getElementById('archiveTabBtn')?.addEventListener('click', async () => {
+    if (currentTab === 'archive') return;
+    currentTab = 'archive';
+    setTabUI('archive');
+    await loadOrders();
+  });
+
+  /* ===============================
      LOAD CLIENTS (for dropdowns & name display)
+     — clientMap includes active + archived for name lookup
+     — dropdowns only get active clients
   =============================== */
   async function loadCompanyClients() {
     try {
-      let allClients = getFromCache(CLIENTS_URL);
-      if (!allClients) {
-        const response = await apiFetch(CLIENTS_URL);
-        allClients = await response.json();
-        saveToCache(CLIENTS_URL, allClients);
-      }
-
-      const companyClients = allClients.filter(
-        c => String(c.company_id) === String(COMPANY_ID)
-      );
+      const [activeRes, archivedRes] = await Promise.all([
+        apiFetch(`${CLIENTS_URL}?company_id=${COMPANY_ID}`),
+        apiFetch(`${CLIENTS_URL}?company_id=${COMPANY_ID}&archived=true`)
+      ]);
+      const activeClients = await activeRes.json();
+      const archivedClients = await archivedRes.json();
 
       clientMap = {};
-      companyClients.forEach(c => {
+      [...activeClients, ...archivedClients].forEach(c => {
         clientMap[c.id] = `${c.first_name} ${c.last_name}`;
       });
 
-      populateClientDropdowns(companyClients);
+      populateClientDropdowns(activeClients);
     } catch (err) {
       console.error("Failed to load clients:", err);
     }
   }
 
-  function populateClientDropdowns(clients) {
-    const addSelect = document.getElementById("addCustomerId");
-    const editSelect = document.getElementById("editCustomerId");
+  let activeClientsList = [];
 
-    [addSelect, editSelect].forEach(select => {
-      if (!select) return;
-      select.innerHTML = `<option value="" selected disabled hidden>Select Customer</option>`;
+  function populateClientDropdowns(clients) {
+    activeClientsList = clients;
+
+    // Edit select (standard — disabled anyway)
+    const editSelect = document.getElementById("editCustomerId");
+    if (editSelect) {
+      editSelect.innerHTML = `<option value="" selected disabled hidden>Select Customer</option>`;
       clients.forEach(client => {
         const opt = document.createElement("option");
         opt.value = client.id;
         opt.textContent = `${client.first_name} ${client.last_name}`;
-        select.appendChild(opt);
+        editSelect.appendChild(opt);
       });
+    }
+
+    // Add customer: searchable dropdown
+    const searchInput = document.getElementById("addCustomerSearch");
+    const dropdown = document.getElementById("addCustomerDropdown");
+    const hiddenInput = document.getElementById("addCustomerId");
+    if (!searchInput || !dropdown || !hiddenInput) return;
+
+    function renderDropdown(filtered) {
+      dropdown.innerHTML = "";
+      if (filtered.length === 0) {
+        dropdown.innerHTML = `<div class="px-3 py-2 text-muted" style="font-size:0.9rem;">No customers found</div>`;
+      } else {
+        filtered.forEach(client => {
+          const item = document.createElement("div");
+          item.className = "px-3 py-2";
+          item.style.cssText = "cursor:pointer;font-size:0.95rem;";
+          item.textContent = `${client.first_name} ${client.last_name}`;
+          item.addEventListener("mouseenter", () => item.style.background = "#f0f0f0");
+          item.addEventListener("mouseleave", () => item.style.background = "");
+          item.addEventListener("mousedown", () => {
+            hiddenInput.value = client.id;
+            searchInput.value = `${client.first_name} ${client.last_name}`;
+            clearFieldError(searchInput);
+            dropdown.style.display = "none";
+          });
+          dropdown.appendChild(item);
+        });
+      }
+      dropdown.style.display = "block";
+    }
+
+    searchInput.addEventListener("input", () => {
+      hiddenInput.value = "";
+      const term = searchInput.value.toLowerCase();
+      if (!term) { dropdown.style.display = "none"; return; }
+      const filtered = activeClientsList.filter(c =>
+        `${c.first_name} ${c.last_name}`.toLowerCase().includes(term)
+      );
+      renderDropdown(filtered);
     });
+
+    searchInput.addEventListener("focus", () => {
+      if (searchInput.value && activeClientsList.length) {
+        const term = searchInput.value.toLowerCase();
+        renderDropdown(activeClientsList.filter(c =>
+          `${c.first_name} ${c.last_name}`.toLowerCase().includes(term)
+        ));
+      }
+    });
+
+    document.addEventListener("click", e => {
+      if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.style.display = "none";
+      }
+    }, { capture: true });
   }
 
   /* ===============================
      LOAD ORDERS
   =============================== */
   async function loadOrders() {
-    const cached = getFromCache(ORDERS_URL);
-    if (cached) {
-      allOrders = cached.filter(order => clientMap[order.client_id]);
-      renderOrders(allOrders);
-      return;
-    }
-
     tableBody.innerHTML = `
       <tr><td colspan="17" class="text-center"><div class="spinner-border"></div></td></tr>
     `;
 
     try {
-      const response = await apiFetch(ORDERS_URL);
+      let url;
+      if (currentTab === 'archive') {
+        url = `${ORDERS_URL}?archived=true&completed=false`;
+      } else {
+        url = `${ORDERS_URL}?completed=false`;
+      }
+
+      const response = await apiFetch(url);
       const orders = await response.json();
 
-      saveToCache(ORDERS_URL, orders);
-      allOrders = orders.filter(order => clientMap[order.client_id]);
+      // Filter to only this company's orders (clientMap covers active + archived clients of this company)
+      allOrders = orders.filter(order => clientMap[order.client_id] !== undefined);
       renderOrders(allOrders);
 
     } catch (err) {
@@ -412,8 +511,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     tableBody.innerHTML = "";
 
     if (data.length === 0) {
+      const label = currentTab === 'archive' ? 'archived orders' : 'orders';
       tableBody.innerHTML = `
-        <tr><td colspan="17" class="text-center text-muted">No orders found</td></tr>
+        <tr><td colspan="17" class="text-center text-muted">No ${label} found</td></tr>
       `;
       return;
     }
@@ -423,6 +523,31 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const total = (Number(order.price) * order.quantity)
         .toLocaleString('en-PH', { minimumFractionDigits: 2 });
+
+      let actionCells;
+      if (currentTab === 'archive') {
+        actionCells = `
+          <td>
+            <button class="btn btn-sm btn-warning restore-order-btn" data-id="${order.id}">Restore</button>
+          </td>
+          <td>
+            <button class="btn btn-sm btn-danger perm-delete-order-btn" data-id="${order.id}">Delete</button>
+          </td>
+        `;
+      } else {
+        actionCells = `
+          <td>
+            <button class="btn btn-sm edit-order-btn" data-id="${order.id}">
+              <img src="${pencilIcon}" width="18">
+            </button>
+          </td>
+          <td>
+            <button class="btn btn-sm delete-btn" data-id="${order.id}">
+              <img src="${trashIcon}" width="18">
+            </button>
+          </td>
+        `;
+      }
 
       row.innerHTML = `
         <td>${order.id}</td>
@@ -440,16 +565,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         <td>${order.quantity}</td>
         <td>₱${Number(order.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
         <td>₱${total}</td>
-        <td>
-          <button class="btn btn-sm edit-order-btn" data-id="${order.id}">
-            <img src="${pencilIcon}" width="18">
-          </button>
-        </td>
-        <td>
-          <button class="btn btn-sm delete-btn" data-id="${order.id}">
-            <img src="${trashIcon}" width="18">
-          </button>
-        </td>
+        ${actionCells}
       `;
 
       tableBody.appendChild(row);
@@ -503,13 +619,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     addOverlay.classList.remove("d-none");
   });
 
+  function resetAddCustomerSearch() {
+    const s = document.getElementById("addCustomerSearch");
+    const h = document.getElementById("addCustomerId");
+    const d = document.getElementById("addCustomerDropdown");
+    if (s) s.value = "";
+    if (h) h.value = "";
+    if (d) d.style.display = "none";
+  }
+
   document.getElementById("closeAddOrder")?.addEventListener("click", () => {
     clearAllErrors(document.getElementById("addOrderForm"));
+    resetAddCustomerSearch();
     addOverlay.classList.add("d-none");
   });
 
   document.getElementById("cancelAddOrder")?.addEventListener("click", () => {
     clearAllErrors(document.getElementById("addOrderForm"));
+    resetAddCustomerSearch();
     addOverlay.classList.add("d-none");
   });
 
@@ -554,6 +681,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       addOverlay.classList.add("d-none");
       form.reset();
+      resetAddCustomerSearch();
       clearAllErrors(form);
       clearCache();
       await loadOrders();
@@ -569,81 +697,114 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   /* ===============================
-     EDIT ORDER (open overlay)
+     CLICK DELEGATION
   =============================== */
-document.addEventListener("click", async (e) => {
+  document.addEventListener("click", async (e) => {
 
-  /* ================= EDIT BUTTON ================= */
-  const editBtn = e.target.closest(".edit-order-btn");
-  if (editBtn) {
-    const orderId = editBtn.dataset.id;
-    selectedOrderId = orderId;
-
-    try {
-      const res = await apiFetch(`${ORDERS_URL}/${orderId}`);
-      const order = await res.json();
-
-      document.getElementById("editCustomerId").value = order.client_id;
-      document.getElementById("editModel").value = order.model;
-      document.getElementById("editSize").value = Number(order.size).toFixed(1);
-      document.getElementById("editMaterial").value = order.material;
-      document.getElementById("editColor").value = order.color;
-      document.getElementById("editHeelType").value = order.heel_type;
-      document.getElementById("editHeelSize").value = order.heel_size;
-      document.getElementById("editMold").value = order.mold;
-      document.getElementById("editQuantity").value = order.quantity;
-      document.getElementById("editPrice").value = order.price;
-
-      const buckleVal = order.has_buckle ? "true" : "false";
-      const slingVal = order.has_slingback ? "true" : "false";
-      const platformVal = order.has_platform ? "true" : "false";
-
-      const buckleRadio = document.querySelector(`input[name="editBuckle"][value="${buckleVal}"]`);
-      const slingRadio = document.querySelector(`input[name="editSlingback"][value="${slingVal}"]`);
-      const platformRadio = document.querySelector(`input[name="editPlatform"][value="${platformVal}"]`);
-
-      if (buckleRadio) buckleRadio.checked = true;
-      if (slingRadio) slingRadio.checked = true;
-      if (platformRadio) platformRadio.checked = true;
-
-      clearAllErrors(document.getElementById("editOrderForm"));
-      editOverlay.classList.remove("d-none");
-
-    } catch (err) {
-      console.error("Failed to load order for edit:", err);
-
-      if (err.message.toLowerCase().includes("not found")) {
+    /* RESTORE ORDER (archive tab) */
+    const restoreBtn = e.target.closest(".restore-order-btn");
+    if (restoreBtn) {
+      const id = restoreBtn.dataset.id;
+      try {
+        restoreBtn.disabled = true;
+        restoreBtn.textContent = "Restoring...";
+        await apiFetch(`${ORDERS_URL}/${id}/restore`, { method: "PATCH" });
         clearCache();
         await loadOrders();
-
-        const banner = document.createElement("div");
-        banner.className = "alert alert-success alert-dismissible fade show mx-0 mt-2";
-        banner.innerHTML = `Order already completed.
-          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
-        document.querySelector("h2").insertAdjacentElement("afterend", banner);
-
-        return;
+      } catch (err) {
+        alert(`Failed to restore: ${err.message}`);
+        restoreBtn.disabled = false;
+        restoreBtn.textContent = "Restore";
       }
-
-      const banner = document.createElement("div");
-      banner.className = "alert alert-danger alert-dismissible fade show mx-0 mt-2";
-      banner.innerHTML = `Failed to load order: ${escapeHtml(err.message)}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
-      document.querySelector("h2").insertAdjacentElement("afterend", banner);
+      return;
     }
 
-    return; // ✅ IMPORTANT FIX
-  }
+    /* PERMANENT DELETE (archive tab) */
+    const permDeleteBtn = e.target.closest(".perm-delete-order-btn");
+    if (permDeleteBtn) {
+      selectedOrderId = permDeleteBtn.dataset.id;
+      isPermanentDelete = true;
+      document.querySelector("#deleteOrderOverlay h5").innerHTML =
+        "Permanently delete this order?<br>This cannot be undone.";
+      deleteOverlay.classList.remove("d-none");
+      return;
+    }
 
-  /* ================= DELETE BUTTON ================= */
-  const deleteBtn = e.target.closest(".delete-btn");
-  if (deleteBtn) {
-    selectedOrderId = deleteBtn.dataset.id;
-    deleteOverlay.classList.remove("d-none");
-    return;
-  }
+    /* EDIT BUTTON (active tab) */
+    const editBtn = e.target.closest(".edit-order-btn");
+    if (editBtn) {
+      const orderId = editBtn.dataset.id;
+      selectedOrderId = orderId;
 
-});
+      try {
+        const res = await apiFetch(`${ORDERS_URL}/${orderId}`);
+        const order = await res.json();
+
+        document.getElementById("editCustomerId").value = order.client_id;
+        document.getElementById("editModel").value = order.model;
+        document.getElementById("editSize").value = Number(order.size).toFixed(1);
+        document.getElementById("editMaterial").value = order.material;
+        document.getElementById("editColor").value = order.color;
+        document.getElementById("editHeelType").value = order.heel_type;
+        document.getElementById("editHeelSize").value = order.heel_size;
+        document.getElementById("editMold").value = order.mold;
+        document.getElementById("editQuantity").value = order.quantity;
+        document.getElementById("editPrice").value = order.price;
+
+        const buckleVal = order.has_buckle ? "true" : "false";
+        const slingVal = order.has_slingback ? "true" : "false";
+        const platformVal = order.has_platform ? "true" : "false";
+
+        const buckleRadio = document.querySelector(`input[name="editBuckle"][value="${buckleVal}"]`);
+        const slingRadio = document.querySelector(`input[name="editSlingback"][value="${slingVal}"]`);
+        const platformRadio = document.querySelector(`input[name="editPlatform"][value="${platformVal}"]`);
+
+        if (buckleRadio) buckleRadio.checked = true;
+        if (slingRadio) slingRadio.checked = true;
+        if (platformRadio) platformRadio.checked = true;
+
+        clearAllErrors(document.getElementById("editOrderForm"));
+        editOverlay.classList.remove("d-none");
+
+      } catch (err) {
+        console.error("Failed to load order for edit:", err);
+
+        if (err.message.toLowerCase().includes("not found")) {
+          clearCache();
+          await loadOrders();
+
+          const banner = document.createElement("div");
+          banner.className = "alert alert-success alert-dismissible fade show mx-0 mt-2";
+          banner.innerHTML = `Order already completed.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+          document.querySelector("h2").insertAdjacentElement("afterend", banner);
+
+          return;
+        }
+
+        const banner = document.createElement("div");
+        banner.className = "alert alert-danger alert-dismissible fade show mx-0 mt-2";
+        banner.innerHTML = `Failed to load order: ${escapeHtml(err.message)}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+        document.querySelector("h2").insertAdjacentElement("afterend", banner);
+      }
+
+      return;
+    }
+
+    /* SOFT DELETE (active tab) */
+    const deleteBtn = e.target.closest(".delete-btn");
+    if (deleteBtn) {
+      selectedOrderId = deleteBtn.dataset.id;
+      isPermanentDelete = false;
+      document.querySelector("#deleteOrderOverlay h5").textContent =
+        "Are you sure you want to delete this order?";
+      deleteOverlay.classList.remove("d-none");
+      return;
+    }
+
+  });
+
   /* ===============================
      EDIT ORDER (form submit)
   =============================== */
@@ -715,10 +876,12 @@ document.addEventListener("click", async (e) => {
 
   document.getElementById("closeDeleteOrder")?.addEventListener("click", () => {
     deleteOverlay.classList.add("d-none");
+    isPermanentDelete = false;
   });
 
   document.getElementById("cancelDeleteOrder")?.addEventListener("click", () => {
     deleteOverlay.classList.add("d-none");
+    isPermanentDelete = false;
   });
 
   /* ===============================
@@ -736,11 +899,13 @@ document.addEventListener("click", async (e) => {
       confirmBtn.disabled = true;
       cancelBtn.disabled = true;
       closeBtn.disabled = true;
-      confirmBtn.textContent = "Deleting...";
+      confirmBtn.textContent = isPermanentDelete ? "Deleting..." : "Deleting...";
 
-      await apiFetch(`${ORDERS_URL}/${selectedOrderId}`, {
-        method: "DELETE"
-      });
+      const url = isPermanentDelete
+        ? `${ORDERS_URL}/${selectedOrderId}/permanent`
+        : `${ORDERS_URL}/${selectedOrderId}`;
+
+      await apiFetch(url, { method: "DELETE" });
 
       deleteOverlay.classList.add("d-none");
       clearCache();
@@ -761,6 +926,7 @@ document.addEventListener("click", async (e) => {
       confirmBtn.disabled = false;
       cancelBtn.disabled = false;
       closeBtn.disabled = false;
+      isPermanentDelete = false;
     }
   });
 

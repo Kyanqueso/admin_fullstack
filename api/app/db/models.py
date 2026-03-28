@@ -10,6 +10,8 @@ class Company(Base):
     name = Column(String(100), nullable=False)
     address = Column(String(255), nullable=True)
 
+    isDeleted = Column(Boolean, nullable=False, default=False)
+
     clients = relationship("Client", back_populates="company", cascade="all, delete-orphan")
 
 
@@ -19,6 +21,8 @@ class Person(Base):
     first_name = Column(String(30), nullable=False)
     last_name = Column(String(30), nullable=False)
     role = Column(String(10), nullable=False)
+
+    isDeleted = Column(Boolean, nullable=False, default=False)
 
     __mapper_args__ = {"polymorphic_on": role}
 
@@ -41,7 +45,6 @@ class Client(Person):
 
     company = relationship("Company", back_populates="clients")
     client_orders = relationship("ClientOrder", back_populates="client", cascade="all, delete-orphan")
-    completed_orders = relationship("CompletedOrder", back_populates="client")
 
 
 class ClientOrder(Base):
@@ -63,10 +66,12 @@ class ClientOrder(Base):
     price = Column(Numeric(10, 2), nullable=False)
     is_zero_balance = Column(Boolean, nullable=False, default=False)
 
+    isCompleted = Column(Boolean, nullable=False, default=False)
+    dateCompleted = Column(DateTime, nullable=True)
+    isDeleted = Column(Boolean, nullable=False, default=False)
+
     client = relationship("Client", back_populates="client_orders")
 
-    # NO "delete" cascade — PaymentSummary must survive after ClientOrder
-    # is deleted so transaction history stays accessible.
     payment_summary = relationship(
         "PaymentSummary",
         back_populates="client_order",
@@ -79,21 +84,16 @@ class PaymentSummary(Base):
     __tablename__ = "payment_summaries"
     id = Column(Integer, primary_key=True, autoincrement=True)
 
-    # nullable=True + SET NULL: when ClientOrder is deleted this becomes NULL
-    # but the row (and its transactions) survive for history lookup.
     client_order_id = Column(
         Integer,
         ForeignKey("client_orders.id", ondelete="SET NULL"),
         nullable=True
     )
 
-    # Stores the original client_order.id permanently — used by the
-    # /payment-transactions/by-order/{id} endpoint to look up history
-    # even after client_order_id has been SET NULL.
-    original_order_id = Column(Integer, nullable=True)
-
     paid_amount = Column(Numeric(10, 2), nullable=False, default=0)
     remaining_balance = Column(Numeric(10, 2), nullable=False)
+
+    isDeleted = Column(Boolean, nullable=False, default=False)
 
     client_order = relationship("ClientOrder", back_populates="payment_summary")
     payment_transactions = relationship(
@@ -110,6 +110,8 @@ class PaymentTransaction(Base):
     payment_number = Column(Integer, nullable=False)
     paid_amount = Column(Numeric(10, 2), nullable=False)
     payment_date = Column(Date, nullable=False, default=date.today)
+
+    isDeleted = Column(Boolean, nullable=False, default=False)
 
     __table_args__ = (
         UniqueConstraint(
@@ -142,33 +144,3 @@ class ShoeImage(Base):
     display_order = Column(Integer, nullable=False, default=1)
 
     shoe_catalog = relationship("ShoeCatalog", back_populates="images")
-
-
-class CompletedOrder(Base):
-    __tablename__ = "completed_orders"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
-    order_date = Column(DateTime, nullable=False)
-
-    model = Column(String(50), nullable=False)
-    size = Column(Numeric(4, 2), nullable=False)
-    material = Column(String(20), nullable=False)
-    color = Column(String(20), nullable=False)
-    mold = Column(String(20), nullable=False)
-
-    heel_size = Column(String(5), nullable=False)
-    heel_type = Column(String(15), nullable=False)
-
-    has_platform = Column(Boolean, nullable=False, default=False)
-    has_slingback = Column(Boolean, nullable=False, default=False)
-    has_buckle = Column(Boolean, nullable=False, default=False)
-
-    quantity = Column(Integer, nullable=False, default=1)
-    price = Column(Numeric(10, 2), nullable=False)
-
-    # Points to the original client_order.id — used to find PaymentSummary
-    # via payment_summaries.original_order_id for history lookup.
-    original_order_id = Column(Integer, nullable=True)
-
-    client = relationship("Client", back_populates="completed_orders")
