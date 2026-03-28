@@ -119,11 +119,14 @@ class ClientOrderCreate(BaseModel):
 
     @field_validator("quantity")
     @classmethod
-    def validate_quantity(cls, v: int) -> int:
+    def validate_quantity(cls, v: Decimal) -> int:
+        if v != int(v):
+            raise ValueError("Quantity must be a whole number.")
+        v = int(v)
         if v <= 0:
             raise ValueError("Quantity must be at least 1.")
         if v > 10000:
-            raise ValueError("Quantity seems too large. Please double-check.")
+            raise ValueError("Quantity seems too large.")
         return v
 
     @field_validator("price")
@@ -131,8 +134,11 @@ class ClientOrderCreate(BaseModel):
     def validate_price(cls, v: Decimal) -> Decimal:
         if v <= 0:
             raise ValueError("Price must be a positive number.")
+        if v > Decimal("99999.99"):
+            raise ValueError("Price cannot exceed 99,999.99.")
+            
         return v
-
+        
     @field_validator("client_id")
     @classmethod
     def validate_client_id(cls, v: int) -> int:

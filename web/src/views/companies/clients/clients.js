@@ -141,11 +141,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /* ===============================
-     VALIDATION HELPERS
+     BOOTSTRAP FIELD ERROR HELPERS
+     (same pattern as orders.js)
   =============================== */
   function showFieldError(inputEl, message) {
     clearFieldError(inputEl);
-
     inputEl.classList.add("is-invalid");
 
     const wrapper = inputEl.closest(".mb-3") || inputEl.parentElement;
@@ -154,7 +154,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const feedback = document.createElement("div");
     feedback.className = "invalid-feedback d-block";
     feedback.textContent = message;
-
     wrapper.appendChild(feedback);
   }
 
@@ -164,17 +163,40 @@ document.addEventListener("DOMContentLoaded", () => {
     const wrapper = inputEl.closest(".mb-3") || inputEl.parentElement;
     if (!wrapper) return;
 
-    const existing = wrapper.querySelectorAll(".invalid-feedback");
-    existing.forEach(el => el.remove());
+    wrapper.querySelectorAll(".invalid-feedback").forEach(el => el.remove());
   }
+
+  function showFormError(formEl, message) {
+    clearFormError(formEl);
+    const alertEl = document.createElement("div");
+    alertEl.className = "alert alert-danger mt-2 form-error-banner";
+    alertEl.role = "alert";
+    alertEl.textContent = message;
+    formEl.prepend(alertEl);
+  }
+
+  function clearFormError(formEl) {
+    const existing = formEl.querySelector(".form-error-banner");
+    if (existing) existing.remove();
+  }
+
+  function clearAllErrors(formEl) {
+    clearFormError(formEl);
+    formEl.querySelectorAll(".is-invalid").forEach(el => clearFieldError(el));
+  }
+
+  /* ===============================
+     VALIDATION HELPERS
+  =============================== */
   function hasEmoji(str) {
     if (!str) return false;
     const cleaned = str.replace(/[0-9A-Za-zÀ-ÿ\s.,\-#'":;!?@&()/\\]/g, "");
     return /[\p{Extended_Pictographic}]/u.test(cleaned);
   }
 
+  //   FIXED: allow spaces and hyphens for compound names like "Raymond Austin"
   function isLettersOnly(str) {
-    return /^[A-Za-zÀ-ÿ\s'-]+$/.test(str) && str.trim().length > 0;
+    return /^[A-Za-zÀ-ÿ\s'\-]+$/.test(str) && str.trim().length >= 2;
   }
 
   function isAlphanumeric(str) {
@@ -189,7 +211,6 @@ document.addEventListener("DOMContentLoaded", () => {
      SHARED VALIDATION FUNCTION
   =============================== */
   function validateClientFields(firstName, lastName, address, contact, inputs) {
-
     const [firstInput, lastInput, addressInput, contactInput] = inputs;
 
     clearFieldError(firstInput);
@@ -197,66 +218,57 @@ document.addEventListener("DOMContentLoaded", () => {
     clearFieldError(addressInput);
     clearFieldError(contactInput);
 
+    let valid = true;
+
     // FIRST NAME
     if (!firstName) {
       showFieldError(firstInput, "First name is required");
-      return false;
-    }
-
-    if (hasEmoji(firstName)) {
+      valid = false;
+    } else if (hasEmoji(firstName)) {
       showFieldError(firstInput, "No emoji allowed");
-      return false;
-    }
-
-    if (!isLettersOnly(firstName)) {
-      showFieldError(firstInput, "Letters only");
-      return false;
+      valid = false;
+    } else if (!isLettersOnly(firstName)) {
+      showFieldError(firstInput, "Letters only (min. 2 characters)");
+      valid = false;
     }
 
     // LAST NAME
     if (!lastName) {
       showFieldError(lastInput, "Last name is required");
-      return false;
-    }
-
-    if (hasEmoji(lastName)) {
+      valid = false;
+    } else if (hasEmoji(lastName)) {
       showFieldError(lastInput, "No emoji allowed");
-      return false;
+      valid = false;
+    } else if (!isLettersOnly(lastName)) {
+      showFieldError(lastInput, "Letters only (min. 2 characters)");
+      valid = false;
     }
 
-    if (!isLettersOnly(lastName)) {
-      showFieldError(lastInput, "Letters only");
-      return false;
-    }
-
-    // ADDRESS
-    if (address && !isAlphanumeric(address)) {
-      showFieldError(addressInput, "Invalid address");
-      return false;
+    // ADDRESS (optional)
+    if (address && hasEmoji(address)) {
+      showFieldError(addressInput, "No emoji allowed");
+      valid = false;
+    } else if (address && !isAlphanumeric(address)) {
+      showFieldError(addressInput, "Invalid address characters");
+      valid = false;
     }
 
     // CONTACT
-    // EMPTY CHECK
     if (!contact) {
       showFieldError(contactInput, "Contact number is required");
-      return false;
-    }
-
-    if (hasEmoji(contact)) {
+      valid = false;
+    } else if (hasEmoji(contact)) {
       showFieldError(contactInput, "No emoji allowed");
-      return false;
-    }
-
-    if (!isNumbersOnly(contact)) {
+      valid = false;
+    } else if (!isNumbersOnly(contact)) {
       showFieldError(contactInput, "Numbers only");
-      return false;
+      valid = false;
+    } else if (contact.length !== 11) {
+      showFieldError(contactInput, "Must be 11 digits");
+      valid = false;
     }
 
-    if (contact.length !== 11) {
-      showFieldError(contactInput, "Must be 11 digits");
-      return false;
-    }
-    return true;
+    return valid;
   }
 
   /* ===============================
@@ -271,7 +283,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (!COMPANY_ID) {
-    setTimeout(() => alert("No company selected."), 0);
     window.location.href = "../companies.html";
     return;
   }
@@ -279,9 +290,20 @@ document.addEventListener("DOMContentLoaded", () => {
   /* ===============================
      OPEN / CLOSE ADD OVERLAY
   =============================== */
-  openAddBtn.onclick = () => addOverlay.classList.remove("d-none");
-  closeAddBtn.onclick =
-    cancelAddBtn.onclick = () => addOverlay.classList.add("d-none");
+  openAddBtn.onclick = () => {
+    clearAllErrors(document.getElementById("overlay-form"));
+    addOverlay.classList.remove("d-none");
+  };
+
+  closeAddBtn.onclick = () => {
+    clearAllErrors(document.getElementById("overlay-form"));
+    addOverlay.classList.add("d-none");
+  };
+
+  cancelAddBtn.onclick = () => {
+    clearAllErrors(document.getElementById("overlay-form"));
+    addOverlay.classList.add("d-none");
+  };
 
   loadCompanyName();
   loadClients();
@@ -469,7 +491,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ===============================
      SORT FUNCTION
-     -- values match the HTML option values: az, za, recent, oldest
   =============================== */
   function sortClients(clientsArray, sortValue) {
     const arr = [...clientsArray];
@@ -509,7 +530,10 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("overlay-form").onsubmit = async (e) => {
     e.preventDefault();
 
-    const inputs = e.target.querySelectorAll("input");
+    const form = e.target;
+    clearFormError(form);
+
+    const inputs = form.querySelectorAll("input");
 
     let firstName = inputs[0].value.trim();
     let lastName = inputs[1].value.trim();
@@ -529,7 +553,7 @@ document.addEventListener("DOMContentLoaded", () => {
       company_id: Number(COMPANY_ID)
     };
 
-    const submitBtn = e.target.querySelector('[type="submit"]');
+    const submitBtn = form.querySelector('[type="submit"]');
     const cancelBtn = document.getElementById("cancelOverlay");
     const closeBtn = document.getElementById("closeOverlay");
     const originalText = submitBtn.textContent;
@@ -546,13 +570,15 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       addOverlay.classList.add("d-none");
-      e.target.reset();
+      form.reset();
+      clearAllErrors(form);
       clearCache();
       loadCompanyName();
       loadClients();
 
     } catch (error) {
-      setTimeout(() => alert(error.message || "Failed to add client"), 0);
+      //   FIXED: Bootstrap inline error instead of alert()
+      showFormError(form, error.message || "Failed to add client");
     } finally {
       submitBtn.textContent = originalText;
       submitBtn.disabled = false;
@@ -607,9 +633,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const client = await response.json();
 
         notesTextarea.value = client.notes || "";
+        // Clear any previous errors on the notes overlay
+        const notesForm = notesOverlay.querySelector("form");
+        if (notesForm) clearFormError(notesForm);
         notesOverlay.classList.remove("d-none");
       } catch (error) {
-        setTimeout(() => alert(error.message || "Failed to load client notes"), 0);
+        //   FIXED: show page-level banner instead of alert()
+        showPageBanner("danger", error.message || "Failed to load client notes");
       }
       return;
     }
@@ -625,13 +655,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
         editFirstName.value = client.first_name;
         editLastName.value = client.last_name;
-        editAddress.value = client.address;
+        editAddress.value = client.address || "";
         editViber.value = client.viber_number || "";
 
+        // Clear any previous errors when opening edit overlay
+        const editForm = editOverlay.querySelector("form");
+        if (editForm) clearAllErrors(editForm);
         editOverlay.classList.remove("d-none");
       } catch (error) {
-        setTimeout(() => alert(error.message || "Failed to load client data"), 0);
-
+        //    FIXED: show page-level banner instead of alert()
+        showPageBanner("danger", error.message || "Failed to load client data");
       }
       return;
     }
@@ -648,20 +681,38 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   /* ===============================
+     PAGE-LEVEL BANNER HELPER
+     (for errors outside any overlay form)
+  =============================== */
+  function showPageBanner(type, message) {
+    // Remove any existing banners first
+    document.querySelectorAll(".page-error-banner").forEach(el => el.remove());
+
+    const banner = document.createElement("div");
+    banner.className = `alert alert-${type} alert-dismissible fade show page-error-banner`;
+    banner.innerHTML = `${escapeHtml(message)}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+    document.querySelector("h2")?.insertAdjacentElement("afterend", banner);
+  }
+
+  /* ===============================
      SAVE NOTES
   =============================== */
   notesOverlay.querySelector("form").onsubmit = async (e) => {
     e.preventDefault();
 
+    const form = e.target;
+    clearFormError(form);
+
     const notesValue = notesTextarea.value.trim();
 
     // EMOJI CHECK
     if (hasEmoji(notesValue)) {
-      setTimeout(() => alert("Emoji not allowed in notes"), 0);
+      showFormError(form, "Emoji not allowed in notes");
       return;
     }
 
-    const submitBtn = e.target.querySelector('[type="submit"]');
+    const submitBtn = form.querySelector('[type="submit"]');
     const closeBtn = document.getElementById("closeNotesOverlay");
     const originalText = submitBtn.textContent;
 
@@ -681,7 +732,8 @@ document.addEventListener("DOMContentLoaded", () => {
       loadClients();
 
     } catch (error) {
-      setTimeout(() => alert(error.message || "Failed to save notes"), 0);
+      //  FIXED: Bootstrap inline error instead of alert()
+      showFormError(form, error.message || "Failed to save notes");
     } finally {
       submitBtn.textContent = originalText;
       submitBtn.disabled = false;
@@ -694,6 +746,9 @@ document.addEventListener("DOMContentLoaded", () => {
   =============================== */
   editOverlay.querySelector("form").onsubmit = async (e) => {
     e.preventDefault();
+
+    const form = e.target;
+    clearFormError(form);
 
     let firstName = editFirstName.value.trim();
     let lastName = editLastName.value.trim();
@@ -711,7 +766,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // UPDATE FIELD WITH CLEANED VALUE BEFORE SEND
     editViber.value = contact;
 
-    const submitBtn = e.target.querySelector('[type="submit"]');
+    const submitBtn = form.querySelector('[type="submit"]');
     const cancelBtn = document.getElementById("cancelEditOverlay");
     const closeBtn = document.getElementById("closeEditOverlay");
     const originalText = submitBtn.textContent;
@@ -738,7 +793,8 @@ document.addEventListener("DOMContentLoaded", () => {
       loadClients();
 
     } catch (error) {
-      setTimeout(() => alert(error.message || "Failed to update client"), 0);
+      //  FIXED: Bootstrap inline error instead of alert()
+      showFormError(form, error.message || "Failed to update client");
     } finally {
       submitBtn.textContent = originalText;
       submitBtn.disabled = false;
@@ -755,6 +811,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const cancelBtn = document.getElementById("cancelDelete");
     const closeBtn = document.getElementById("closeDeleteOverlay");
     const originalText = confirmBtn.textContent;
+
+    // Clear any previous delete error
+    const overlay = document.getElementById("deleteClientOverlay");
+    overlay.querySelector(".delete-error-banner")?.remove();
 
     try {
       confirmBtn.disabled = true;
@@ -773,7 +833,14 @@ document.addEventListener("DOMContentLoaded", () => {
       loadClients();
 
     } catch (error) {
-      setTimeout(() => alert(error.message || "Failed to delete client"), 0);
+      // inline error inside delete overlay instead of alert()
+      let banner = overlay.querySelector(".delete-error-banner");
+      if (!banner) {
+        banner = document.createElement("div");
+        banner.className = "alert alert-danger mt-3 delete-error-banner";
+        overlay.querySelector(".overlay-content").appendChild(banner);
+      }
+      banner.textContent = error.message || "Failed to delete client";
     } finally {
       confirmBtn.textContent = originalText;
       confirmBtn.disabled = false;
@@ -786,18 +853,25 @@ document.addEventListener("DOMContentLoaded", () => {
   /* ===============================
      CLOSE BUTTONS
   =============================== */
-  document.getElementById("closeNotesOverlay").onclick =
-    document.getElementById("closeEditOverlay").onclick =
-    document.getElementById("cancelEditOverlay").onclick =
-    document.getElementById("closeDeleteOverlay").onclick =
-    document.getElementById("cancelDelete").onclick = () => {
-      notesOverlay.classList.add("d-none");
-      editOverlay.classList.add("d-none");
-      deleteOverlay.classList.add("d-none");
-      isPermanentDelete = false;
-      document.querySelector("#deleteClientOverlay h5").innerHTML =
-        "Are you sure you want to<br>delete this client?";
-    };
+  document.getElementById("closeNotesOverlay").onclick = () => {
+    notesOverlay.classList.add("d-none");
+    clearFormError(notesOverlay.querySelector("form"));
+  };
+
+  document.getElementById("closeEditOverlay").onclick =
+  document.getElementById("cancelEditOverlay").onclick = () => {
+    editOverlay.classList.add("d-none");
+    clearAllErrors(editOverlay.querySelector("form"));
+  };
+
+  document.getElementById("closeDeleteOverlay").onclick =
+  document.getElementById("cancelDelete").onclick = () => {
+    deleteOverlay.classList.add("d-none");
+    deleteOverlay.querySelector(".delete-error-banner")?.remove();
+    isPermanentDelete = false;
+    document.querySelector("#deleteClientOverlay h5").innerHTML =
+      "Are you sure you want to<br>delete this client?";
+  };
 
   const closeRestoreError = () =>
     document.getElementById("restoreErrorOverlay").classList.add("d-none");

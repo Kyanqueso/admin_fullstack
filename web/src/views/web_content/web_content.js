@@ -6,6 +6,10 @@ import { getFromCache, saveToCache, clearCache } from '../../js/apiCache.js';
 
 const FAST_API_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
 
+//      Allowed image extensions and MIME types (frontend soft-check; server does hard check via magic bytes)
+const ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
+const ALLOWED_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
+
 // Logout confirmation overlay
 const logoutOverlay = document.getElementById('logout-overlay');
 document.getElementById('logout-btn').addEventListener('click', () => logoutOverlay.classList.remove('d-none'));
@@ -35,13 +39,13 @@ const imageUploadLabel = document.getElementById('image-upload-label');
 const imageInput = document.getElementById('shoe-images');
 
 let allShoes = [];
-let imagesToRemove = []; // track image IDs to remove during edit
+let imagesToRemove = [];
 
 // Block emojis on all text inputs in real time
 [searchInput, document.getElementById('shoe-name')]
     .forEach(el => blockEmojis(el));
 
-// Price input: enforce digits-only, max 5 integer digits, max 2 decimal places
+// Price input: enforce digits-only, max 7 integer digits, max 2 decimal places
 const priceInput = document.getElementById('shoe-price');
 
 priceInput.addEventListener('keydown', e => {
@@ -66,10 +70,26 @@ priceInput.addEventListener('input', () => {
 =============================== */
 const emojiRegex = /\p{Extended_Pictographic}/u;
 
+//      FIXED: isValidInput now also rejects purely whitespace,
+// single characters, and special characters like !#$@
 function isValidInput(value) {
-    return value.length <= 50
-        && !/[\x00-\x1F\x7F]/.test(value)
-        && !emojiRegex.test(value);
+    if (!value || !value.trim()) return false;
+
+    const trimmed = value.trim();
+
+    // Reject emoji
+    if (emojiRegex.test(trimmed)) return false;
+
+    // Reject single character (after stripping spaces)
+    if (trimmed.replace(/\s/g, '').length < 2) return false;
+
+    // Reject special characters — only allow letters, numbers, spaces, hyphens, apostrophes, parens, &, comma
+    if (!/^[A-Za-z0-9À-ÿ\s\-'().&,]+$/.test(trimmed)) return false;
+
+    // Max 50 chars
+    if (trimmed.length > 50) return false;
+
+    return true;
 }
 
 function blockEmojis(el) {
@@ -127,7 +147,6 @@ async function apiFetch(url, options = {}) {
 }
 
 async function fetchShoeById(id) {
-    // Check in-memory list first — avoids the round-trip on edit
     const local = allShoes.find(s => String(s.id) === String(id));
     if (local) return local;
     return await apiFetch(`${FAST_API_URL}/shoe-management/shoes/${id}`);
@@ -153,7 +172,7 @@ async function loadShoes() {
     `;
 
     try {
-        const shoes = await apiFetch(url);  // apiFetch already attaches auth headers
+        const shoes = await apiFetch(url);
         saveToCache(url, shoes);
         allShoes = shoes;
         renderShoes(allShoes);
@@ -318,7 +337,37 @@ function resetOverlayState() {
     existingImagesContainer.classList.add('d-none');
     existingImagesDiv.innerHTML = '';
     imagesToRemove = [];
+    //      FIX: always clear file input when overlay resets so old files don't persist
+    imageInput.value = "";
     clearOverlayError();
+}
+
+/* ===============================
+   IMAGE FILE VALIDATION (frontend soft-check)
+   Real protection is server-side magic bytes check.
+=============================== */
+function validateImageFiles(files) {
+    for (const file of files) {
+        const ext = file.name.includes('.')
+            ? file.name.split('.').pop().toLowerCase()
+            : '';
+
+        //      FIX: reject files with disallowed extensions
+        if (!ALLOWED_IMAGE_EXTENSIONS.includes(ext)) {
+            throw new Error(
+                `"${file.name}" is not an allowed file type. ` +
+                `Only JPG, PNG, and WebP images are accepted.`
+            );
+        }
+
+        //      FIX: also check MIME type reported by browser
+        if (file.type && !ALLOWED_IMAGE_MIMES.includes(file.type)) {
+            throw new Error(
+                `"${file.name}" does not appear to be a valid image (type: ${file.type}). ` +
+                `Only JPG, PNG, and WebP are allowed.`
+            );
+        }
+    }
 }
 
 /* ===============================
@@ -334,7 +383,6 @@ function renderExistingImages(images) {
 
     existingImagesContainer.classList.remove('d-none');
 
-    // Render sorted by display_order so initial sequence is correct
     const sorted = [...images].sort((a, b) => a.display_order - b.display_order);
     sorted.forEach((img, index) => {
         const item = document.createElement('div');
@@ -427,10 +475,11 @@ function openOverlay(type, shoeData = {}) {
         overlayMessage.classList.add('d-none');
         overlayForm.classList.remove('d-none');
         overlayForm.reset();
+        //      FIX: ensure file input is cleared on add open too
+        imageInput.value = "";
         overlayConfirm.className = 'btn btn-green';
         overlayConfirm.textContent = 'Add';
 
-        // Image input: required for add, label reflects 1-5
         imageUploadLabel.textContent = 'Upload Images (1-5 required)';
         imageInput.required = true;
 
@@ -443,12 +492,12 @@ function openOverlay(type, shoeData = {}) {
         overlayConfirm.className = 'btn btn-green';
         overlayConfirm.textContent = 'Save';
 
-        // Show existing images with remove buttons
         renderExistingImages(shoeData.images || []);
 
-        // Image input: optional for edit
         imageUploadLabel.textContent = 'Add More Images (optional)';
         imageInput.required = false;
+        //      FIX: explicitly clear file input so previous session's files are gone
+        imageInput.value = "";
 
     } else if (type === 'delete') {
         overlayTitle.innerHTML = '<strong>Delete Shoe?</strong>';
@@ -461,6 +510,8 @@ function openOverlay(type, shoeData = {}) {
 
 function closeOverlay() {
     overlay.classList.add('d-none');
+    //      FIX: always clear file input on close
+    imageInput.value = "";
     clearOverlayError();
     enableAllCardButtons();
 }
@@ -479,7 +530,6 @@ existingImagesDiv.addEventListener('click', (e) => {
     const item = removeBtn.closest('.existing-image-item');
     const imageId = parseInt(item.dataset.imageId);
 
-    // Check: don't allow removing if it's the last image and no new files are queued
     const remainingItems = existingImagesDiv.querySelectorAll('.existing-image-item').length - 1;
     const newFiles = imageInput.files ? imageInput.files.length : 0;
 
@@ -492,11 +542,22 @@ existingImagesDiv.addEventListener('click', (e) => {
     item.remove();
 });
 
-// Validate file count on input change
+//      FIX: Validate file type on selection (frontend soft-check)
 imageInput.addEventListener('change', () => {
     clearOverlayError();
     const newFiles = imageInput.files ? imageInput.files.length : 0;
     const type = overlay.dataset.type;
+
+    if (newFiles === 0) return;
+
+    // Validate each file type before even counting
+    try {
+        validateImageFiles(imageInput.files);
+    } catch (err) {
+        showOverlayError(err.message);
+        imageInput.value = "";
+        return;
+    }
 
     if (type === 'add') {
         if (newFiles > 5) {
@@ -599,13 +660,11 @@ overlayConfirm.addEventListener('click', async () => {
     const price = overlayForm.shoePrice?.value;
     const newFiles = imageInput.files;
 
-    // Store original button text to restore on error
     const originalText = overlayConfirm.textContent;
 
     clearOverlayError();
 
     try {
-        // Disable buttons and show progress text
         overlayConfirm.disabled = true;
         overlayCancel.disabled = true;
         overlayClose.disabled = true;
@@ -620,9 +679,22 @@ overlayConfirm.addEventListener('click', async () => {
             if (!name || !name.trim()) {
                 throw new Error('Shoe name is required');
             }
-            if (!isValidInput(name.trim())) {
-                throw new Error('Shoe name must be 50 characters or fewer with no emojis');
+
+            //      FIX: full name validation
+            const trimmedName = name.trim();
+            if (emojiRegex.test(trimmedName)) {
+                throw new Error('Shoe name must not contain emojis');
             }
+            if (trimmedName.replace(/\s/g, '').length < 2) {
+                throw new Error('Shoe name must be at least 2 characters (not just spaces)');
+            }
+            if (!/^[A-Za-z0-9À-ÿ\s\-'().&,]+$/.test(trimmedName)) {
+                throw new Error('Shoe name contains invalid characters.');
+            }
+            if (trimmedName.length > 50) {
+                throw new Error('Shoe name must be 50 characters or fewer');
+            }
+
             if (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 1) {
                 throw new Error('Price must be greater than 1');
             }
@@ -633,10 +705,13 @@ overlayConfirm.addEventListener('click', async () => {
                 throw new Error('Maximum 5 images allowed');
             }
 
+            //      FIX: validate file types before upload
+            validateImageFiles(newFiles);
+
             overlayConfirm.textContent = 'Adding...';
 
             const formData = new FormData();
-            formData.append('model_name', name);
+            formData.append('model_name', trimmedName);
             formData.append('price', price);
             for (const file of newFiles) {
                 formData.append('images', file);
@@ -656,9 +731,22 @@ overlayConfirm.addEventListener('click', async () => {
             if (!name || !name.trim()) {
                 throw new Error('Shoe name is required');
             }
-            if (!isValidInput(name.trim())) {
-                throw new Error('Shoe name must be 50 characters or fewer with no emojis');
+
+            //      FIX: full name validation
+            const trimmedName = name.trim();
+            if (emojiRegex.test(trimmedName)) {
+                throw new Error('Shoe name must not contain emojis');
             }
+            if (trimmedName.replace(/\s/g, '').length < 2) {
+                throw new Error('Shoe name must be at least 2 characters (not just spaces)');
+            }
+            if (!/^[A-Za-z0-9À-ÿ\s\-'().&,]+$/.test(trimmedName)) {
+                throw new Error('Shoe name contains invalid characters (no special characters like !#$@)');
+            }
+            if (trimmedName.length > 50) {
+                throw new Error('Shoe name must be 50 characters or fewer');
+            }
+
             if (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 1) {
                 throw new Error('Price must be greater than 1');
             }
@@ -673,27 +761,29 @@ overlayConfirm.addEventListener('click', async () => {
                 throw new Error('Maximum 5 images allowed');
             }
 
+            //      FIX: validate new files if any were selected
+            if (newCount > 0) {
+                validateImageFiles(newFiles);
+            }
+
             overlayConfirm.textContent = 'Saving...';
 
             const formData = new FormData();
-            formData.append('model_name', name);
+            formData.append('model_name', trimmedName);
             formData.append('price', price);
 
-            // Append drag-reordered image IDs so backend applies new display_order
             const orderedIds = [...existingImagesDiv.querySelectorAll('.existing-image-item')]
                 .map(item => item.dataset.imageId);
             if (orderedIds.length > 0) {
                 formData.append('image_order', orderedIds.join(','));
             }
 
-            // Append new image files
             if (newFiles && newFiles.length > 0) {
                 for (const file of newFiles) {
                     formData.append('images', file);
                 }
             }
 
-            // Append image IDs to remove
             if (imagesToRemove.length > 0) {
                 formData.append('remove_image_ids', imagesToRemove.join(','));
             }

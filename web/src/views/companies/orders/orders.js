@@ -142,21 +142,49 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!el) return;
     el.addEventListener("input", () => {
       // Keep only digits and at most one decimal
-      let val = el.value.replace(/[^0-9.]/g, "");
-      const parts = val.split(".");
-      if (parts.length > 2) val = parts[0] + "." + parts.slice(1).join("");
-      el.value = val;
+    let val = el.value.replace(/[^0-9.-]/g, "");
+
+    // Allow only ONE minus at start
+    if (val.includes("-")) {
+      val = val.replace(/(?!^)-/g, "");
+    }
+
+    // Allow only ONE decimal
+    const parts = val.split(".");
+    if (parts.length > 2) {
+      val = parts[0] + "." + parts.slice(1).join("");
+    }
+
+    el.value = val;
     });
   });
 
   // Quantity and Price: only allow digits and decimal
-  ["addQuantity", "addPrice", "editQuantity", "editPrice"].forEach(id => {
+  ["addQuantity", "editQuantity"].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
+
+    el.addEventListener("input", () => {
+      el.value = el.value.replace(/[^0-9]/g, "").slice(0, 5);
+    });
+  });
+
+  ["addPrice", "editPrice"].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
     el.addEventListener("input", () => {
       let val = el.value.replace(/[^0-9.]/g, "");
-      const parts = val.split(".");
-      if (parts.length > 2) val = parts[0] + "." + parts.slice(1).join("");
+
+      const dotIndex = val.indexOf(".");
+      if (dotIndex !== -1) {
+        const intPart = val.slice(0, dotIndex).slice(0, 7);
+        const decPart = val.slice(dotIndex + 1).replace(/\./g, "").slice(0, 2);
+        val = intPart + "." + decPart;
+      } else {
+        val = val.slice(0, 7);
+      }
+
       el.value = val;
     });
   });
@@ -243,8 +271,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       showFieldError(sizeEl, "Size is required.");
       valid = false;
 
-    } else if (sizeNum < -1 || sizeNum > 10) {
-      showFieldError(sizeEl, "Size must be between -1 and 10.");
+    } else if (sizeNum < -1 || sizeNum > 15) {
+      showFieldError(sizeEl, "Size must be between -1 and 15.");
       valid = false;
 
     } else if ((sizeNum * 10) % 5 !== 0) {
@@ -329,6 +357,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     } else if ((priceRaw.split(".")[1] || "").length > 2) {
       showFieldError(priceEl, "Price cannot have more than 2 decimal places.");
       valid = false;
+    } else if (priceNum > 99999.99) {
+      showFieldError(priceEl, "Price cannot exceed ₱99,999.99.");
+      valid = false;  
     } else {
       clearFieldError(priceEl);
     }
