@@ -129,6 +129,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let allClients = [];
   let currentTab = 'active';
   let isPermanentDelete = false;
+  let formIsDirty = false;
 
   function escapeHtml(str) {
     if (!str) return '';
@@ -230,6 +231,9 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (!isLettersOnly(firstName)) {
       showFieldError(firstInput, "Letters only (min. 2 characters)");
       valid = false;
+    } else if (firstName.length > 50) {
+      showFieldError(firstInput, "First name must not exceed 50 characters");
+      valid = false;
     }
 
     // LAST NAME
@@ -241,6 +245,9 @@ document.addEventListener("DOMContentLoaded", () => {
       valid = false;
     } else if (!isLettersOnly(lastName)) {
       showFieldError(lastInput, "Letters only (min. 2 characters)");
+      valid = false;
+    } else if (lastName.length > 50) {
+      showFieldError(lastInput, "Last name must not exceed 50 characters");
       valid = false;
     }
 
@@ -288,20 +295,47 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /* ===============================
+     REFRESH WARNING
+  =============================== */
+  const refreshWarningOverlay = document.getElementById('refresh-warning-overlay');
+  function showRefreshWarning() { refreshWarningOverlay.classList.remove('d-none'); }
+  function hideRefreshWarning() { refreshWarningOverlay.classList.add('d-none'); }
+  document.getElementById('refresh-stay').addEventListener('click', hideRefreshWarning);
+  document.getElementById('refresh-leave').addEventListener('click', () => {
+    setFormClean();
+    hideRefreshWarning();
+    location.reload();
+  });
+  function handleBeforeUnload(e) { e.preventDefault(); e.returnValue = ''; }
+  window.addEventListener('keydown', (e) => {
+    if (!formIsDirty) return;
+    const isReload = (e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'r';
+    const isHardReload = (e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'r';
+    if (!isReload && !isHardReload) return;
+    e.preventDefault();
+    showRefreshWarning();
+  }, true);
+  function setFormDirty() { formIsDirty = true; window.addEventListener('beforeunload', handleBeforeUnload); }
+  function setFormClean() { formIsDirty = false; window.removeEventListener('beforeunload', handleBeforeUnload); }
+
+  /* ===============================
      OPEN / CLOSE ADD OVERLAY
   =============================== */
   openAddBtn.onclick = () => {
     clearAllErrors(document.getElementById("overlay-form"));
     addOverlay.classList.remove("d-none");
+    setFormDirty();
   };
 
   closeAddBtn.onclick = () => {
     clearAllErrors(document.getElementById("overlay-form"));
+    setFormClean();
     addOverlay.classList.add("d-none");
   };
 
   cancelAddBtn.onclick = () => {
     clearAllErrors(document.getElementById("overlay-form"));
+    setFormClean();
     addOverlay.classList.add("d-none");
   };
 
@@ -569,6 +603,7 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify(payload)
       });
 
+      setFormClean();
       addOverlay.classList.add("d-none");
       form.reset();
       clearAllErrors(form);
@@ -662,6 +697,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const editForm = editOverlay.querySelector("form");
         if (editForm) clearAllErrors(editForm);
         editOverlay.classList.remove("d-none");
+        setFormDirty();
       } catch (error) {
         //    FIXED: show page-level banner instead of alert()
         showPageBanner("danger", error.message || "Failed to load client data");
@@ -787,6 +823,7 @@ document.addEventListener("DOMContentLoaded", () => {
         })
       });
 
+      setFormClean();
       editOverlay.classList.add("d-none");
       clearCache();
       loadCompanyName();
@@ -860,6 +897,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("closeEditOverlay").onclick =
   document.getElementById("cancelEditOverlay").onclick = () => {
+    setFormClean();
     editOverlay.classList.add("d-none");
     clearAllErrors(editOverlay.querySelector("form"));
   };

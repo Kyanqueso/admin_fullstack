@@ -168,6 +168,18 @@
         </div>
     </div>
 
+    <!-- Refresh Warning Overlay -->
+    <div id="refresh-warning-overlay" class="overlay d-none">
+        <div class="overlay-content p-4 position-relative">
+            <h5 class="mb-2 text-center fw-bold">Unsaved Changes</h5>
+            <p class="text-center text-muted mb-4">You have unsaved changes. Refresh anyway?<br>Your progress will be lost.</p>
+            <div class="d-flex justify-content-center gap-3">
+                <button id="refresh-stay" class="btn btn-secondary px-4">Stay</button>
+                <button id="refresh-leave" class="btn btn-danger px-4">Refresh</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script type="module" src="payments.js"></script>
     <script src="../../../assets/bootstrap/bootstrap.bundle.min.js"></script>

@@ -206,7 +206,9 @@
     -webkit-backdrop-filter: blur(6px);
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
+    overflow-y: auto;
+    padding: 1.5rem 0;
     z-index: 9999;
     animation: overlayFadeIn 0.2s ease;
 }
@@ -222,6 +224,8 @@
         0 8px 16px rgba(0, 0, 0, 0.16);
     border: 1px solid rgba(0, 0, 0, 0.07);
     animation: overlaySlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    /* Ensure the card itself never clips content */
+    overflow: visible;
 }
 
 .overlay-close {
@@ -326,6 +330,11 @@
 
 .existing-image-item .remove-image-btn:hover {
     background: #dc3545;
+}
+
+/* New-file preview thumbnails are not draggable */
+.new-image-item {
+    cursor: default;
 }
 
 /* Medium screens (tablets) */

@@ -13,7 +13,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const COMPANY_ID = localStorage.getItem("activeCompanyId");
 
   if (!COMPANY_ID) {
-    alert("No company selected.");
     window.location.href = "../companies.html";
     return;
   }
@@ -112,6 +111,31 @@ document.addEventListener("DOMContentLoaded", async () => {
   let clientMap = {};
   let currentTab = 'active';
   let isPermanentDelete = false;
+  let formIsDirty = false;
+
+  /* ===============================
+     REFRESH WARNING
+  =============================== */
+  const refreshWarningOverlay = document.getElementById('refresh-warning-overlay');
+  function showRefreshWarning() { refreshWarningOverlay.classList.remove('d-none'); }
+  function hideRefreshWarning() { refreshWarningOverlay.classList.add('d-none'); }
+  document.getElementById('refresh-stay').addEventListener('click', hideRefreshWarning);
+  document.getElementById('refresh-leave').addEventListener('click', () => {
+    setFormClean();
+    hideRefreshWarning();
+    location.reload();
+  });
+  function handleBeforeUnload(e) { e.preventDefault(); e.returnValue = ''; }
+  window.addEventListener('keydown', (e) => {
+    if (!formIsDirty) return;
+    const isReload = (e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'r';
+    const isHardReload = (e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'r';
+    if (!isReload && !isHardReload) return;
+    e.preventDefault();
+    showRefreshWarning();
+  }, true);
+  function setFormDirty() { formIsDirty = true; window.addEventListener('beforeunload', handleBeforeUnload); }
+  function setFormClean() { formIsDirty = false; window.removeEventListener('beforeunload', handleBeforeUnload); }
 
   /* ===============================
      VALIDATION HELPERS
@@ -256,8 +280,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     } else if (EMOJI_REGEX.test(styleVal)) {
       showFieldError(styleEl, "Style must not contain emojis.");
       valid = false;
-    } else if (styleVal.length > 64) {
-      showFieldError(styleEl, "Style must not exceed 64 characters.");
+    } else if (styleVal.length > 50) {
+      showFieldError(styleEl, "Style must not exceed 50 characters.");
       valid = false;
     } else {
       clearFieldError(styleEl);
@@ -648,6 +672,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const form = document.getElementById("addOrderForm");
     clearAllErrors(form);
     addOverlay.classList.remove("d-none");
+    setFormDirty();
   });
 
   function resetAddCustomerSearch() {
@@ -662,12 +687,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("closeAddOrder")?.addEventListener("click", () => {
     clearAllErrors(document.getElementById("addOrderForm"));
     resetAddCustomerSearch();
+    setFormClean();
     addOverlay.classList.add("d-none");
   });
 
   document.getElementById("cancelAddOrder")?.addEventListener("click", () => {
     clearAllErrors(document.getElementById("addOrderForm"));
     resetAddCustomerSearch();
+    setFormClean();
     addOverlay.classList.add("d-none");
   });
 
@@ -710,6 +737,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         body: JSON.stringify(payload)
       });
 
+      setFormClean();
       addOverlay.classList.add("d-none");
       form.reset();
       resetAddCustomerSearch();
@@ -743,9 +771,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         clearCache();
         await loadOrders();
       } catch (err) {
-        alert(`Failed to restore: ${err.message}`);
         restoreBtn.disabled = false;
         restoreBtn.textContent = "Restore";
+        const banner = document.createElement('div');
+        banner.className = 'alert alert-danger alert-dismissible fade show mx-0 mt-2';
+        banner.innerHTML = `Failed to restore: ${escapeHtml(err.message)}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+        document.querySelector('h2')?.insertAdjacentElement('afterend', banner);
       }
       return;
     }
@@ -796,6 +828,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         clearAllErrors(document.getElementById("editOrderForm"));
         editOverlay.classList.remove("d-none");
+        setFormDirty();
 
       } catch (err) {
         console.error("Failed to load order for edit:", err);
@@ -877,6 +910,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         body: JSON.stringify(payload)
       });
 
+      setFormClean();
       editOverlay.classList.add("d-none");
       clearAllErrors(form);
       clearCache();
@@ -897,11 +931,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   =============================== */
   document.getElementById("closeEditOrder")?.addEventListener("click", () => {
     clearAllErrors(document.getElementById("editOrderForm"));
+    setFormClean();
     editOverlay.classList.add("d-none");
   });
 
   document.getElementById("cancelEditOrder")?.addEventListener("click", () => {
     clearAllErrors(document.getElementById("editOrderForm"));
+    setFormClean();
     editOverlay.classList.add("d-none");
   });
 

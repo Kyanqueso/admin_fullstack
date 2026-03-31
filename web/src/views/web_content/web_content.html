@@ -38,7 +38,7 @@
                 <span class="input-group-text">
                     <img src="../../assets/icons/search.svg" width="20">
                 </span>
-                <input type="text" class="form-control" placeholder="Search Shoe Name">
+                <input type="text" class="form-control" placeholder="Search Shoe Name" maxlength="100">
             </div>
         </div>
 
@@ -77,7 +77,7 @@
                 <input type="text" id="shoe-name" name="shoeName" class="form-control mb-2" placeholder="Shoe Name" maxlength="50" required>
 
                 <label class="form-label text-black">Price</label>
-                <input type="text" inputmode="decimal" id="shoe-price" name="shoePrice" class="form-control mb-2" placeholder="Price (e.g. 1999.99)" required>
+                <input type="text" inputmode="decimal" id="shoe-price" name="shoePrice" class="form-control mb-2" placeholder="Price (e.g. 1999.99)" maxlength="10" required>
 
                 <!-- Existing images shown during edit -->
                 <div id="existing-images-container" class="d-none mb-2">
@@ -87,6 +87,8 @@
 
                 <label id="image-upload-label" class="form-label text-black">Upload Images (1-5 required)</label>
                 <input type="file" id="shoe-images" name="shoeImages" class="form-control mb-2" accept="image/*" multiple>
+                <!-- Preview panel for newly-selected files (before upload) -->
+                <div id="new-images-preview" class="d-flex flex-wrap gap-2 d-none"></div>
             </form>
 
             <!-- Inline error message -->
@@ -96,6 +98,18 @@
             <div class="d-flex justify-content-end gap-2 mt-3">
                 <button id="overlay-cancel" class="btn btn-secondary">Cancel</button>
                 <button id="overlay-confirm" class="btn btn-green">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Refresh Warning Overlay -->
+    <div id="refresh-warning-overlay" class="overlay d-none">
+        <div class="overlay-content p-4 position-relative">
+            <h5 class="mb-2 text-center fw-bold">Unsaved Changes</h5>
+            <p class="text-center text-muted mb-4">You have unsaved changes. Refresh anyway?<br>Your progress will be lost.</p>
+            <div class="d-flex justify-content-center gap-3">
+                <button id="refresh-stay" class="btn btn-secondary px-4">Stay</button>
+                <button id="refresh-leave" class="btn btn-danger px-4">Refresh</button>
             </div>
         </div>
     </div>

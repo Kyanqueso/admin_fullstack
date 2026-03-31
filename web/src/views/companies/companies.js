@@ -62,6 +62,7 @@ let selectedCompanyId = null;
 let allCompanies = [];
 let currentTab = 'active';
 let isPermanentDelete = false;
+let formIsDirty = false;
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -355,7 +356,7 @@ async function restoreCompany(id) {
     loadCompanies();
   } catch (error) {
     console.error("Failed to restore company:", error);
-    alert(`Failed to restore company: ${error.message}`);
+    showPageBanner('danger', `Failed to restore company: ${error.message}`);
   }
 }
 
@@ -366,6 +367,7 @@ document.addEventListener("click", async (e) => {
   /* ADD COMPANY */
   if (e.target.closest("#addCompanyCard")) {
     addOverlay.classList.remove("d-none");
+    setFormDirty();
     return;
   }
 
@@ -484,6 +486,7 @@ addForm.onsubmit = async (e) => {
       body: JSON.stringify({ name: validName })
     });
 
+    setFormClean();
     addOverlay.classList.add("d-none");
     addForm.reset();
     clearFieldError(addNameInput);
@@ -520,10 +523,11 @@ async function openEditCompany(companyId) {
     editNameInput.value = company.name || "";
     clearFieldError(editNameInput);
     editOverlay.classList.remove("d-none");
+    setFormDirty();
 
   } catch (error) {
     console.error("Failed to load company for editing:", error);
-    alert(`Failed to load company: ${error.message}`);
+    showPageBanner('danger', `Failed to load company: ${error.message}`);
   }
 }
 
@@ -557,6 +561,7 @@ editForm.onsubmit = async (e) => {
       body: JSON.stringify({ name: validName })
     });
 
+    setFormClean();
     editOverlay.classList.add("d-none");
     clearFieldError(editNameInput);
     clearCache();
@@ -582,6 +587,9 @@ document.getElementById("confirmDeleteCompany").onclick = async () => {
   const closeBtn = document.getElementById("closeDeleteCompany");
   const originalText = confirmBtn.textContent;
 
+  const errEl = document.getElementById('deleteCompanyError');
+  if (errEl) errEl.classList.add('d-none');
+
   try {
     confirmBtn.disabled = true;
     cancelBtn.disabled = true;
@@ -600,7 +608,11 @@ document.getElementById("confirmDeleteCompany").onclick = async () => {
 
   } catch (error) {
     console.error("Failed to delete company:", error);
-    alert(`Failed to delete company: ${error.message}`);
+    const errEl = document.getElementById('deleteCompanyError');
+    if (errEl) {
+      errEl.textContent = `Failed: ${error.message}`;
+      errEl.classList.remove('d-none');
+    }
   } finally {
     confirmBtn.textContent = originalText;
     confirmBtn.disabled = false;
@@ -611,17 +623,55 @@ document.getElementById("confirmDeleteCompany").onclick = async () => {
 };
 
 /* ===============================
+   REFRESH WARNING
+=============================== */
+const refreshWarningOverlay = document.getElementById('refresh-warning-overlay');
+function showRefreshWarning() { refreshWarningOverlay.classList.remove('d-none'); }
+function hideRefreshWarning() { refreshWarningOverlay.classList.add('d-none'); }
+document.getElementById('refresh-stay').addEventListener('click', hideRefreshWarning);
+document.getElementById('refresh-leave').addEventListener('click', () => {
+  setFormClean();
+  hideRefreshWarning();
+  location.reload();
+});
+function handleBeforeUnload(e) { e.preventDefault(); e.returnValue = ''; }
+window.addEventListener('keydown', (e) => {
+  if (!formIsDirty) return;
+  const isReload = (e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'r';
+  const isHardReload = (e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'r';
+  if (!isReload && !isHardReload) return;
+  e.preventDefault();
+  showRefreshWarning();
+}, true);
+function setFormDirty() { formIsDirty = true; window.addEventListener('beforeunload', handleBeforeUnload); }
+function setFormClean() { formIsDirty = false; window.removeEventListener('beforeunload', handleBeforeUnload); }
+
+/* ===============================
+   PAGE BANNER HELPER
+=============================== */
+function showPageBanner(type, message) {
+  document.querySelectorAll('.page-error-banner').forEach(el => el.remove());
+  const banner = document.createElement('div');
+  banner.className = `alert alert-${type} alert-dismissible fade show page-error-banner`;
+  banner.innerHTML = `${escapeHtml(message)}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+  document.querySelector('h1')?.insertAdjacentElement('afterend', banner);
+}
+
+/* ===============================
    CLOSE BUTTONS
 =============================== */
 document.getElementById("closeAddCompany").onclick =
   document.getElementById("cancelAddCompany").onclick = () => {
     clearFieldError(addNameInput);
+    setFormClean();
     addOverlay.classList.add("d-none");
   };
 
 document.getElementById("closeEditCompany").onclick =
   document.getElementById("cancelEditCompany").onclick = () => {
     clearFieldError(editNameInput);
+    setFormClean();
     editOverlay.classList.add("d-none");
   };
 
@@ -631,6 +681,8 @@ document.getElementById("closeDeleteCompany").onclick =
     isPermanentDelete = false;
     document.querySelector("#deleteCompanyOverlay h5").innerHTML =
       "Are you sure you want to<br>delete this company?";
+    const errEl = document.getElementById('deleteCompanyError');
+    if (errEl) errEl.classList.add('d-none');
   };
 
 /* ===============================

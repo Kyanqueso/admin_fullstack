@@ -8,6 +8,8 @@ let clientsMap = {};
 let ordersMap = {};
 let paymentSummaries = [];
 let maxPaymentNumber = 0;
+let formIsDirty = false;
+let currentTab = 'active';
 
 
 /* ===============================
@@ -71,6 +73,22 @@ async function loadCompanyName() {
 /* ===============================
    INIT
 =============================== */
+function setTabUI(tab) {
+  const activeBtn = document.getElementById('activeTabBtn');
+  const archiveBtn = document.getElementById('archiveTabBtn');
+  activeBtn.className = tab === 'active' ? 'btn btn-dark btn-sm' : 'btn btn-outline-secondary btn-sm';
+  archiveBtn.className = tab === 'archive' ? 'btn btn-dark btn-sm' : 'btn btn-outline-secondary btn-sm';
+}
+
+async function switchTab(tab) {
+  if (currentTab === tab) return;
+  currentTab = tab;
+  setTabUI(tab);
+  clearCache();
+  await loadOrders(tab === 'archive');
+  await loadPaymentSummaries();
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
 
   if (!COMPANY_ID) {
@@ -84,8 +102,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   loadCompanyName();
   await loadClients();
-  await loadOrders();
+  await loadOrders(false);
   await loadPaymentSummaries();
+  setTabUI('active');
+
+  document.getElementById('activeTabBtn')?.addEventListener('click', () => switchTab('active'));
+  document.getElementById('archiveTabBtn')?.addEventListener('click', () => switchTab('archive'));
 
   setupSearchAndSort();
   setupOverlayControls();
@@ -94,30 +116,31 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 /* ===============================
    LOAD CLIENTS
+   Always loads both active and archived so name lookups work on both tabs
 =============================== */
 async function loadClients() {
-  const url = `${FAST_API_URL}/clients/`;
-  let clients = getFromCache(url);
-
-  if (!clients) {
-    const res = await apiFetch(url);
-    clients = await res.json();
-    saveToCache(url, clients);
-  }
-
-  clients
-    .filter(c => String(c.company_id) === String(COMPANY_ID))
-    .forEach(client => {
-      clientsMap[client.id] = `${client.first_name} ${client.last_name}`;
+  try {
+    const [res1, res2] = await Promise.all([
+      apiFetch(`${FAST_API_URL}/clients/?company_id=${COMPANY_ID}`),
+      apiFetch(`${FAST_API_URL}/clients/?company_id=${COMPANY_ID}&archived=true`)
+    ]);
+    const [active, archived] = await Promise.all([res1.json(), res2.json()]);
+    clientsMap = {};
+    [...active, ...archived].forEach(c => {
+      clientsMap[c.id] = `${c.first_name} ${c.last_name}`;
     });
+  } catch (err) {
+    console.error("Failed to load clients:", err);
+  }
 }
 
 
 /* ===============================
    LOAD ORDERS
 =============================== */
-async function loadOrders() {
-  const url = `${FAST_API_URL}/client-orders/`;
+async function loadOrders(archived = false) {
+  ordersMap = {};
+  const url = `${FAST_API_URL}/client-orders/?archived=${archived}`;
   let orders = getFromCache(url);
 
   if (!orders) {
@@ -143,7 +166,8 @@ async function loadPaymentSummaries() {
     <tr><td colspan="8" class="text-center"><div class="spinner-border"></div></td></tr>
   `;
 
-  const res = await apiFetch(`${FAST_API_URL}/payment-summaries/`);
+  const archived = currentTab === 'archive';
+  const res = await apiFetch(`${FAST_API_URL}/payment-summaries/?archived=${archived}`);
   paymentSummaries = await res.json();
 
   renderPaymentRows(paymentSummaries);
@@ -159,11 +183,24 @@ function renderPaymentRows(summaries) {
 
   const visible = summaries.filter(s => ordersMap[s.client_order_id]);
 
+  const isArchive = currentTab === 'archive';
+
   if (visible.length === 0) {
+    const label = isArchive ? 'archived payments' : 'payments';
     tbody.innerHTML = `
-      <tr><td colspan="8" class="text-center text-muted">No payments found</td></tr>
+      <tr><td colspan="8" class="text-center text-muted">No ${label} found</td></tr>
     `;
     return;
+  }
+
+  // Update table header for archive tab
+  const ths = document.querySelectorAll('thead th');
+  if (isArchive) {
+    if (ths[6]) ths[6].textContent = 'Transaction History';
+    if (ths[7]) ths[7].textContent = '';
+  } else {
+    if (ths[6]) ths[6].textContent = 'Transaction History';
+    if (ths[7]) ths[7].textContent = 'Edit';
   }
 
   visible.forEach(summary => {
@@ -180,6 +217,29 @@ function renderPaymentRows(summaries) {
         ? new Date().toLocaleDateString()
         : "-";
 
+    const actionCell = isArchive
+      ? `<td>
+          <button class="btn btn-sm text-white view-transaction-btn"
+            data-summary-id="${summary.id}"
+            style="background-color: var(--color-primary);">
+            👁 View
+          </button>
+        </td>
+        <td></td>`
+      : `<td>
+          <button class="btn btn-sm text-white view-transaction-btn"
+            data-summary-id="${summary.id}"
+            style="background-color: var(--color-primary);">
+            👁 View
+          </button>
+        </td>
+        <td>
+          <button class="btn btn-sm edit-payment-btn"
+            data-summary-id="${summary.id}">
+            <img src="${pencilIcon}" width="18">
+          </button>
+        </td>`;
+
     const row = document.createElement("tr");
     row.innerHTML = `
       <td>${order.id}</td>
@@ -190,19 +250,7 @@ function renderPaymentRows(summaries) {
         ₱${Number(summary.remaining_balance).toLocaleString()}
       </td>
       <td>${balanceClearedDate}</td>
-      <td>
-        <button class="btn btn-sm text-white view-transaction-btn"
-          data-summary-id="${summary.id}"
-          style="background-color: var(--color-primary);">
-          👁 View
-        </button>
-      </td>
-      <td>
-        <button class="btn btn-sm edit-payment-btn"
-          data-summary-id="${summary.id}">
-          <img src="${pencilIcon}" width="18">
-        </button>
-      </td>
+      ${actionCell}
     `;
 
     tbody.appendChild(row);
@@ -357,6 +405,7 @@ async function openEditOverlay(summaryId) {
   `;
 
   editOverlay.classList.remove("d-none");
+  setFormDirty();
 
   const res = await apiFetch(`${FAST_API_URL}/payment-transactions/`);
   const transactions = await res.json();
@@ -420,9 +469,35 @@ function buildExistingRow(t) {
 
 
 /* ===============================
+   REFRESH WARNING HELPERS
+=============================== */
+function handleBeforeUnload(e) { e.preventDefault(); e.returnValue = ''; }
+function setFormDirty() { formIsDirty = true; window.addEventListener('beforeunload', handleBeforeUnload); }
+function setFormClean() { formIsDirty = false; window.removeEventListener('beforeunload', handleBeforeUnload); }
+
+/* ===============================
    OVERLAY CONTROLS
 =============================== */
 function setupOverlayControls() {
+
+  /* ---- Refresh warning ---- */
+  const refreshWarningOverlay = document.getElementById('refresh-warning-overlay');
+  function showRefreshWarning() { refreshWarningOverlay.classList.remove('d-none'); }
+  function hideRefreshWarning() { refreshWarningOverlay.classList.add('d-none'); }
+  document.getElementById('refresh-stay').addEventListener('click', hideRefreshWarning);
+  document.getElementById('refresh-leave').addEventListener('click', () => {
+    setFormClean();
+    hideRefreshWarning();
+    location.reload();
+  });
+  window.addEventListener('keydown', (e) => {
+    if (!formIsDirty) return;
+    const isReload = (e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'r';
+    const isHardReload = (e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'r';
+    if (!isReload && !isHardReload) return;
+    e.preventDefault();
+    showRefreshWarning();
+  }, true);
 
   /* ---- History overlay ---- */
   document.getElementById("closeTransactionOverlay")
@@ -439,6 +514,7 @@ function setupOverlayControls() {
   const editOverlay = document.getElementById("editTransactionOverlay");
 
   function closeEdit() {
+    setFormClean();
     editOverlay.classList.add("d-none");
     clearEditError();
   }
@@ -684,6 +760,7 @@ function setupOverlayControls() {
         }
 
         await loadPaymentSummaries();
+        setFormClean();
         editOverlay.classList.add("d-none");
 
       } catch (err) {

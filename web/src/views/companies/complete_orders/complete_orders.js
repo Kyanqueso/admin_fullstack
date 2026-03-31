@@ -243,7 +243,6 @@ async function openPaymentHistory(summaryId, clientName, totalDisplay) {
 
 document.addEventListener("DOMContentLoaded", async () => {
   if (!COMPANY_ID) {
-    alert("No company selected.");
     window.location.href = "../companies.html";
     return;
   }
@@ -285,9 +284,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (historyBtn) {
       const summaryId = historyBtn.dataset.summaryId;
       if (!summaryId) {
-        alert("No payment summary found for this order.");
+        const errEl = document.getElementById('historyErrorMsg');
+        if (errEl) {
+          errEl.textContent = "No payment summary found for this order.";
+          errEl.classList.remove('d-none');
+        }
+        document.getElementById("completedPaymentHistoryOverlay").classList.remove("d-none");
+        document.getElementById("completedHistoryCustomerName").textContent = historyBtn.dataset.clientName || "";
+        document.getElementById("completedHistoryTotalPrice").textContent = "";
+        document.getElementById("completedHistoryTransactionsBody").innerHTML = "";
         return;
       }
+      const errEl = document.getElementById('historyErrorMsg');
+      if (errEl) errEl.classList.add('d-none');
       await openPaymentHistory(summaryId, historyBtn.dataset.clientName, historyBtn.dataset.total);
       return;
     }
@@ -314,9 +323,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         clearCache();
         await loadOrders();
       } catch (err) {
-        alert(`Failed to restore: ${err.message}`);
         restoreBtn.disabled = false;
         restoreBtn.textContent = "Restore";
+        const banner = document.getElementById('page-error-banner');
+        const msg = document.getElementById('page-error-msg');
+        if (banner && msg) {
+          msg.textContent = `Failed to restore: ${err.message}`;
+          banner.classList.remove('d-none');
+        }
       }
       return;
     }
@@ -341,6 +355,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     const closeBtn = document.getElementById("closeDeleteCompleted");
     const originalText = confirmBtn.textContent;
 
+    const errEl = document.getElementById('deleteCompletedError');
+    if (errEl) errEl.classList.add('d-none');
+
     try {
       confirmBtn.disabled = true;
       cancelBtn.disabled = true;
@@ -357,7 +374,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (currentTab === 'active') await loadSummaries();
       await loadOrders();
     } catch (err) {
-      alert(`Failed: ${err.message}`);
+      const errEl = document.getElementById('deleteCompletedError');
+      if (errEl) {
+        errEl.textContent = `Failed: ${err.message}`;
+        errEl.classList.remove('d-none');
+      }
     } finally {
       confirmBtn.textContent = originalText;
       confirmBtn.disabled = false;
@@ -371,6 +392,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   ["cancelDeleteCompleted", "closeDeleteCompleted"].forEach(id => {
     document.getElementById(id)?.addEventListener("click", () => {
       document.getElementById("deleteCompletedOverlay")?.classList.add("d-none");
+      const errEl = document.getElementById('deleteCompletedError');
+      if (errEl) errEl.classList.add('d-none');
       selectedOrderId = null;
       isPermanentDelete = false;
     });

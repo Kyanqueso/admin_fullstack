@@ -122,14 +122,15 @@ def delete_shoe_catalog(db: Session, shoe_id: int):
 
 async def upload_shoe_image(image: UploadFile) -> str:
     """
-    Compresses image to WebP, uploads to Supabase, and logs compression stats.
+    Validates, compresses, and uploads an image to Supabase as WebP.
+    Performs magic-bytes check so renamed non-image files (.exe, .wav, etc.) are rejected.
     """
     # Validate extension
     file_ext = image.filename.split(".")[-1].lower()
     allowed_ext = ["jpg", "jpeg", "png", "webp"]
 
     if file_ext not in allowed_ext:
-        raise ValueError("Unsupported file type")
+        raise ValueError("Unsupported file type. Only JPG, PNG, and WebP are accepted.")
 
     MAX_SIZE = 25 * 1024 * 1024  # 25 MB
     if image.size and image.size > MAX_SIZE:
@@ -139,27 +140,31 @@ async def upload_shoe_image(image: UploadFile) -> str:
     file_content = await image.read()
     if len(file_content) > MAX_SIZE:
         raise ValueError("Image must be 25 MB or smaller")
-    original_size = len(file_content)  # Size in bytes
 
-    # Compress and Resize Logic
+    # Validate magic bytes — catches files renamed to a valid image extension
+    # (e.g. malware.exe renamed to photo.jpg, or audio.wav renamed to photo.jpg)
+    header = file_content[:12]
+    is_jpeg = header[:3] == b'\xff\xd8\xff'
+    is_png  = header[:4] == b'\x89PNG'
+    is_webp = header[:4] == b'RIFF' and header[8:12] == b'WEBP'
+    if not (is_jpeg or is_png or is_webp):
+        raise ValueError(
+            f"'{image.filename}' is not a valid image file. "
+            "Only JPEG, PNG, and WebP content is accepted."
+        )
+
+    original_size = len(file_content)
+
+    # Compress and convert to WebP
     try:
-        # Open image from bytes
         img = Image.open(io.BytesIO(file_content))
-
-        # Resize: Restrict max dimension to 1024px (preserves aspect ratio)
         img.thumbnail((1024, 1024))
 
-        # Save compressed image to a memory buffer
         output_buffer = io.BytesIO()
-
-        # Save as WebP with quality=70
         img.save(output_buffer, format="WEBP", quality=70, optimize=True)
-
-        # Get the compressed bytes
         compressed_data = output_buffer.getvalue()
-        compressed_size = len(compressed_data)  # New size in bytes
+        compressed_size = len(compressed_data)
 
-        # --- MONITORING LOGS ---
         reduction = (1 - (compressed_size / original_size)) * 100
         print("-" * 30)
         print(f"📸 Image Compression Stats:")
@@ -167,21 +172,14 @@ async def upload_shoe_image(image: UploadFile) -> str:
         print(f"   Compressed Size: {compressed_size / 1024:.2f} KB")
         print(f"   Space Saved:     {reduction:.2f}% 📉")
         print("-" * 30)
-        # -----------------------
 
-        # Prepare for upload
         file_name = f"{uuid.uuid4()}.webp"
         content_type = "image/webp"
         data_to_upload = compressed_data
 
     except Exception as e:
-        print(f"⚠️ Compression failed: {e}")
-        print("   Uploading original file instead.")
-
-        # Fallback to original if compression fails
-        data_to_upload = file_content
-        file_name = f"{uuid.uuid4()}.{file_ext}"
-        content_type = image.content_type
+        # Do NOT fall back — a file that Pillow cannot open is not a valid image
+        raise ValueError(f"Failed to process '{image.filename}': {str(e)}")
 
     # Upload to Supabase
     supabase.storage.from_("shoe_images").upload(
