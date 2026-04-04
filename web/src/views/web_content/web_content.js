@@ -380,8 +380,7 @@ function resetOverlayState() {
 /* ===============================
    IMAGE FILE VALIDATION
    Three-layer check: extension → MIME type → magic bytes.
-   Magic bytes catch renamed non-image files (.exe, .wav, etc.
-   renamed to .jpg).
+   Magic bytes bubuhat dto
 =============================== */
 function validateImageMagicBytes(file) {
     return new Promise((resolve, reject) => {
@@ -415,14 +414,14 @@ async function validateImageFiles(files) {
         if (!ALLOWED_IMAGE_EXTENSIONS.includes(ext)) {
             throw new Error(
                 `"${file.name}" has an unsupported file type. ` +
-                `Only JPG, PNG, and WebP images are accepted.`
+                `Only JPG, PNG, and WebP files are allowed.`
             );
         }
 
         if (file.type && !ALLOWED_IMAGE_MIMES.includes(file.type)) {
             throw new Error(
                 `"${file.name}" does not appear to be a valid image (reported type: ${file.type}). ` +
-                `Only JPG, PNG, and WebP are allowed.`
+                `Only JPG, PNG, and WebP files are allowed.`
             );
         }
 
@@ -678,7 +677,7 @@ imageInput.addEventListener('change', async () => {
         if (canAdd <= 0) {
             showOverlayError('You already have 5 images. Remove one before adding more.');
         } else {
-            showOverlayError(`You can only add ${canAdd} more image${canAdd !== 1 ? 's' : ''} (5 max total).`);
+            showOverlayError(`You can only add ${canAdd} more image${canAdd !== 1 ? 's' : ''}. You can have up to 5 images only.`);
         }
         return;
     }
@@ -807,8 +806,8 @@ overlayConfirm.addEventListener('click', async () => {
                 throw new Error('Shoe name must be 50 characters or fewer');
             }
 
-            if (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 1) {
-                throw new Error('Price must be greater than 1');
+            if (!price || isNaN(parseFloat(price)) || parseFloat(price) < 1) {
+                throw new Error('Price must be 1 or greater');
             }
 
             // Issue 3: use newFilesArray (not imageInput.files)
@@ -816,7 +815,7 @@ overlayConfirm.addEventListener('click', async () => {
                 throw new Error('Please select at least 1 image');
             }
             if (newFilesArray.length > 5) {
-                throw new Error('Maximum 5 images allowed');
+                throw new Error('Maximum 5 images allowed only');
             }
 
             overlayConfirm.textContent = 'Adding...';
@@ -857,8 +856,8 @@ overlayConfirm.addEventListener('click', async () => {
                 throw new Error('Shoe name must be 50 characters or fewer');
             }
 
-            if (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 1) {
-                throw new Error('Price must be greater than 1');
+            if (!price || isNaN(parseFloat(price)) || parseFloat(price) < 1) {
+                throw new Error('Price must be 1 or greater');
             }
 
             const remainingExisting = existingImagesDiv.querySelectorAll('.existing-image-item').length;
@@ -868,7 +867,7 @@ overlayConfirm.addEventListener('click', async () => {
                 throw new Error('Shoe must have at least 1 image');
             }
             if (remainingExisting + newCount > 5) {
-                throw new Error('Maximum 5 images allowed');
+                throw new Error('Maximum 5 images allowed only (including existing and new images)');
             }
 
             overlayConfirm.textContent = 'Saving...';
