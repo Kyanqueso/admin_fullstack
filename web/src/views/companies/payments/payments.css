@@ -94,8 +94,13 @@
   font-weight: 600;
 }
 
-.transaction-summary .balance {
-  color: #0a8f3c; /* green balance */
+.text-balance-owed {
+  color: #c0392b !important;
+}
+
+.text-success-light,
+.text-balance-paid {
+  color: #27ae60 !important;
 }
 
 /* Table header color */

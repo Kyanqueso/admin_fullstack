@@ -1,6 +1,16 @@
 import { getFromCache, saveToCache } from '../../js/apiCache.js';
 
 const FAST_API_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
 let uncollectedData = [];
 
 console.log("Checking API URL:", FAST_API_URL);
@@ -199,7 +209,7 @@ function createSalesChart(breakdownData) {
                 tension: 0.3,                      // Curve smoothing (0 = straight lines)
 
                 // Point styling
-                pointBackgroundColor: '550000',
+                pointBackgroundColor: '#550000',
                 pointBorderColor: '#fff',
                 pointBorderWidth: 2,
                 pointRadius: 4,                    // Point size
@@ -344,9 +354,9 @@ function renderUncollectedTable(data) {
 
     tbody.innerHTML = data.map(item => `
         <tr>
-            <td>${item.company}</td>
-            <td>${item.name}</td>
-            <td>${item.contact_number}</td>
+            <td>${escapeHtml(item.company)}</td>
+            <td>${escapeHtml(item.name)}</td>
+            <td>${escapeHtml(item.contact_number)}</td>
             <td>${new Date(item.order_date).toLocaleDateString('en-PH')}</td>
             <td>${formatCurrencyToPhp(item.price)}</td>
             <td>${formatCurrencyToPhp(item.first_pay)}</td>

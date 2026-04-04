@@ -4,10 +4,30 @@ import { getFromCache, saveToCache, clearCache } from '../../../js/apiCache.js';
 const FAST_API_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
 const COMPANY_ID = localStorage.getItem("activeCompanyId");
 
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function formatCurrency(amount) {
+  return '₱' + Number(amount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// Sets balance text and applies red (owed) or light-green (cleared) colour to the span
+function renderBalance(spanEl, amount) {
+  spanEl.textContent = formatCurrency(amount);
+  const isPaid = Number(amount) === 0;
+  spanEl.className = isPaid ? 'text-balance-paid' : 'text-balance-owed';
+}
+
 let clientsMap = {};
 let ordersMap = {};
 let paymentSummaries = [];
-let maxPaymentNumber = 0;
 let formIsDirty = false;
 let currentTab = 'active';
 
@@ -40,6 +60,19 @@ async function apiFetch(url, options = {}) {
     localStorage.removeItem("access_token");
     window.location.href = "../../auth/index.html";
     throw new Error("Unauthorized");
+  }
+
+  if (!response.ok) {
+    let errorMsg = `Request failed (${response.status})`;
+    try {
+      const errData = await response.json();
+      if (errData.detail) {
+        errorMsg = Array.isArray(errData.detail)
+          ? errData.detail.map(e => e.msg || JSON.stringify(e)).join(", ")
+          : errData.detail;
+      }
+    } catch { /* non-JSON body */ }
+    throw new Error(errorMsg);
   }
 
   return response;
@@ -205,7 +238,7 @@ function renderPaymentRows(summaries) {
 
   visible.forEach(summary => {
     const order = ordersMap[summary.client_order_id];
-    const clientName = clientsMap[order.client_id] || "-";
+    const clientName = escapeHtml(clientsMap[order.client_id] || "-");
     const totalAmount = Number(order.price) * Number(order.quantity);
 
     const orderDate = order.order_date
@@ -213,8 +246,8 @@ function renderPaymentRows(summaries) {
       : "-";
 
     const balanceClearedDate =
-      summary.remaining_balance == 0
-        ? new Date().toLocaleDateString()
+      summary.remaining_balance == 0 && order.dateCompleted
+        ? new Date(order.dateCompleted).toLocaleDateString()
         : "-";
 
     const actionCell = isArchive
@@ -244,10 +277,10 @@ function renderPaymentRows(summaries) {
     row.innerHTML = `
       <td>${order.id}</td>
       <td>${clientName}</td>
-      <td>₱${totalAmount.toLocaleString()}</td>
+      <td>${formatCurrency(totalAmount)}</td>
       <td>${orderDate}</td>
-      <td class="${summary.remaining_balance > 0 ? 'text-danger' : 'text-success'}">
-        ₱${Number(summary.remaining_balance).toLocaleString()}
+      <td class="${summary.remaining_balance > 0 ? 'text-balance-owed' : 'text-balance-paid'}">
+        ${formatCurrency(summary.remaining_balance)}
       </td>
       <td>${balanceClearedDate}</td>
       ${actionCell}
@@ -331,9 +364,8 @@ function attachDynamicHandlers() {
       const totalPrice = Number(order.price) * Number(order.quantity);
 
       document.getElementById("historyCustomerName").innerText = clientName;
-      document.getElementById("historyTotalPrice").innerText = "₱" + totalPrice.toLocaleString();
-      document.getElementById("historyBalance").innerText =
-        "₱" + Number(summary.remaining_balance).toLocaleString();
+      document.getElementById("historyTotalPrice").innerText = formatCurrency(totalPrice);
+      renderBalance(document.getElementById("historyBalance"), summary.remaining_balance);
 
       const tableBody = document.getElementById("historyTransactionsBody");
       tableBody.innerHTML = `
@@ -361,8 +393,8 @@ function attachDynamicHandlers() {
         const row = document.createElement("tr");
         row.innerHTML = `
           <td>${index + 1}</td>
-          <td>₱${Number(t.paid_amount).toLocaleString()}</td>
-          <td>${new Date(t.payment_date).toLocaleDateString()}</td>
+          <td>${formatCurrency(t.paid_amount)}</td>
+          <td>${new Date(t.payment_date + 'T00:00:00').toLocaleDateString()}</td>
         `;
         tableBody.appendChild(row);
       });
@@ -391,9 +423,8 @@ async function openEditOverlay(summaryId) {
   editOverlay.dataset.summaryId = summaryId;
 
   document.getElementById("editCustomerName").innerText = clientName;
-  document.getElementById("editTotalPrice").innerText = "₱" + totalPrice.toLocaleString();
-  document.getElementById("editCurrentBalance").innerText =
-    "₱" + Number(summary.remaining_balance).toLocaleString();
+  document.getElementById("editTotalPrice").innerText = formatCurrency(totalPrice);
+  renderBalance(document.getElementById("editCurrentBalance"), summary.remaining_balance);
 
   clearEditError();
 
@@ -410,8 +441,6 @@ async function openEditOverlay(summaryId) {
   const res = await apiFetch(`${FAST_API_URL}/payment-transactions/`);
   const transactions = await res.json();
   const filtered = transactions.filter(t => t.payment_summary_id == summaryId);
-
-  maxPaymentNumber = filtered.reduce((max, t) => Math.max(max, t.payment_number ?? 0), 0);
 
   container.innerHTML = "";
 
@@ -584,15 +613,15 @@ function setupOverlayControls() {
         btn.disabled = true;
         btn.textContent = "⏳";
 
-        const res = await apiFetch(
-          `${FAST_API_URL}/payment-transactions/${transactionId}`,
-          { method: "DELETE" }
-        );
-
-        if (!res.ok) {
+        try {
+          await apiFetch(
+            `${FAST_API_URL}/payment-transactions/${transactionId}`,
+            { method: "DELETE" }
+          );
+        } catch (err) {
           btn.disabled = false;
           btn.textContent = "🗑";
-          showEditError("Failed to delete transaction. Please try again.");
+          showEditError(err.message || "Failed to delete transaction. Please try again.");
           return;
         }
 
@@ -602,8 +631,7 @@ function setupOverlayControls() {
         const summaryId = editOverlay.dataset.summaryId;
         const fresh = paymentSummaries.find(s => s.id == summaryId);
         if (fresh) {
-          document.getElementById("editCurrentBalance").innerText =
-            "₱" + Number(fresh.remaining_balance).toLocaleString();
+          renderBalance(document.getElementById("editCurrentBalance"), fresh.remaining_balance);
         }
 
         const container = document.getElementById("transactionsContainer");
@@ -645,12 +673,17 @@ function setupOverlayControls() {
         return;
       }
 
-      // Validate helper
+      // Validate a single amount+date pair; returns true if valid
       function validateRow(amountInput, dateInput) {
         const amount = parseFloat(amountInput.value);
         const paymentDate = dateInput.value;
 
-        if (!amountInput.value || isNaN(amount) || amount < 0.01) {
+        if (!amountInput.value || isNaN(amount) || amount <= 0) {
+          showEditError("Payment amount must be greater than ₱0.");
+          amountInput.focus();
+          return false;
+        }
+        if (amount < 0.01) {
           showEditError("Payment amount must be at least ₱0.01.");
           amountInput.focus();
           return false;
@@ -683,22 +716,29 @@ function setupOverlayControls() {
       for (const row of existingRows) {
         if (!validateRow(row.querySelector(".existing-amount"), row.querySelector(".existing-date"))) return;
       }
-
-      let newTotal = 0;
       for (const row of newRows) {
         const amountInput = row.querySelector("input[type='number']");
         const dateInput = row.querySelector("input[type='date']");
         if (!validateRow(amountInput, dateInput)) return;
-        newTotal += parseFloat(amountInput.value);
       }
 
-      newTotal = Math.round(newTotal * 100) / 100;
-      const remaining = Math.round(Number(summary.remaining_balance) * 100) / 100;
+      // Overpayment check: sum of ALL rows (existing edits + new) must not exceed order total
+      const order = ordersMap[summary.client_order_id];
+      const orderTotal = Math.round(Number(order.price) * Number(order.quantity) * 100) / 100;
 
-      if (newTotal > remaining) {
+      let existingTotal = 0;
+      for (const row of existingRows) {
+        existingTotal += parseFloat(row.querySelector(".existing-amount").value);
+      }
+      let newTotal = 0;
+      for (const row of newRows) {
+        newTotal += parseFloat(row.querySelector("input[type='number']").value);
+      }
+      const grandTotal = Math.round((existingTotal + newTotal) * 100) / 100;
+
+      if (grandTotal > orderTotal + 0.009) {
         showEditError(
-          `Total new payments (₱${newTotal.toLocaleString()}) exceed the ` +
-          `remaining balance (₱${remaining.toLocaleString()}).`
+          `Total payments (${formatCurrency(grandTotal)}) would exceed the order total (${formatCurrency(orderTotal)}).`
         );
         return;
       }
@@ -716,47 +756,34 @@ function setupOverlayControls() {
         addBtn.disabled = true;
         saveBtn.textContent = "Saving...";
 
-        // ✅ PATCH existing edited transactions
+        // PATCH existing edited transactions
         for (const row of existingRows) {
           const transactionId = row.dataset.transactionId;
           const amount = Math.round(parseFloat(row.querySelector(".existing-amount").value) * 100) / 100;
           const paymentDate = row.querySelector(".existing-date").value;
 
-          const response = await apiFetch(
+          await apiFetch(
             `${FAST_API_URL}/payment-transactions/${transactionId}`,
             {
               method: "PATCH",
               body: JSON.stringify({ paid_amount: amount, payment_date: paymentDate })
             }
           );
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            showEditError(errorData.detail || "Failed to update payment.");
-            return;
-          }
         }
 
-        // POST new transactions
-        for (let i = 0; i < newRows.length; i++) {
-          const amount = Math.round(parseFloat(newRows[i].querySelector("input[type='number']").value) * 100) / 100;
-          const paymentDate = newRows[i].querySelector("input[type='date']").value;
+        // POST new transactions — let backend auto-assign payment_number
+        for (const row of newRows) {
+          const amount = Math.round(parseFloat(row.querySelector("input[type='number']").value) * 100) / 100;
+          const paymentDate = row.querySelector("input[type='date']").value;
 
-          const response = await apiFetch(`${FAST_API_URL}/payment-transactions/`, {
+          await apiFetch(`${FAST_API_URL}/payment-transactions/`, {
             method: "POST",
             body: JSON.stringify({
               payment_summary_id: parseInt(summaryId),
-              payment_number: maxPaymentNumber + i + 1,
               paid_amount: amount,
               payment_date: paymentDate
             })
           });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            showEditError(errorData.detail || "Failed to save payment.");
-            return;
-          }
         }
 
         await loadPaymentSummaries();
@@ -765,7 +792,7 @@ function setupOverlayControls() {
 
       } catch (err) {
         console.error("Failed to save transactions:", err);
-        showEditError("Failed to save transactions. Please try again.");
+        showEditError(err.message || "Failed to save transactions. Please try again.");
       } finally {
         saveBtn.textContent = originalText;
         saveBtn.disabled = false;
