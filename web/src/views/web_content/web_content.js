@@ -246,9 +246,9 @@ function highlightQuery(text) {
 
 function sortShoes(shoesArray, sortValue) {
     const arr = [...shoesArray];
-    if (sortValue === 'a-z') {
+    if (sortValue === 'az') {
         arr.sort((a, b) => a.model_name.localeCompare(b.model_name));
-    } else if (sortValue === 'z-a') {
+    } else if (sortValue === 'za') {
         arr.sort((a, b) => b.model_name.localeCompare(a.model_name));
     } else if (sortValue === 'recent') {
         arr.sort((a, b) => new Date(b.date_added) - new Date(a.date_added));

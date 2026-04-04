@@ -39,8 +39,8 @@
       </div>
       <select id="sortSelect" class="form-select" style="max-width: 160px;">
         <option value="" selected disabled hidden>Sort by</option>
-        <option value="az">A–Z</option>
-        <option value="za">Z–A</option>
+        <option value="az">A–Z (Name)</option>
+        <option value="za">Z–A (Name)</option>
         <option value="recent">Recently Added</option>
         <option value="oldest">Oldest First</option>
       </select>
@@ -155,6 +155,19 @@
 
   <!-- DELETE COMPANY — add error area -->
   <!-- (error div injected dynamically by JS) -->
+
+  <!-- RESTORE COMPANY -->
+  <div class="overlay d-none" id="restoreCompanyOverlay">
+    <div class="overlay-content p-4 text-center" style="max-width: 320px;">
+      <button class="overlay-close" id="closeRestoreCompany">✕</button>
+      <h5 class="mb-4">Restore this company?</h5>
+      <div id="restoreCompanyError" class="alert alert-danger d-none mb-3 py-2 px-3" role="alert"></div>
+      <div class="d-flex justify-content-center gap-3">
+        <button class="btn btn-danger px-4" id="cancelRestoreCompany">No</button>
+        <button class="btn btn-green px-4" id="confirmRestoreCompany">Yes</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Refresh Warning Overlay -->
   <div id="refresh-warning-overlay" class="overlay d-none">

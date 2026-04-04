@@ -31,41 +31,30 @@
     </div>
 
     <!-- Page Title -->
-    <h2 class="mb-2 mt-2" id="companyTitle">Client List</h2>
+    <h2 class="mb-5 mt-2" id="companyTitle">Client List</h2>
 
-    <!-- Active/Archive Tabs -->
-    <div class="d-flex justify-content-center gap-2 mb-2">
-        <button class="btn btn-dark btn-sm" id="activeTabBtn">Active</button>
-        <button class="btn btn-outline-secondary btn-sm" id="archiveTabBtn">Archive</button>
-    </div>
-
-    <!-- Search / Sort / Add -->
-    <div class="row align-items-end mb-4">
-        <div class="col-12 col-md-4 mb-2">
-            <label class="form-label invisible">Search</label>
-            <div class="input-group">
-                <span class="input-group-text">
-                    <img src="../../../assets/icons/search.svg" width="20">
-                </span>
-                <input type="text" class="form-control" placeholder="Search name">
-            </div>
+    <!-- Search / Sort / Tabs / Add -->
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+        <div class="input-group" style="max-width: 320px;">
+            <span class="input-group-text">
+                <img src="../../../assets/icons/search.svg" width="20">
+            </span>
+            <input type="text" class="form-control" placeholder="Search name">
         </div>
-
-        <div class="col-12 col-md-2 mb-2">
-            <select class="form-select mt-2">
-                <option value="" selected disabled hidden>Sort by</option>
-                <option value="az">A–Z (First Name)</option>
-                <option value="za">Z–A (First Name)</option>
-                <option value="recent">Recently Added</option>
-                <option value="oldest">Oldest First</option>
-            </select>
+        <select class="form-select" style="max-width: 160px;">
+            <option value="" selected disabled hidden>Sort by</option>
+            <option value="az">A–Z (First Name)</option>
+            <option value="za">Z–A (First Name)</option>
+            <option value="recent">Recently Added</option>
+            <option value="oldest">Oldest First</option>
+        </select>
+        <div class="d-flex gap-2">
+            <button class="btn btn-dark btn-sm" id="activeTabBtn">Active</button>
+            <button class="btn btn-outline-secondary btn-sm" id="archiveTabBtn">Archive</button>
         </div>
-
-        <div class="col-12 col-md-6 text-md-end mt-3 mt-md-0">
-            <button class="btn btn-outline-dark" id="openOverlay">
-                + Add New Client
-            </button>
-        </div>
+        <button class="btn btn-outline-dark ms-auto" id="openOverlay">
+            + Add New Client
+        </button>
     </div>
 
     <!-- TABLE -->
@@ -115,7 +104,7 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label class="form-label">Address</label>
-                        <input type="text" class="form-control" placeholder="123 Main Street">
+                        <input type="text" class="form-control" placeholder="123 Main Street" maxlength="100">
                     </div>
 
                     <div class="col-md-6">
@@ -184,7 +173,7 @@
 
                 <div class="mb-3">
                     <label class="form-label">Address</label>
-                    <input type="text" class="form-control" id="editAddress">
+                    <input type="text" class="form-control" id="editAddress" maxlength="100">
                 </div>
 
                 <div class="mb-4">
@@ -216,6 +205,19 @@
             <div class="d-flex justify-content-center gap-3">
                 <button class="btn btn-danger px-4" id="cancelDelete">No</button>
                 <button class="btn btn-green px-4" id="confirmDelete">Yes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RESTORE CLIENT CONFIRMATION OVERLAY -->
+    <div class="overlay d-none" id="restoreClientOverlay">
+        <div class="overlay-content p-4 text-center" style="max-width: 320px;">
+            <button class="overlay-close" id="closeRestoreClient">✕</button>
+            <h5 class="mb-4">Restore this client?</h5>
+            <div id="restoreClientError" class="alert alert-danger d-none mb-3 py-2 px-3" role="alert"></div>
+            <div class="d-flex justify-content-center gap-3">
+                <button class="btn btn-danger px-4" id="cancelRestoreClient">No</button>
+                <button class="btn btn-green px-4" id="confirmRestoreClient">Yes</button>
             </div>
         </div>
     </div>

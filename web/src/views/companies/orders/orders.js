@@ -325,6 +325,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     } else if (EMOJI_REGEX.test(colorVal)) {
       showFieldError(colorEl, "Color must not contain emojis.");
       valid = false;
+    } else if (colorVal.length > 32) {
+      showFieldError(colorEl, "Color must not exceed 32 characters.");
+      valid = false;
     } else {
       clearFieldError(colorEl);
     }
@@ -630,40 +633,29 @@ document.addEventListener("DOMContentLoaded", async () => {
   /* ===============================
      SEARCH & SORT
   =============================== */
-  document.getElementById("searchOrders")?.addEventListener("input", (e) => {
-    const term = e.target.value.toLowerCase();
-    const filtered = allOrders.filter(order =>
+  function applySearchAndSort() {
+    const term = (document.getElementById("searchOrders")?.value || "").toLowerCase().trim();
+    const sortValue = document.getElementById("sortOrders")?.value || "";
+
+    let result = allOrders.filter(order =>
       (clientMap[order.client_id] || "").toLowerCase().includes(term)
     );
-    renderOrders(filtered);
-  });
 
-  document.getElementById("sortOrders")?.addEventListener("change", (e) => {
-    const value = e.target.value;
-    let sorted = [...allOrders];
-
-    switch (value) {
-      case "az":
-        sorted.sort((a, b) =>
-          (clientMap[a.client_id] || "").localeCompare(clientMap[b.client_id] || "")
-        );
-        break;
-      case "za":
-        sorted.sort((a, b) =>
-          (clientMap[b.client_id] || "").localeCompare(clientMap[a.client_id] || "")
-        );
-        break;
-      case "recent":
-        sorted.sort((a, b) => b.id - a.id);
-        break;
-      case "oldest":
-      case "orderid":
-        sorted.sort((a, b) => a.id - b.id);
-        break;
+    if (sortValue === "az") {
+      result.sort((a, b) => (clientMap[a.client_id] || "").localeCompare(clientMap[b.client_id] || ""));
+    } else if (sortValue === "za") {
+      result.sort((a, b) => (clientMap[b.client_id] || "").localeCompare(clientMap[a.client_id] || ""));
+    } else if (sortValue === "recent") {
+      result.sort((a, b) => b.id - a.id);
+    } else if (sortValue === "oldest") {
+      result.sort((a, b) => a.id - b.id);
     }
 
-    renderOrders(sorted);
-  });
+    renderOrders(result);
+  }
+
+  document.getElementById("searchOrders")?.addEventListener("input", applySearchAndSort);
+  document.getElementById("sortOrders")?.addEventListener("change", applySearchAndSort);
 
   /* ===============================
      ADD ORDER
@@ -760,25 +752,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   =============================== */
   document.addEventListener("click", async (e) => {
 
-    /* RESTORE ORDER (archive tab) */
+    /* RESTORE ORDER (archive tab) — open confirm overlay */
     const restoreBtn = e.target.closest(".restore-order-btn");
     if (restoreBtn) {
-      const id = restoreBtn.dataset.id;
-      try {
-        restoreBtn.disabled = true;
-        restoreBtn.textContent = "Restoring...";
-        await apiFetch(`${ORDERS_URL}/${id}/restore`, { method: "PATCH" });
-        clearCache();
-        await loadOrders();
-      } catch (err) {
-        restoreBtn.disabled = false;
-        restoreBtn.textContent = "Restore";
-        const banner = document.createElement('div');
-        banner.className = 'alert alert-danger alert-dismissible fade show mx-0 mt-2';
-        banner.innerHTML = `Failed to restore: ${escapeHtml(err.message)}
-          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
-        document.querySelector('h2')?.insertAdjacentElement('afterend', banner);
-      }
+      selectedOrderId = restoreBtn.dataset.id;
+      const errEl = document.getElementById("restoreOrderError");
+      if (errEl) { errEl.classList.add("d-none"); errEl.textContent = ""; }
+      document.getElementById("restoreOrderOverlay").classList.remove("d-none");
       return;
     }
 
@@ -1003,6 +983,53 @@ document.addEventListener("DOMContentLoaded", async () => {
       const banner = document.querySelector(".delete-error-banner");
       if (banner) banner.remove();
     });
+  });
+
+  /* ===============================
+     RESTORE ORDER OVERLAY
+  =============================== */
+  function closeRestoreOrderOverlay() {
+    document.getElementById("restoreOrderOverlay").classList.add("d-none");
+    const errEl = document.getElementById("restoreOrderError");
+    if (errEl) { errEl.classList.add("d-none"); errEl.textContent = ""; }
+  }
+
+  document.getElementById("closeRestoreOrder")?.addEventListener("click", closeRestoreOrderOverlay);
+  document.getElementById("cancelRestoreOrder")?.addEventListener("click", closeRestoreOrderOverlay);
+
+  document.getElementById("confirmRestoreOrder")?.addEventListener("click", async () => {
+    if (!selectedOrderId) return;
+    const confirmBtn = document.getElementById("confirmRestoreOrder");
+    const cancelBtn = document.getElementById("cancelRestoreOrder");
+    const closeBtn = document.getElementById("closeRestoreOrder");
+    const errEl = document.getElementById("restoreOrderError");
+    const originalText = confirmBtn.textContent;
+
+    if (errEl) errEl.classList.add("d-none");
+
+    try {
+      confirmBtn.disabled = true;
+      cancelBtn.disabled = true;
+      closeBtn.disabled = true;
+      confirmBtn.textContent = "Restoring...";
+
+      await apiFetch(`${ORDERS_URL}/${selectedOrderId}/restore`, { method: "PATCH" });
+
+      closeRestoreOrderOverlay();
+      selectedOrderId = null;
+      clearCache();
+      await loadOrders();
+    } catch (err) {
+      if (errEl) {
+        errEl.textContent = err.message || "Failed to restore order.";
+        errEl.classList.remove("d-none");
+      }
+    } finally {
+      confirmBtn.textContent = originalText;
+      confirmBtn.disabled = false;
+      cancelBtn.disabled = false;
+      closeBtn.disabled = false;
+    }
   });
 
   /* ===============================

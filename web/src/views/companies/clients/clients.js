@@ -255,6 +255,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (address && hasEmoji(address)) {
       showFieldError(addressInput, "No emoji allowed");
       valid = false;
+    } else if (address && address.length > 100) {
+      showFieldError(addressInput, "Address must not exceed 100 characters");
+      valid = false;
     } else if (address && !isAlphanumeric(address)) {
       showFieldError(addressInput, "Invalid address characters");
       valid = false;
@@ -627,22 +630,13 @@ document.addEventListener("DOMContentLoaded", () => {
   =============================== */
   document.addEventListener("click", async (e) => {
 
-    // RESTORE CLIENT (archive tab)
+    // RESTORE CLIENT (archive tab) — open confirm overlay
     const restoreBtn = e.target.closest(".restore-btn");
     if (restoreBtn) {
-      const id = restoreBtn.dataset.id;
-      try {
-        restoreBtn.disabled = true;
-        restoreBtn.textContent = "Restoring...";
-        await apiFetch(`${API_URL}/${id}/restore`, { method: "PATCH" });
-        clearCache();
-        loadClients();
-      } catch (error) {
-        document.getElementById("restoreErrorMessage").textContent = error.message;
-        document.getElementById("restoreErrorOverlay").classList.remove("d-none");
-        restoreBtn.disabled = false;
-        restoreBtn.textContent = "Restore";
-      }
+      selectedClientId = restoreBtn.dataset.id;
+      const restoreErrEl = document.getElementById("restoreClientError");
+      if (restoreErrEl) { restoreErrEl.classList.add("d-none"); restoreErrEl.textContent = ""; }
+      document.getElementById("restoreClientOverlay").classList.remove("d-none");
       return;
     }
 
@@ -909,6 +903,51 @@ document.addEventListener("DOMContentLoaded", () => {
     isPermanentDelete = false;
     document.querySelector("#deleteClientOverlay h5").innerHTML =
       "Are you sure you want to<br>delete this client?";
+  };
+
+  /* ===============================
+     RESTORE CLIENT OVERLAY HANDLERS
+  =============================== */
+  function closeRestoreClientOverlay() {
+    document.getElementById("restoreClientOverlay").classList.add("d-none");
+    const errEl = document.getElementById("restoreClientError");
+    if (errEl) { errEl.classList.add("d-none"); errEl.textContent = ""; }
+  }
+
+  document.getElementById("closeRestoreClient").onclick = closeRestoreClientOverlay;
+  document.getElementById("cancelRestoreClient").onclick = closeRestoreClientOverlay;
+
+  document.getElementById("confirmRestoreClient").onclick = async () => {
+    const confirmBtn = document.getElementById("confirmRestoreClient");
+    const cancelBtn = document.getElementById("cancelRestoreClient");
+    const closeBtn = document.getElementById("closeRestoreClient");
+    const errEl = document.getElementById("restoreClientError");
+    const originalText = confirmBtn.textContent;
+
+    if (errEl) errEl.classList.add("d-none");
+
+    try {
+      confirmBtn.disabled = true;
+      cancelBtn.disabled = true;
+      closeBtn.disabled = true;
+      confirmBtn.textContent = "Restoring...";
+
+      await apiFetch(`${API_URL}/${selectedClientId}/restore`, { method: "PATCH" });
+
+      closeRestoreClientOverlay();
+      clearCache();
+      loadClients();
+    } catch (error) {
+      if (errEl) {
+        errEl.textContent = error.message || "Failed to restore client.";
+        errEl.classList.remove("d-none");
+      }
+    } finally {
+      confirmBtn.textContent = originalText;
+      confirmBtn.disabled = false;
+      cancelBtn.disabled = false;
+      closeBtn.disabled = false;
+    }
   };
 
   const closeRestoreError = () =>

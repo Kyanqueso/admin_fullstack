@@ -31,7 +31,7 @@
     </div>
 
     <!-- Page Title -->
-    <h2 class="mb-2 mt-2" id="companyTitle">Completed Orders</h2>
+    <h2 class="mb-5 mt-2" id="companyTitle">Completed Orders</h2>
 
     <!-- Page-level error banner -->
     <div id="page-error-banner" class="alert alert-danger alert-dismissible fade show d-none mb-2" role="alert">
@@ -39,36 +39,23 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 
-    <!-- Active/Archive Tabs -->
-    <div class="d-flex justify-content-center gap-2 mb-2">
-        <button class="btn btn-dark btn-sm" id="activeTabBtn">Active</button>
-        <button class="btn btn-outline-secondary btn-sm" id="archiveTabBtn">Archive</button>
-    </div>
-
-    <!-- Search / Sort / Add -->
-    <div class="row align-items-end mb-4">
-
-        <!-- Search -->
-        <div class="col-12 col-md-4 mb-2">
-            <label class="form-label invisible">Search</label>
-            <div class="input-group">
-                <span class="input-group-text"><img src="../../../assets/icons/search.svg" alt="search" width="20"
-                        height="20"></span>
-                <input type="text" class="form-control" placeholder="Search name">
-            </div>
+    <!-- Search / Sort / Tabs -->
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+        <div class="input-group" style="max-width: 320px;">
+            <span class="input-group-text"><img src="../../../assets/icons/search.svg" alt="search" width="20" height="20"></span>
+            <input type="text" class="form-control" placeholder="Search name">
         </div>
-
-        <!-- Sort -->
-        <div class="col-12 col-md-2 mb-2">
-            <label class="form-label"></label>
-            <select class="form-select mt-2">
-                <option value="" selected disabled hidden>Sort by</option>
-                <option value="name">Name</option>
-                <option value="recent">Recently Added</option>
-                <option value="alpha">Alphabetical</option>
-            </select>
+        <select class="form-select" style="max-width: 160px;">
+            <option value="" selected disabled hidden>Sort by</option>
+            <option value="az">A–Z (Client)</option>
+            <option value="za">Z–A (Client)</option>
+            <option value="recent">Recently Added</option>
+            <option value="oldest">Oldest First</option>
+        </select>
+        <div class="d-flex gap-2">
+            <button class="btn btn-dark btn-sm" id="activeTabBtn">Active</button>
+            <button class="btn btn-outline-secondary btn-sm" id="archiveTabBtn">Archive</button>
         </div>
-
     </div>
 
     <!-- Table -->
@@ -94,6 +81,7 @@
                     <th>Quantity</th>
                     <th>Price</th>
                     <th>Total Amount</th>
+                    <th>Date Completed</th>
                     <th>Payment History</th>
                     <th class="action-col"></th>
                 </tr>
@@ -154,6 +142,19 @@
             <div class="d-flex justify-content-center gap-3">
                 <button class="btn btn-danger px-4" id="cancelDeleteCompleted">No</button>
                 <button class="btn btn-green px-4" id="confirmDeleteCompleted">Yes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Restore Completed Order Overlay -->
+    <div class="overlay d-none" id="restoreCompletedOverlay">
+        <div class="overlay-content p-4 text-center" style="max-width: 320px;">
+            <button class="overlay-close" id="closeRestoreCompleted">✕</button>
+            <h5 class="mb-4">Restore this order?</h5>
+            <div id="restoreCompletedError" class="alert alert-danger d-none mb-3 py-2 px-3" role="alert"></div>
+            <div class="d-flex justify-content-center gap-3">
+                <button class="btn btn-danger px-4" id="cancelRestoreCompleted">No</button>
+                <button class="btn btn-green px-4" id="confirmRestoreCompleted">Yes</button>
             </div>
         </div>
     </div>

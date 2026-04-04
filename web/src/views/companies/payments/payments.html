@@ -31,33 +31,25 @@
     <!-- Page Title -->
     <h2 class="mb-5 mt-2" id="companyTitle">Client Payment List</h2>
 
-    <!-- Active/Archive Tabs -->
-    <div class="d-flex justify-content-center gap-2 mb-3">
-        <button class="btn btn-dark btn-sm" id="activeTabBtn">Active</button>
-        <button class="btn btn-outline-secondary btn-sm" id="archiveTabBtn">Archive</button>
-    </div>
-
-    <!-- Search / Sort -->
-    <div class="row align-items-end mb-4">
-
-        <div class="col-12 col-md-4 mb-2">
-            <div class="input-group">
-                <span class="input-group-text">
-                    <img src="../../../assets/icons/search.svg" width="20">
-                </span>
-                <input type="text" class="form-control" placeholder="Search name">
-            </div>
+    <!-- Search / Sort / Tabs -->
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+        <div class="input-group" style="max-width: 320px;">
+            <span class="input-group-text">
+                <img src="../../../assets/icons/search.svg" width="20">
+            </span>
+            <input type="text" class="form-control" placeholder="Search name">
         </div>
-
-        <div class="col-12 col-md-2 mb-2">
-            <select class="form-select">
-                <option value="" selected disabled hidden>Sort by</option>
-                <option value="name">Name</option>
-                <option value="recent">Recently Added</option>
-                <option value="alpha">Alphabetical</option>
-            </select>
+        <select class="form-select" style="max-width: 160px;">
+            <option value="" selected disabled hidden>Sort by</option>
+            <option value="az">A–Z (Client)</option>
+            <option value="za">Z–A (Client)</option>
+            <option value="recent">Recently Added</option>
+            <option value="oldest">Oldest First</option>
+        </select>
+        <div class="d-flex gap-2">
+            <button class="btn btn-dark btn-sm" id="activeTabBtn">Active</button>
+            <button class="btn btn-outline-secondary btn-sm" id="archiveTabBtn">Archive</button>
         </div>
-
     </div>
 
     <!-- Table -->

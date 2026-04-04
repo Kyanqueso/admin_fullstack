@@ -311,15 +311,25 @@ function setupSearchAndSort() {
       return clientName.includes(query);
     });
 
-    if (sortValue === "name" || sortValue === "alpha") {
+    if (sortValue === "az") {
       result.sort((a, b) => {
         const nameA = clientsMap[ordersMap[a.client_order_id]?.client_id] || "";
         const nameB = clientsMap[ordersMap[b.client_order_id]?.client_id] || "";
         return nameA.localeCompare(nameB);
       });
+    } else if (sortValue === "za") {
+      result.sort((a, b) => {
+        const nameA = clientsMap[ordersMap[a.client_order_id]?.client_id] || "";
+        const nameB = clientsMap[ordersMap[b.client_order_id]?.client_id] || "";
+        return nameB.localeCompare(nameA);
+      });
     } else if (sortValue === "recent") {
       result.sort((a, b) =>
         (ordersMap[b.client_order_id]?.id || 0) - (ordersMap[a.client_order_id]?.id || 0)
+      );
+    } else if (sortValue === "oldest") {
+      result.sort((a, b) =>
+        (ordersMap[a.client_order_id]?.id || 0) - (ordersMap[b.client_order_id]?.id || 0)
       );
     }
 
@@ -453,6 +463,14 @@ async function openEditOverlay(summaryId) {
   } else {
     filtered.forEach(t => container.appendChild(buildExistingRow(t)));
   }
+
+  // Sync button state after existing rows are rendered
+  const addBtn = document.getElementById("addTransactionBtn");
+  if (addBtn) {
+    const atLimit = container.querySelectorAll(".transaction-row").length >= 3;
+    addBtn.disabled = atLimit;
+    addBtn.title = atLimit ? "Maximum 3 transactions allowed" : "";
+  }
 }
 
 
@@ -551,9 +569,26 @@ function setupOverlayControls() {
   document.getElementById("closeEditTransaction")?.addEventListener("click", closeEdit);
   document.getElementById("cancelEditTransaction")?.addEventListener("click", closeEdit);
 
+  /* ---- Transaction count helper ---- */
+  function countTransactionRows() {
+    return document.querySelectorAll("#transactionsContainer .transaction-row").length;
+  }
+
+  function updateAddBtnState() {
+    const addBtn = document.getElementById("addTransactionBtn");
+    if (!addBtn) return;
+    const atLimit = countTransactionRows() >= 3;
+    addBtn.disabled = atLimit;
+    addBtn.title = atLimit ? "Maximum 3 transactions allowed" : "";
+  }
+
   /* ---- Add new transaction row ---- */
   document.getElementById("addTransactionBtn")?.addEventListener("click", () => {
     clearEditError();
+    if (countTransactionRows() >= 3) {
+      showEditError("Maximum 3 transactions allowed.");
+      return;
+    }
 
     const container = document.getElementById("transactionsContainer");
     const emptyMsg = container.querySelector("p.text-muted");
@@ -596,6 +631,7 @@ function setupOverlayControls() {
     });
 
     container.appendChild(row);
+    updateAddBtnState();
     amountInput.focus();
   });
 
@@ -642,8 +678,10 @@ function setupOverlayControls() {
             </p>
           `;
         }
+        updateAddBtnState();
       } else {
         btn.closest(".transaction-row").remove();
+        updateAddBtnState();
       }
     });
 
@@ -739,6 +777,15 @@ function setupOverlayControls() {
       if (grandTotal > orderTotal + 0.009) {
         showEditError(
           `Total payments (${formatCurrency(grandTotal)}) would exceed the order total (${formatCurrency(orderTotal)}).`
+        );
+        return;
+      }
+
+      const totalRowCount = existingRows.length + newRows.length;
+      if (totalRowCount >= 3 && grandTotal < orderTotal - 0.009) {
+        showEditError(
+          `The 3rd (final) payment must fully settle the balance. ` +
+          `Remaining unpaid: ${formatCurrency(orderTotal - grandTotal)}.`
         );
         return;
       }

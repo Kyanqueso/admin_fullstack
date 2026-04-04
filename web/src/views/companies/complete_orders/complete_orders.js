@@ -103,7 +103,7 @@ async function loadOrders() {
   const tbody = document.getElementById("completedOrdersTableBody");
   if (!tbody) return;
 
-  tbody.innerHTML = `<tr><td colspan="17" class="text-center"><div class="spinner-border"></div></td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="18" class="text-center"><div class="spinner-border"></div></td></tr>`;
 
   try {
     let url;
@@ -119,7 +119,7 @@ async function loadOrders() {
     renderOrders(allOrders);
   } catch (err) {
     console.error("Failed to load orders:", err);
-    tbody.innerHTML = `<tr><td colspan="17" class="text-danger text-center">Failed to load: ${escapeHtml(err.message)}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="18" class="text-danger text-center">Failed to load: ${escapeHtml(err.message)}</td></tr>`;
   }
 }
 
@@ -132,11 +132,11 @@ function setTabUI(tab) {
   // Update table headers
   const ths = document.querySelectorAll('thead th');
   if (tab === 'archive') {
-    if (ths[15]) ths[15].textContent = 'Restore';
-    if (ths[16]) ths[16].textContent = 'Delete';
+    if (ths[16]) ths[16].textContent = 'Restore';
+    if (ths[17]) ths[17].textContent = 'Delete';
   } else {
-    if (ths[15]) ths[15].textContent = 'Payment History';
-    if (ths[16]) ths[16].textContent = '';
+    if (ths[16]) ths[16].textContent = 'Payment History';
+    if (ths[17]) ths[17].textContent = '';
   }
 }
 
@@ -146,7 +146,7 @@ function renderOrders(orders) {
 
   if (orders.length === 0) {
     const label = currentTab === 'archive' ? 'archived' : 'completed';
-    tbody.innerHTML = `<tr><td colspan="17" class="text-center text-muted">No ${label} orders found</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="18" class="text-center text-muted">No ${label} orders found</td></tr>`;
     return;
   }
 
@@ -154,6 +154,9 @@ function renderOrders(orders) {
     const total = (Number(order.price) * order.quantity)
       .toLocaleString('en-PH', { minimumFractionDigits: 2 });
     const clientName = escapeHtml(clientsMap[order.client_id] || String(order.client_id));
+    const dateCompleted = order.dateCompleted
+      ? new Date(order.dateCompleted).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
+      : '—';
 
     let actionCells;
     if (currentTab === 'archive') {
@@ -202,6 +205,7 @@ function renderOrders(orders) {
       <td>${order.quantity}</td>
       <td>₱${Number(order.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
       <td>₱${total}</td>
+      <td>${dateCompleted}</td>
       ${actionCells}
     `;
     tbody.appendChild(row);
@@ -312,26 +316,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    // Restore from archive tab
+    // Restore from archive tab — open confirm overlay
     const restoreBtn = e.target.closest(".restore-order-btn");
     if (restoreBtn) {
-      const id = restoreBtn.dataset.id;
-      try {
-        restoreBtn.disabled = true;
-        restoreBtn.textContent = "Restoring...";
-        await apiFetch(`${FAST_API_URL}/client-orders/${id}/restore`, { method: "PATCH" });
-        clearCache();
-        await loadOrders();
-      } catch (err) {
-        restoreBtn.disabled = false;
-        restoreBtn.textContent = "Restore";
-        const banner = document.getElementById('page-error-banner');
-        const msg = document.getElementById('page-error-msg');
-        if (banner && msg) {
-          msg.textContent = `Failed to restore: ${err.message}`;
-          banner.classList.remove('d-none');
-        }
-      }
+      selectedOrderId = restoreBtn.dataset.id;
+      const errEl = document.getElementById("restoreCompletedError");
+      if (errEl) { errEl.classList.add("d-none"); errEl.textContent = ""; }
+      document.getElementById("restoreCompletedOverlay").classList.remove("d-none");
       return;
     }
 
@@ -345,6 +336,55 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.getElementById("deleteCompletedOverlay")?.classList.remove("d-none");
       return;
     }
+  });
+
+  // Restore confirm overlay
+  function closeRestoreCompletedOverlay() {
+    document.getElementById("restoreCompletedOverlay").classList.add("d-none");
+    const errEl = document.getElementById("restoreCompletedError");
+    if (errEl) { errEl.classList.add("d-none"); errEl.textContent = ""; }
+  }
+
+  document.getElementById("closeRestoreCompleted")?.addEventListener("click", closeRestoreCompletedOverlay);
+  document.getElementById("cancelRestoreCompleted")?.addEventListener("click", closeRestoreCompletedOverlay);
+
+  document.getElementById("confirmRestoreCompleted")?.addEventListener("click", async () => {
+    if (!selectedOrderId) return;
+    const confirmBtn = document.getElementById("confirmRestoreCompleted");
+    const cancelBtn = document.getElementById("cancelRestoreCompleted");
+    const closeBtn = document.getElementById("closeRestoreCompleted");
+    const errEl = document.getElementById("restoreCompletedError");
+    const originalText = confirmBtn.textContent;
+
+    if (errEl) errEl.classList.add("d-none");
+
+    try {
+      confirmBtn.disabled = true;
+      cancelBtn.disabled = true;
+      closeBtn.disabled = true;
+      confirmBtn.textContent = "Restoring...";
+
+      await apiFetch(`${FAST_API_URL}/client-orders/${selectedOrderId}/restore`, { method: "PATCH" });
+
+      closeRestoreCompletedOverlay();
+      selectedOrderId = null;
+      clearCache();
+      await loadOrders();
+    } catch (err) {
+      if (errEl) {
+        errEl.textContent = err.message || "Failed to restore order.";
+        errEl.classList.remove("d-none");
+      }
+    } finally {
+      confirmBtn.textContent = originalText;
+      confirmBtn.disabled = false;
+      cancelBtn.disabled = false;
+      closeBtn.disabled = false;
+    }
+  });
+
+  ["cancelRestoreCompleted", "closeRestoreCompleted"].forEach(id => {
+    document.getElementById(id)?.addEventListener("click", closeRestoreCompletedOverlay);
   });
 
   // Delete confirm overlay

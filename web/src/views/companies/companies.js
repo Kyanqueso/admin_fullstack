@@ -347,18 +347,54 @@ document.getElementById('archiveTabBtn')?.addEventListener('click', () => {
 });
 
 /* ===============================
-   RESTORE COMPANY
+   RESTORE COMPANY OVERLAY
 =============================== */
-async function restoreCompany(id) {
+const restoreOverlay = document.getElementById("restoreCompanyOverlay");
+const restoreErrEl = document.getElementById("restoreCompanyError");
+
+function openRestoreOverlay(id) {
+  selectedCompanyId = id;
+  restoreErrEl.classList.add("d-none");
+  restoreErrEl.textContent = "";
+  restoreOverlay.classList.remove("d-none");
+}
+
+document.getElementById("closeRestoreCompany").onclick =
+document.getElementById("cancelRestoreCompany").onclick = () => {
+  restoreOverlay.classList.add("d-none");
+  selectedCompanyId = null;
+};
+
+document.getElementById("confirmRestoreCompany").onclick = async () => {
+  const confirmBtn = document.getElementById("confirmRestoreCompany");
+  const cancelBtn = document.getElementById("cancelRestoreCompany");
+  const closeBtn = document.getElementById("closeRestoreCompany");
+  const originalText = confirmBtn.textContent;
+
+  restoreErrEl.classList.add("d-none");
+
   try {
-    await apiFetch(`${FAST_API_URL}/companies/${id}/restore`, { method: "PATCH" });
+    confirmBtn.disabled = true;
+    cancelBtn.disabled = true;
+    closeBtn.disabled = true;
+    confirmBtn.textContent = "Restoring...";
+
+    await apiFetch(`${FAST_API_URL}/companies/${selectedCompanyId}/restore`, { method: "PATCH" });
+
+    restoreOverlay.classList.add("d-none");
     clearCache();
     loadCompanies();
   } catch (error) {
     console.error("Failed to restore company:", error);
-    showPageBanner('danger', `Failed to restore company: ${error.message}`);
+    restoreErrEl.textContent = error.message || "Failed to restore company.";
+    restoreErrEl.classList.remove("d-none");
+  } finally {
+    confirmBtn.textContent = originalText;
+    confirmBtn.disabled = false;
+    cancelBtn.disabled = false;
+    closeBtn.disabled = false;
   }
-}
+};
 
 /* ===============================
    CLICK HANDLING
@@ -375,7 +411,7 @@ document.addEventListener("click", async (e) => {
   const restoreBtn = e.target.closest(".restore-company");
   if (restoreBtn) {
     e.stopPropagation();
-    await restoreCompany(restoreBtn.dataset.id);
+    openRestoreOverlay(restoreBtn.dataset.id);
     return;
   }
 
