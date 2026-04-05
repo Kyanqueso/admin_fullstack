@@ -32,8 +32,8 @@ def validate_name_field(v: str) -> str:
     if len(v) < 2:
         raise ValueError("Company name must be at least 2 characters.")
 
-    if len(v) > 32:
-        raise ValueError("Company name must not exceed 32 characters.")
+    if len(v) > 50:
+        raise ValueError("Company name must not exceed 50 characters.")
 
     if EMOJI_PATTERN.search(v):
         raise ValueError("Company name must not contain emojis or symbols.")

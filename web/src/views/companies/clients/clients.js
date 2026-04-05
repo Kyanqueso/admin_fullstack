@@ -131,6 +131,57 @@ document.addEventListener("DOMContentLoaded", () => {
   let isPermanentDelete = false;
   let formIsDirty = false;
 
+  /* ===============================
+     LIVE INPUT BLOCKING
+  =============================== */
+  // Strip any character that is not a letter, accent, space, hyphen, or apostrophe
+  function blockNonNameChars(el) {
+    el.addEventListener('input', () => {
+      const before = el.value;
+      const after = before
+        .replace(/\p{Extended_Pictographic}/gu, '')
+        .replace(/[^A-Za-zÀ-ÿ\s'\-]/g, '');
+      if (before !== after) {
+        const pos = el.selectionStart - (before.length - after.length);
+        el.value = after;
+        try { el.setSelectionRange(Math.max(0, pos), Math.max(0, pos)); } catch {}
+      }
+    });
+  }
+
+  // Strip any non-digit character
+  function blockNonDigits(el) {
+    el.addEventListener('input', () => {
+      const before = el.value;
+      const after = before.replace(/\D/g, '');
+      if (before !== after) el.value = after;
+    });
+  }
+
+  // Strip emoji and characters not valid in an address
+  function blockAddressInvalidChars(el) {
+    el.addEventListener('input', () => {
+      const before = el.value;
+      const after = before
+        .replace(/\p{Extended_Pictographic}/gu, '')
+        .replace(/[^A-Za-z0-9À-ÿ\s,.\-#]/g, '');
+      if (before !== after) {
+        const pos = el.selectionStart - (before.length - after.length);
+        el.value = after;
+        try { el.setSelectionRange(Math.max(0, pos), Math.max(0, pos)); } catch {}
+      }
+    });
+  }
+
+  // Strip emoji only (notes allow most characters)
+  function blockEmojiOnly(el) {
+    el.addEventListener('input', () => {
+      const before = el.value;
+      const after = before.replace(/\p{Extended_Pictographic}/gu, '');
+      if (before !== after) el.value = after;
+    });
+  }
+
   function escapeHtml(str) {
     if (!str) return '';
     return String(str)
@@ -231,8 +282,8 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (!isLettersOnly(firstName)) {
       showFieldError(firstInput, "Letters only (min. 2 characters)");
       valid = false;
-    } else if (firstName.length > 50) {
-      showFieldError(firstInput, "First name must not exceed 50 characters");
+    } else if (firstName.length > 30) {
+      showFieldError(firstInput, "First name must not exceed 30 characters");
       valid = false;
     }
 
@@ -246,8 +297,8 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (!isLettersOnly(lastName)) {
       showFieldError(lastInput, "Letters only (min. 2 characters)");
       valid = false;
-    } else if (lastName.length > 50) {
-      showFieldError(lastInput, "Last name must not exceed 50 characters");
+    } else if (lastName.length > 30) {
+      showFieldError(lastInput, "Last name must not exceed 30 characters");
       valid = false;
     }
 
@@ -344,6 +395,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadCompanyName();
   loadClients();
+
+  /* ===============================
+     ATTACH LIVE BLOCKING
+  =============================== */
+  const addFirstName = document.getElementById('addFirstName');
+  const addLastName  = document.getElementById('addLastName');
+  const addViber     = document.getElementById('addViber');
+  const addAddress   = document.querySelector('#overlay-form input[maxlength="100"]');
+
+  if (addFirstName) blockNonNameChars(addFirstName);
+  if (addLastName)  blockNonNameChars(addLastName);
+  if (addViber)     blockNonDigits(addViber);
+  if (addAddress)   blockAddressInvalidChars(addAddress);
+
+  blockNonNameChars(editFirstName);
+  blockNonNameChars(editLastName);
+  blockNonDigits(editViber);
+  blockAddressInvalidChars(editAddress);
+  blockEmojiOnly(notesTextarea);
 
   /* ===============================
      TAB SETUP
@@ -851,7 +921,7 @@ document.addEventListener("DOMContentLoaded", () => {
       confirmBtn.disabled = true;
       cancelBtn.disabled = true;
       closeBtn.disabled = true;
-      confirmBtn.textContent = "Deleting...";
+      confirmBtn.textContent = isPermanentDelete ? "Deleting..." : "Archiving...";
 
       if (isPermanentDelete) {
         await apiFetch(`${API_URL}/${selectedClientId}/permanent`, { method: "DELETE" });

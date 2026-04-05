@@ -142,6 +142,16 @@
   display: none !important;
 }
 
+/* Narrow refresh warning dialog */
+#refresh-warning-overlay .overlay-content {
+  max-width: 420px;
+}
+
+/* Narrow logout confirmation dialog */
+#logout-overlay .overlay-content {
+  max-width: 420px;
+}
+
 /* Small delete modal like payment */
 #deleteCompanyOverlay .overlay-content {
   max-width: 350px !important;

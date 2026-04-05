@@ -95,8 +95,8 @@ function validateCompanyName(name) {
     throw new Error("Company name must be at least 2 characters.");
   }
 
-  if (trimmed.length > 32) {
-    throw new Error("Company name must not exceed 32 characters.");
+  if (trimmed.length > 50) {
+    throw new Error("Company name must not exceed 50 characters.");
   }
 
   if (EMOJI_REGEX.test(trimmed)) {
@@ -630,7 +630,7 @@ document.getElementById("confirmDeleteCompany").onclick = async () => {
     confirmBtn.disabled = true;
     cancelBtn.disabled = true;
     closeBtn.disabled = true;
-    confirmBtn.textContent = isPermanentDelete ? "Deleting..." : "Deleting...";
+    confirmBtn.textContent = isPermanentDelete ? "Deleting..." : "Archiving...";
 
     const url = isPermanentDelete
       ? `${FAST_API_URL}/companies/${selectedCompanyId}/permanent`

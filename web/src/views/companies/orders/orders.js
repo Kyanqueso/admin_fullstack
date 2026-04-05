@@ -160,26 +160,34 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (el) blockEmoji(el);
   });
 
-  // Size inputs: only allow digits and one decimal point
+  // Size inputs: only allow digits, one decimal, one leading minus; clamp to -1..10
   ["addSize", "editSize"].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     el.addEventListener("input", () => {
-      // Keep only digits and at most one decimal
-    let val = el.value.replace(/[^0-9.-]/g, "");
+      let val = el.value.replace(/[^0-9.-]/g, "");
 
-    // Allow only ONE minus at start
-    if (val.includes("-")) {
-      val = val.replace(/(?!^)-/g, "");
-    }
+      // Allow only ONE minus at start
+      if (val.includes("-")) {
+        val = "-" + val.replace(/-/g, "");
+      }
 
-    // Allow only ONE decimal
-    const parts = val.split(".");
-    if (parts.length > 2) {
-      val = parts[0] + "." + parts.slice(1).join("");
-    }
+      // Allow only ONE decimal
+      const parts = val.split(".");
+      if (parts.length > 2) {
+        val = parts[0] + "." + parts.slice(1).join("");
+      }
 
-    el.value = val;
+      // Clamp to range -1..10 (skip while still mid-typing e.g. "10.", "-0.")
+      if (!val.endsWith(".")) {
+        const num = parseFloat(val);
+        if (!isNaN(num)) {
+          if (num > 10) val = "10";
+          else if (num < -1) val = "-1";
+        }
+      }
+
+      el.value = val;
     });
   });
 
@@ -208,6 +216,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       } else {
         val = val.slice(0, 7);
       }
+
+      // Cap at 1,000,000
+      const num = parseFloat(val);
+      if (!isNaN(num) && num > 1000000) val = "1000000";
 
       el.value = val;
     });
@@ -295,8 +307,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       showFieldError(sizeEl, "Size is required.");
       valid = false;
 
-    } else if (sizeNum < -1 || sizeNum > 15) {
-      showFieldError(sizeEl, "Size must be between -1 and 15.");
+    } else if (sizeNum < -1 || sizeNum > 10) {
+      showFieldError(sizeEl, "Size must be between -1 and 10.");
       valid = false;
 
     } else if ((sizeNum * 10) % 5 !== 0) {
@@ -378,15 +390,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     const priceEl = document.getElementById(isAdd ? "addPrice" : "editPrice");
     const priceRaw = priceEl.value.trim();
     const priceNum = parseFloat(priceRaw);
-    if (!priceRaw || isNaN(priceNum) || priceNum < 0.01) {
-      showFieldError(priceEl, "Price must be a positive number.");
+    if (!priceRaw || isNaN(priceNum) || priceNum < 1) {
+      showFieldError(priceEl, "Price must be ₱1.00 or greater.");
       valid = false;
     } else if ((priceRaw.split(".")[1] || "").length > 2) {
       showFieldError(priceEl, "Price cannot have more than 2 decimal places.");
       valid = false;
-    } else if (priceNum > 99999.99) {
-      showFieldError(priceEl, "Price cannot exceed ₱99,999.99.");
-      valid = false;  
+    } else if (priceNum > 1000000) {
+      showFieldError(priceEl, "Price cannot exceed ₱1,000,000.00.");
+      valid = false;
     } else {
       clearFieldError(priceEl);
     }
@@ -946,7 +958,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       confirmBtn.disabled = true;
       cancelBtn.disabled = true;
       closeBtn.disabled = true;
-      confirmBtn.textContent = isPermanentDelete ? "Deleting..." : "Deleting...";
+      confirmBtn.textContent = isPermanentDelete ? "Deleting..." : "Archiving...";
 
       const url = isPermanentDelete
         ? `${ORDERS_URL}/${selectedOrderId}/permanent`

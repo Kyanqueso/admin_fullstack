@@ -37,9 +37,8 @@ def _no_emoji(value: str, field_name: str) -> str:
 
 
 def _validate_size(v: Decimal) -> Decimal:
-    # Must be positive
-    if v <= 0:
-        raise ValueError("Size must be a positive number.")
+    if v < Decimal("-1") or v > Decimal("10"):
+        raise ValueError("Size must be between -1 and 10.")
     # Decimal must end in .0 or .5
     remainder = v % Decimal("0.5")
     if remainder != 0:
@@ -132,11 +131,10 @@ class ClientOrderCreate(BaseModel):
     @field_validator("price")
     @classmethod
     def validate_price(cls, v: Decimal) -> Decimal:
-        if v <= 0:
-            raise ValueError("Price must be a positive number.")
-        if v > Decimal("99999.99"):
-            raise ValueError("Price cannot exceed 99,999.99.")
-            
+        if v < Decimal("1"):
+            raise ValueError("Price must be ₱1.00 or greater.")
+        if v > Decimal("1000000"):
+            raise ValueError("Price cannot exceed ₱1,000,000.00.")
         return v
         
     @field_validator("client_id")
@@ -269,11 +267,10 @@ class ClientOrderUpdate(BaseModel):
     def validate_price(cls, v: Decimal | None) -> Decimal | None:
         if v is None:
             return v
-
-        if v < Decimal("0.01"):
-            raise ValueError("Price must be at least 0.01.")
-
+        if v < Decimal("1"):
+            raise ValueError("Price must be ₱1.00 or greater.")
+        if v > Decimal("1000000"):
+            raise ValueError("Price cannot exceed ₱1,000,000.00.")
         if v.as_tuple().exponent < -2:
             raise ValueError("Price cannot have more than 2 decimal places.")
-
         return v    

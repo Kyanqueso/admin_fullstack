@@ -101,6 +101,11 @@
   display: block;
 }
 
+/* Narrow refresh warning dialog */
+#refresh-warning-overlay .overlay-content {
+  max-width: 420px;
+}
+
 /* Smaller delete confirmation modal */
 #deleteClientOverlay .overlay-content {
   max-width: 350px;   /* try 350–400px */

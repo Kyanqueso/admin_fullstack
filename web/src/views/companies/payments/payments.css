@@ -2,6 +2,15 @@
   background-color: var(--color-primary);
   color: white;
 }
+
+.view-transaction-btn:hover,
+.view-transaction-btn:focus,
+.view-transaction-btn:active {
+  background-color: var(--color-primary) !important;
+  border-color: transparent !important;
+  filter: none !important;
+  cursor: pointer;
+}
 /*default tab color */
 .client-tabs .tab-btn {
   background-color: var(--color-accent);
@@ -58,8 +67,7 @@
 }
 
 .overlay-close:hover {
-  background-color: rgba(0, 0, 0, 0.08);
-  transform: scale(1.1);
+  cursor: pointer;
 }
 
 /* Summary box */
@@ -129,6 +137,15 @@
   width: 100%;
   padding: 10px;
   border-radius: 6px;
+}
+
+.transaction-close-btn:hover,
+.transaction-close-btn:focus,
+.transaction-close-btn:active {
+  background-color: var(--color-primary) !important;
+  border-color: transparent !important;
+  filter: none !important;
+  cursor: pointer;
 }
 
 /* Force left alignment inside transaction summary */

@@ -14,6 +14,7 @@ def get_analytics(db: Session):
     total_balance = db.query(func.sum(PaymentSummary.remaining_balance)).join(
         ClientOrder, PaymentSummary.client_order_id == ClientOrder.id
     ).filter(
+        PaymentSummary.isDeleted == False,
         ClientOrder.isDeleted == False
     ).scalar() or Decimal(0)
 

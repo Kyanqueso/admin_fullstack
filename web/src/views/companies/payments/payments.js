@@ -176,17 +176,21 @@ async function loadOrders(archived = false) {
   const url = `${FAST_API_URL}/client-orders/?archived=${archived}`;
   let orders = getFromCache(url);
 
-  if (!orders) {
-    const res = await apiFetch(url);
-    orders = await res.json();
-    saveToCache(url, orders);
-  }
+  try {
+    if (!orders) {
+      const res = await apiFetch(url);
+      orders = await res.json();
+      saveToCache(url, orders);
+    }
 
-  orders
-    .filter(order => clientsMap[order.client_id] !== undefined)
-    .forEach(order => {
-      ordersMap[order.id] = order;
-    });
+    orders
+      .filter(order => clientsMap[order.client_id] !== undefined)
+      .forEach(order => {
+        ordersMap[order.id] = order;
+      });
+  } catch (err) {
+    console.error("Failed to load orders:", err);
+  }
 }
 
 
@@ -199,11 +203,17 @@ async function loadPaymentSummaries() {
     <tr><td colspan="8" class="text-center"><div class="spinner-border"></div></td></tr>
   `;
 
-  const archived = currentTab === 'archive';
-  const res = await apiFetch(`${FAST_API_URL}/payment-summaries/?archived=${archived}`);
-  paymentSummaries = await res.json();
-
-  renderPaymentRows(paymentSummaries);
+  try {
+    const archived = currentTab === 'archive';
+    const res = await apiFetch(`${FAST_API_URL}/payment-summaries/?archived=${archived}`);
+    paymentSummaries = await res.json();
+    renderPaymentRows(paymentSummaries);
+  } catch (err) {
+    console.error("Failed to load payment summaries:", err);
+    tbody.innerHTML = `
+      <tr><td colspan="8" class="text-center text-danger">Failed to load payments. Please refresh.</td></tr>
+    `;
+  }
 }
 
 
@@ -386,28 +396,36 @@ function attachDynamicHandlers() {
 
       document.getElementById("transactionHistoryOverlay").classList.remove("d-none");
 
-      const res = await apiFetch(`${FAST_API_URL}/payment-transactions/`);
-      const transactions = await res.json();
-      const filtered = transactions.filter(t => t.payment_summary_id == summaryId);
+      try {
+        const res = await apiFetch(`${FAST_API_URL}/payment-transactions/`);
+        const transactions = await res.json();
+        const filtered = transactions.filter(t => t.payment_summary_id == summaryId);
 
-      tableBody.innerHTML = "";
+        tableBody.innerHTML = "";
 
-      if (filtered.length === 0) {
+        if (filtered.length === 0) {
+          tableBody.innerHTML = `
+            <tr><td colspan="3" class="text-center text-muted">No transactions yet</td></tr>
+          `;
+          return;
+        }
+
+        filtered.forEach((t, index) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${formatCurrency(t.paid_amount)}</td>
+            <td>${new Date(t.payment_date + 'T00:00:00').toLocaleDateString()}</td>
+          `;
+          tableBody.appendChild(row);
+        });
+      } catch (err) {
         tableBody.innerHTML = `
-          <tr><td colspan="3" class="text-center text-muted">No transactions yet</td></tr>
+          <tr><td colspan="3" class="text-danger text-center">
+            Failed to load transactions: ${escapeHtml(err.message)}
+          </td></tr>
         `;
-        return;
       }
-
-      filtered.forEach((t, index) => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${index + 1}</td>
-          <td>${formatCurrency(t.paid_amount)}</td>
-          <td>${new Date(t.payment_date + 'T00:00:00').toLocaleDateString()}</td>
-        `;
-        tableBody.appendChild(row);
-      });
     });
   });
 
@@ -426,6 +444,7 @@ async function openEditOverlay(summaryId) {
   if (!summary) return;
 
   const order = ordersMap[summary.client_order_id];
+  if (!order) return;
   const clientName = clientsMap[order.client_id];
   const totalPrice = Number(order.price) * Number(order.quantity);
 
@@ -448,20 +467,29 @@ async function openEditOverlay(summaryId) {
   editOverlay.classList.remove("d-none");
   setFormDirty();
 
-  const res = await apiFetch(`${FAST_API_URL}/payment-transactions/`);
-  const transactions = await res.json();
-  const filtered = transactions.filter(t => t.payment_summary_id == summaryId);
+  try {
+    const res = await apiFetch(`${FAST_API_URL}/payment-transactions/`);
+    const transactions = await res.json();
+    const filtered = transactions.filter(t => t.payment_summary_id == summaryId);
 
-  container.innerHTML = "";
+    container.innerHTML = "";
 
-  if (filtered.length === 0) {
+    if (filtered.length === 0) {
+      container.innerHTML = `
+        <p class="text-muted text-center small mb-0">
+          No transactions yet. Click "+ Add Transaction" to add one.
+        </p>
+      `;
+    } else {
+      filtered.forEach(t => container.appendChild(buildExistingRow(t)));
+    }
+  } catch (err) {
+    console.error("Failed to load transactions:", err);
     container.innerHTML = `
-      <p class="text-muted text-center small mb-0">
-        No transactions yet. Click "+ Add Transaction" to add one.
+      <p class="text-danger text-center small mb-0">
+        Failed to load transactions. Please close and try again.
       </p>
     `;
-  } else {
-    filtered.forEach(t => container.appendChild(buildExistingRow(t)));
   }
 
   // Sync button state after existing rows are rendered
@@ -488,9 +516,9 @@ function buildExistingRow(t) {
   row.innerHTML = `
     <div>
       <label class="form-label">Amount (₱)</label>
-      <input type="number" class="form-control existing-amount"
+      <input type="text" inputmode="decimal" class="form-control existing-amount"
         value="${t.paid_amount}"
-        min="0.01" step="0.01" max="9999999.99">
+        placeholder="0.00">
     </div>
     <div>
       <label class="form-label">Date</label>
@@ -602,8 +630,8 @@ function setupOverlayControls() {
     row.innerHTML = `
       <div>
         <label class="form-label">Amount (₱)</label>
-        <input type="number" class="form-control" placeholder="0.00"
-          min="0.01" step="0.01" max="9999999.99" inputmode="decimal">
+        <input type="text" inputmode="decimal" class="form-control new-amount"
+          placeholder="0.00">
       </div>
       <div>
         <label class="form-label">Date</label>
@@ -612,7 +640,7 @@ function setupOverlayControls() {
       <button type="button" class="delete-transaction-btn">🗑</button>
     `;
 
-    const amountInput = row.querySelector("input[type='number']");
+    const amountInput = row.querySelector(".new-amount");
     const dateInput = row.querySelector("input[type='date']");
 
     amountInput.addEventListener("input", () => {
@@ -755,7 +783,7 @@ function setupOverlayControls() {
         if (!validateRow(row.querySelector(".existing-amount"), row.querySelector(".existing-date"))) return;
       }
       for (const row of newRows) {
-        const amountInput = row.querySelector("input[type='number']");
+        const amountInput = row.querySelector(".new-amount");
         const dateInput = row.querySelector("input[type='date']");
         if (!validateRow(amountInput, dateInput)) return;
       }
@@ -770,7 +798,7 @@ function setupOverlayControls() {
       }
       let newTotal = 0;
       for (const row of newRows) {
-        newTotal += parseFloat(row.querySelector("input[type='number']").value);
+        newTotal += parseFloat(row.querySelector(".new-amount").value);
       }
       const grandTotal = Math.round((existingTotal + newTotal) * 100) / 100;
 
@@ -820,7 +848,7 @@ function setupOverlayControls() {
 
         // POST new transactions — let backend auto-assign payment_number
         for (const row of newRows) {
-          const amount = Math.round(parseFloat(row.querySelector("input[type='number']").value) * 100) / 100;
+          const amount = Math.round(parseFloat(row.querySelector(".new-amount").value) * 100) / 100;
           const paymentDate = row.querySelector("input[type='date']").value;
 
           await apiFetch(`${FAST_API_URL}/payment-transactions/`, {

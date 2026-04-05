@@ -85,6 +85,11 @@
   margin-right: 12px;
 }
 
+/* Narrow refresh warning dialog */
+#refresh-warning-overlay .overlay-content {
+  max-width: 420px;
+}
+
 #deleteOrderOverlay .overlay-content {
   max-width: 350px !important;
   padding: 20px;

@@ -57,6 +57,8 @@ def delete_payment_summary(db: Session, payment_summary_id: int):
 
 
 def create_payment_summary_for_order(db: Session, client_order_id: int, order_price: Decimal):
+    if order_price <= Decimal(0):
+        raise ValueError(f"order_price must be positive, got {order_price}")
     payment_summary = PaymentSummary(
         client_order_id=client_order_id,
         paid_amount=Decimal(0),

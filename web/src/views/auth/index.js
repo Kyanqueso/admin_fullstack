@@ -51,10 +51,46 @@ function hideModal() {
 
 let resetEmail = '';
 
+// ========== BRUTE FORCE STATE ==========
+const LOGIN_MAX_ATTEMPTS = 5;
+const LOGIN_LOCKOUT_SECS = 30;
+const OTP_MAX_ATTEMPTS = 5;
+const OTP_LOCKOUT_SECS = 60;
+const SEND_CODE_COOLDOWN_SECS = 60;
+
+let loginAttempts = 0;
+let otpAttempts = 0;
+
+// Starts a countdown on `btn`, disabling it for `secs` seconds.
+// `labelFn(remaining)` returns the button text during countdown.
+// `resetLabel` is restored when the lockout ends.
+function startCountdown(btn, secs, labelFn, resetLabel, onDone) {
+    btn.disabled = true;
+    let remaining = secs;
+    btn.textContent = labelFn(remaining);
+    const timer = setInterval(() => {
+        remaining--;
+        if (remaining <= 0) {
+            clearInterval(timer);
+            btn.disabled = false;
+            btn.textContent = resetLabel;
+            if (onDone) onDone();
+        } else {
+            btn.textContent = labelFn(remaining);
+        }
+    }, 1000);
+}
+
 // Block emojis on all text inputs in real time
 [emailInput, passwordInput, resetEmailInput, otpCodeInput,
     document.getElementById('new-password'), document.getElementById('confirm-password')]
     .forEach(el => blockEmojis(el));
+
+// Block non-digits on OTP input in real time
+otpCodeInput.addEventListener('input', () => {
+    const cleaned = otpCodeInput.value.replace(/\D/g, '');
+    if (cleaned !== otpCodeInput.value) otpCodeInput.value = cleaned;
+});
 
 // ========== INPUT VALIDATION ==========
 const emojiRegex = /\p{Extended_Pictographic}/u;
@@ -182,13 +218,25 @@ loginBtn.addEventListener('click', async (e) => {
         if (error) throw new Error(error.message);
         if (!data.session?.access_token) throw new Error("Login successful but no session was created.");
 
+        loginAttempts = 0;
         localStorage.setItem('access_token', data.session.access_token);
         await callBackend();
         window.location.href = '../../views/analytics/analytics.html';
 
     } catch (err) {
         console.error(err);
-        showError(err.message || "An unexpected error occurred.");
+        loginAttempts++;
+        if (loginAttempts >= LOGIN_MAX_ATTEMPTS) {
+            loginAttempts = 0;
+            showError(`Too many failed attempts. Please wait ${LOGIN_LOCKOUT_SECS} seconds.`);
+            startCountdown(
+                loginBtn, LOGIN_LOCKOUT_SECS,
+                s => `Try again in ${s}s`,
+                "Login"
+            );
+        } else {
+            showError(err.message || "An unexpected error occurred.");
+        }
     }
 });
 
@@ -244,10 +292,15 @@ sendCodeBtn.addEventListener('click', async () => {
         showModalSuccess("Code sent! Check your email.");
         stepEmail.classList.add('d-none');
         stepOtp.classList.remove('d-none');
+        otpAttempts = 0;
+        startCountdown(
+            sendCodeBtn, SEND_CODE_COOLDOWN_SECS,
+            s => `Resend in ${s}s`,
+            "Send Code"
+        );
 
     } catch (err) {
         showModalError(err.message);
-    } finally {
         sendCodeBtn.disabled = false;
         sendCodeBtn.textContent = "Send Code";
     }
@@ -258,13 +311,8 @@ verifyCodeBtn.addEventListener('click', async () => {
     clearModalAlerts();
     const code = otpCodeInput.value.trim();
 
-    if (!code || code.length !== 8) {
-        showModalError("Please enter the 8-digit code.");
-        return;
-    }
-
-    if (!isValidInput(code)) {
-        showModalError("Code must not contain emojis or control characters.");
+    if (!/^\d{8}$/.test(code)) {
+        showModalError("Please enter exactly 8 digits.");
         return;
     }
 
@@ -280,15 +328,26 @@ verifyCodeBtn.addEventListener('click', async () => {
 
         if (error) throw new Error(error.message);
 
+        otpAttempts = 0;
         showModalSuccess("Verified! Set your new password.");
         stepOtp.classList.add('d-none');
         stepPassword.classList.remove('d-none');
 
     } catch (err) {
-        showModalError(err.message);
-    } finally {
-        verifyCodeBtn.disabled = false;
-        verifyCodeBtn.textContent = "Verify Code";
+        otpAttempts++;
+        if (otpAttempts >= OTP_MAX_ATTEMPTS) {
+            otpAttempts = 0;
+            showModalError(`Too many failed attempts. Please wait ${OTP_LOCKOUT_SECS} seconds.`);
+            startCountdown(
+                verifyCodeBtn, OTP_LOCKOUT_SECS,
+                s => `Try again in ${s}s`,
+                "Verify Code"
+            );
+        } else {
+            showModalError(err.message);
+            verifyCodeBtn.disabled = false;
+            verifyCodeBtn.textContent = "Verify Code";
+        }
     }
 });
 

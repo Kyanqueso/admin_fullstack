@@ -92,12 +92,12 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label class="form-label">First Name</label>
-                        <input type="text" class="form-control" placeholder="Juan">
+                        <input type="text" class="form-control" id="addFirstName" placeholder="Juan" maxlength="50">
                     </div>
 
                     <div class="col-md-6">
                         <label class="form-label">Last Name</label>
-                        <input type="text" class="form-control" placeholder="Dela Cruz">
+                        <input type="text" class="form-control" id="addLastName" placeholder="Dela Cruz" maxlength="50">
                     </div>
                 </div>
 
@@ -109,7 +109,7 @@
 
                     <div class="col-md-6">
                         <label class="form-label">Viber</label>
-                        <input type="text" class="form-control" placeholder="09... (must be 11 digits)">
+                        <input type="text" class="form-control" id="addViber" placeholder="09... (must be 11 digits)" maxlength="11" inputmode="numeric">
                     </div>
                 </div>
 
@@ -141,7 +141,7 @@
             <h5 class="mb-3">Client Notes</h5>
 
             <form>
-                <textarea class="form-control mb-4" rows="7" placeholder="Enter client notes here..."></textarea>
+                <textarea class="form-control mb-4" rows="7" placeholder="Enter client notes here..." maxlength="500"></textarea>
 
                 <div class="text-center">
                     <button type="submit" class="btn btn-green px-4">
@@ -163,11 +163,11 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label class="form-label">First Name</label>
-                        <input type="text" class="form-control" id="editFirstName">
+                        <input type="text" class="form-control" id="editFirstName" maxlength="50">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Last Name</label>
-                        <input type="text" class="form-control" id="editLastName">
+                        <input type="text" class="form-control" id="editLastName" maxlength="50">
                     </div>
                 </div>
 
@@ -178,7 +178,7 @@
 
                 <div class="mb-4">
                     <label class="form-label">Viber</label>
-                    <input type="text" class="form-control" id="editViber">
+                    <input type="text" class="form-control" id="editViber" maxlength="11" inputmode="numeric">
                 </div>
 
                 <div class="d-flex gap-3">

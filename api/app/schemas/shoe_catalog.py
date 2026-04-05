@@ -69,8 +69,8 @@ class ShoeCatalogCreate(BaseModel):
         if v is None:
             raise ValueError("Price is required")
 
-        if v <= Decimal("1"):
-            raise ValueError("Price must be greater than 1")
+        if v < Decimal("1"):
+            raise ValueError("Price must be 1 or greater")
 
         if v > Decimal("9999999.99"):
             raise ValueError("Price is too large")
@@ -132,8 +132,8 @@ class ShoeCatalogUpdate(BaseModel):
         if v is None:
             return v
 
-        if v <= Decimal("1"):
-            raise ValueError("Price must be greater than 1")
+        if v < Decimal("1"):
+            raise ValueError("Price must be 1 or greater")
 
         if v > Decimal("9999999.99"):
             raise ValueError("Price is too large")

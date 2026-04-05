@@ -62,7 +62,7 @@
         <!-- Step 2: Enter OTP code -->
         <div id="step-otp" class="d-none">
           <p>Enter the 8-digit code sent to your email.</p>
-          <input type="text" class="form-control mb-3" id="otp-code" placeholder="Enter 8-digit code" maxlength="8">
+          <input type="text" class="form-control mb-3" id="otp-code" placeholder="Enter 8-digit code" maxlength="8" inputmode="numeric" pattern="[0-9]{8}" autocomplete="one-time-code">
           <button id="verify-code-btn" type="button" class="btn btn-primary w-100 fw-bold">Verify Code</button>
         </div>
 
