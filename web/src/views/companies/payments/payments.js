@@ -861,6 +861,7 @@ function setupOverlayControls() {
           });
         }
 
+        clearCache();
         await loadPaymentSummaries();
         setFormClean();
         editOverlay.classList.add("d-none");
