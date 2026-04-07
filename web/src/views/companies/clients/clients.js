@@ -497,7 +497,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       allClients = clients;
 
-      renderClientRows(allClients);
+      renderClientRows(sortClients(allClients, sortSelect.value));
 
     } catch (error) {
       console.error("Failed to load clients:", error);

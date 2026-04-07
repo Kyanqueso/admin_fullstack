@@ -221,7 +221,7 @@ async function loadCompanies() {
 
     allCompanies = companies;
     loader.classList.add("d-none");
-    renderCompanies(allCompanies);
+    applySearchAndSort();
 
   } catch (error) {
     console.error("Failed to load companies:", error);

@@ -141,7 +141,7 @@ async function loadShoes() {
     const cached = getFromCache(url);
     if (cached) {
         allShoes = cached;
-        renderShoes(allShoes);
+        applySearchAndSort();
         return;
     }
 
@@ -156,7 +156,7 @@ async function loadShoes() {
         const shoes = await apiFetch(url);
         saveToCache(url, shoes);
         allShoes = shoes;
-        renderShoes(allShoes);
+        applySearchAndSort();
     } catch (err) {
         grid.innerHTML = `<p class="text-danger text-center">Failed to load shoes: ${escapeHtml(err.message)}</p>`;
         console.error(err);
@@ -254,6 +254,10 @@ function sortShoes(shoesArray, sortValue) {
         arr.sort((a, b) => new Date(b.date_added) - new Date(a.date_added));
     } else if (sortValue === 'oldest') {
         arr.sort((a, b) => new Date(a.date_added) - new Date(b.date_added));
+    } else if (sortValue === 'price-asc') {
+        arr.sort((a, b) => Number(a.price) - Number(b.price));
+    } else if (sortValue === 'price-desc') {
+        arr.sort((a, b) => Number(b.price) - Number(a.price));
     }
     return arr;
 }
@@ -452,11 +456,17 @@ function renderNewFilePreviews() {
     }
 
     newImagesPreviewDiv.classList.remove('d-none');
+    const hint = document.createElement('p');
+    hint.className = 'text-muted w-100 mb-1';
+    hint.style.fontSize = '0.8rem';
+    hint.textContent = 'drag to reorder · first = main photo';
+    newImagesPreviewDiv.appendChild(hint);
     newFilesArray.forEach((file, index) => {
         const blobUrl = URL.createObjectURL(file);
         const item = document.createElement('div');
         item.className = 'existing-image-item new-image-item';
         item.dataset.newIndex = String(index);
+        item.draggable = true;
         item.innerHTML = `
             <img src="${blobUrl}" alt="New image ${index + 1}">
             <span class="order-badge">${index + 1}</span>
@@ -551,6 +561,58 @@ function setupImageDragDrop() {
 
     existingImagesDiv.addEventListener('dragend', () => {
         existingImagesDiv.querySelectorAll('.dragging, .drag-over').forEach(el => {
+            el.classList.remove('dragging', 'drag-over');
+        });
+        dragSrc = null;
+    });
+}
+
+/* ===============================
+   NEW IMAGE DRAG-AND-DROP (Add mode)
+=============================== */
+function setupNewImageDragDrop() {
+    let dragSrc = null;
+
+    newImagesPreviewDiv.addEventListener('dragstart', e => {
+        const item = e.target.closest('.new-image-item');
+        if (!item) return;
+        dragSrc = item;
+        item.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+    });
+
+    newImagesPreviewDiv.addEventListener('dragover', e => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        const target = e.target.closest('.new-image-item');
+        if (!target || target === dragSrc) return;
+        newImagesPreviewDiv.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        target.classList.add('drag-over');
+    });
+
+    newImagesPreviewDiv.addEventListener('dragleave', e => {
+        if (!newImagesPreviewDiv.contains(e.relatedTarget)) {
+            newImagesPreviewDiv.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        }
+    });
+
+    newImagesPreviewDiv.addEventListener('drop', e => {
+        e.preventDefault();
+        const target = e.target.closest('.new-image-item');
+        if (!target || target === dragSrc || !dragSrc) return;
+
+        const srcIndex = parseInt(dragSrc.dataset.newIndex);
+        const targetIndex = parseInt(target.dataset.newIndex);
+
+        const [moved] = newFilesArray.splice(srcIndex, 1);
+        newFilesArray.splice(targetIndex, 0, moved);
+
+        target.classList.remove('drag-over');
+        renderNewFilePreviews();
+    });
+
+    newImagesPreviewDiv.addEventListener('dragend', () => {
+        newImagesPreviewDiv.querySelectorAll('.dragging, .drag-over').forEach(el => {
             el.classList.remove('dragging', 'drag-over');
         });
         dragSrc = null;
@@ -939,4 +1001,5 @@ overlayConfirm.addEventListener('click', async () => {
 window.addEventListener('DOMContentLoaded', () => {
     loadShoes();
     setupImageDragDrop();
+    setupNewImageDragDrop();
 });

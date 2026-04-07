@@ -160,10 +160,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (el) blockEmoji(el);
   });
 
-  // Size inputs: only allow digits, one decimal, one leading minus; clamp to -1..10
+  // Size inputs: allow digits, one decimal, one leading minus; clamp to -1..12; step 0.5
   ["addSize", "editSize"].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
+
     el.addEventListener("input", () => {
       let val = el.value.replace(/[^0-9.-]/g, "");
 
@@ -178,12 +179,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         val = parts[0] + "." + parts.slice(1).join("");
       }
 
-      // Clamp to range -1..10 (skip while still mid-typing e.g. "10.", "-0.")
+      // Skip while typing incomplete decimals (e.g. "10.", "-0.")
       if (!val.endsWith(".")) {
-        const num = parseFloat(val);
+        let num = parseFloat(val);
+
         if (!isNaN(num)) {
-          if (num > 10) val = "10";
-          else if (num < -1) val = "-1";
+          // Clamp to range -1..12
+          num = Math.max(-1, Math.min(12, num));
+
+          // Snap to nearest 0.5
+          num = Math.round(num * 2) / 2;
+
+          val = num.toString();
         }
       }
 
@@ -564,7 +571,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       // Filter to only this company's orders (clientMap covers active + archived clients of this company)
       allOrders = orders.filter(order => clientMap[order.client_id] !== undefined);
-      renderOrders(allOrders);
+      applySearchAndSort();
 
     } catch (err) {
       console.error("Failed to load orders:", err);

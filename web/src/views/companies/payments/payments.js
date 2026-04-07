@@ -207,7 +207,7 @@ async function loadPaymentSummaries() {
     const archived = currentTab === 'archive';
     const res = await apiFetch(`${FAST_API_URL}/payment-summaries/?archived=${archived}`);
     paymentSummaries = await res.json();
-    renderPaymentRows(paymentSummaries);
+    applySearchAndSort();
   } catch (err) {
     console.error("Failed to load payment summaries:", err);
     tbody.innerHTML = `
@@ -306,48 +306,47 @@ function renderPaymentRows(summaries) {
 /* ===============================
    SEARCH & SORT
 =============================== */
-function setupSearchAndSort() {
+function applySearchAndSort() {
   const searchInput = document.querySelector('input[placeholder="Search name"]');
   const sortSelect = document.querySelector('.form-select');
+  const query = (searchInput?.value || "").toLowerCase().trim();
+  const sortValue = sortSelect?.value || "az";
 
-  function applySearchAndSort() {
-    const query = (searchInput?.value || "").toLowerCase().trim();
-    const sortValue = sortSelect?.value || "";
+  let result = paymentSummaries.filter(s => {
+    const order = ordersMap[s.client_order_id];
+    if (!order) return false;
+    const clientName = (clientsMap[order.client_id] || "").toLowerCase();
+    return clientName.includes(query);
+  });
 
-    let result = paymentSummaries.filter(s => {
-      const order = ordersMap[s.client_order_id];
-      if (!order) return false;
-      const clientName = (clientsMap[order.client_id] || "").toLowerCase();
-      return clientName.includes(query);
+  if (sortValue === "az") {
+    result.sort((a, b) => {
+      const nameA = clientsMap[ordersMap[a.client_order_id]?.client_id] || "";
+      const nameB = clientsMap[ordersMap[b.client_order_id]?.client_id] || "";
+      return nameA.localeCompare(nameB);
     });
-
-    if (sortValue === "az") {
-      result.sort((a, b) => {
-        const nameA = clientsMap[ordersMap[a.client_order_id]?.client_id] || "";
-        const nameB = clientsMap[ordersMap[b.client_order_id]?.client_id] || "";
-        return nameA.localeCompare(nameB);
-      });
-    } else if (sortValue === "za") {
-      result.sort((a, b) => {
-        const nameA = clientsMap[ordersMap[a.client_order_id]?.client_id] || "";
-        const nameB = clientsMap[ordersMap[b.client_order_id]?.client_id] || "";
-        return nameB.localeCompare(nameA);
-      });
-    } else if (sortValue === "recent") {
-      result.sort((a, b) =>
-        (ordersMap[b.client_order_id]?.id || 0) - (ordersMap[a.client_order_id]?.id || 0)
-      );
-    } else if (sortValue === "oldest") {
-      result.sort((a, b) =>
-        (ordersMap[a.client_order_id]?.id || 0) - (ordersMap[b.client_order_id]?.id || 0)
-      );
-    }
-
-    renderPaymentRows(result);
+  } else if (sortValue === "za") {
+    result.sort((a, b) => {
+      const nameA = clientsMap[ordersMap[a.client_order_id]?.client_id] || "";
+      const nameB = clientsMap[ordersMap[b.client_order_id]?.client_id] || "";
+      return nameB.localeCompare(nameA);
+    });
+  } else if (sortValue === "recent") {
+    result.sort((a, b) =>
+      (ordersMap[b.client_order_id]?.id || 0) - (ordersMap[a.client_order_id]?.id || 0)
+    );
+  } else if (sortValue === "oldest") {
+    result.sort((a, b) =>
+      (ordersMap[a.client_order_id]?.id || 0) - (ordersMap[b.client_order_id]?.id || 0)
+    );
   }
 
-  searchInput?.addEventListener("input", applySearchAndSort);
-  sortSelect?.addEventListener("change", applySearchAndSort);
+  renderPaymentRows(result);
+}
+
+function setupSearchAndSort() {
+  document.querySelector('input[placeholder="Search name"]')?.addEventListener("input", applySearchAndSort);
+  document.querySelector('.form-select')?.addEventListener("change", applySearchAndSort);
 }
 
 

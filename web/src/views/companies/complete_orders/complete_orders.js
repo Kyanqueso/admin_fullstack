@@ -53,6 +53,19 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
 
+function applySearchAndSort() {
+  const searchInput = document.querySelector('input[placeholder="Search name"]');
+  const sortSelect = document.querySelector('.form-select');
+  const query = (searchInput?.value || "").toLowerCase().trim();
+  const sortValue = sortSelect?.value || "az";
+  let result = allOrders.filter(o => (clientsMap[o.client_id] || "").toLowerCase().includes(query));
+  if (sortValue === "az") result.sort((a, b) => (clientsMap[a.client_id] || "").localeCompare(clientsMap[b.client_id] || ""));
+  else if (sortValue === "za") result.sort((a, b) => (clientsMap[b.client_id] || "").localeCompare(clientsMap[a.client_id] || ""));
+  else if (sortValue === "recent") result.sort((a, b) => b.id - a.id);
+  else if (sortValue === "oldest") result.sort((a, b) => a.id - b.id);
+  renderOrders(result);
+}
+
 async function loadCompanyName() {
   const heading = document.getElementById("companyTitle");
   const url = `${FAST_API_URL}/companies/${COMPANY_ID}`;
@@ -116,7 +129,7 @@ async function loadOrders() {
     const res = await apiFetch(url);
     const orders = await res.json();
     allOrders = orders.filter(o => clientsMap[o.client_id] !== undefined);
-    renderOrders(allOrders);
+    applySearchAndSort();
   } catch (err) {
     console.error("Failed to load orders:", err);
     tbody.innerHTML = `<tr><td colspan="18" class="text-danger text-center">Failed to load: ${escapeHtml(err.message)}</td></tr>`;
@@ -440,20 +453,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // Search & Sort
-  const searchInput = document.querySelector('input[placeholder="Search name"]');
-  const sortSelect = document.querySelector('.form-select');
-
-  function applySearchAndSort() {
-    const query = (searchInput?.value || "").toLowerCase().trim();
-    const sortValue = sortSelect?.value || "";
-    let result = allOrders.filter(o => (clientsMap[o.client_id] || "").toLowerCase().includes(query));
-    if (sortValue === "az") result.sort((a, b) => (clientsMap[a.client_id] || "").localeCompare(clientsMap[b.client_id] || ""));
-    else if (sortValue === "za") result.sort((a, b) => (clientsMap[b.client_id] || "").localeCompare(clientsMap[a.client_id] || ""));
-    else if (sortValue === "recent") result.sort((a, b) => b.id - a.id);
-    else if (sortValue === "oldest") result.sort((a, b) => a.id - b.id);
-    renderOrders(result);
-  }
-
-  searchInput?.addEventListener("input", applySearchAndSort);
-  sortSelect?.addEventListener("change", applySearchAndSort);
+  document.querySelector('input[placeholder="Search name"]')?.addEventListener("input", applySearchAndSort);
+  document.querySelector('.form-select')?.addEventListener("change", applySearchAndSort);
 });
