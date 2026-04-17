@@ -50,6 +50,7 @@ def get_shoe(shoe_id: int, db: Session = Depends(get_db)):
 @router.post("/shoes", response_model=ShoeCatalogRead, status_code=status.HTTP_201_CREATED)
 async def create_shoe(
     model_name: str = Form(...),
+    description: str = Form(...),
     price: float = Form(...),
     images: list[UploadFile] = File(...),
     db: Session = Depends(get_db),
@@ -74,7 +75,7 @@ async def create_shoe(
             detail=f"Image upload failed: {str(e)}"
         )
 
-    shoe_data = ShoeCatalogCreate(model_name=model_name, price=price)
+    shoe_data = ShoeCatalogCreate(model_name=model_name, description=description, price=price)
     shoe = shoe_catalog_service.create_shoe_catalog(db, shoe_data, image_urls)
     if not shoe:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unable to create shoe")
@@ -85,6 +86,7 @@ async def create_shoe(
 async def update_shoe(
     shoe_id: int,
     model_name: str = Form(...),
+    description: str = Form(...),
     price: float = Form(...),
     images: Optional[list[UploadFile]] = File(default=None),
     remove_image_ids: str = Form(default=""),
@@ -144,7 +146,7 @@ async def update_shoe(
                 detail=f"Image upload failed: {str(e)}"
             )
 
-    update_data = ShoeCatalogUpdate(model_name=model_name, price=price)
+    update_data = ShoeCatalogUpdate(model_name=model_name, description=description, price=price)
     updated_shoe = shoe_catalog_service.update_shoe_catalog(
         db, shoe_id, update_data,
         new_image_urls=new_image_urls if new_image_urls else None,

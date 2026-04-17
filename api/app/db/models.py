@@ -31,6 +31,7 @@ class Admin(Person):
     __tablename__ = "admins"
     id = Column(Integer, ForeignKey("persons.id"), primary_key=True)
     account = Column(String(50), nullable=False, unique=True)
+    supabase_uid = Column(String(36), nullable=True)
     __mapper_args__ = {"polymorphic_identity": "admin"}
 
 
@@ -128,6 +129,7 @@ class ShoeCatalog(Base):
     __tablename__ = "shoe_catalog"
     id = Column(Integer, primary_key=True, name="shoe_catalog_id")
     model_name = Column(String(100), nullable=False)
+    description = Column(String(1000), nullable=True)
     price = Column(Numeric(10, 2), nullable=False)
     is_visible = Column(Boolean, nullable=False, default=True)
     date_added = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))

@@ -34,6 +34,7 @@ class ShoeImageRead(BaseModel):
 class ShoeCatalogCreate(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
     model_name: str
+    description: str
     price: Decimal
 
     @field_validator("model_name")
@@ -63,6 +64,22 @@ class ShoeCatalogCreate(BaseModel):
 
         return v
 
+    @field_validator("description")
+    @classmethod
+    def validate_description(cls, v):
+        if not v or not v.strip():
+            raise ValueError("Description cannot be empty")
+
+        v = v.strip()
+
+        if EMOJI_PATTERN.search(v):
+            raise ValueError("Description must not contain emojis")
+
+        if len(v) > 1000:
+            raise ValueError("Description must not exceed 1000 characters")
+
+        return v
+
     @field_validator("price")
     @classmethod
     def validate_price(cls, v):
@@ -86,6 +103,7 @@ class ShoeCatalogRead(BaseModel):
     model_config = ConfigDict(from_attributes=True, protected_namespaces=())
     id: int
     model_name: str
+    description: Optional[str] = None
     price: Decimal
     is_visible: bool = True
     date_added: datetime
@@ -95,6 +113,7 @@ class ShoeCatalogRead(BaseModel):
 class ShoeCatalogUpdate(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
     model_name: Optional[str] = None
+    description: Optional[str] = None
     price: Optional[Decimal] = None
 
     @field_validator("model_name")
@@ -123,6 +142,25 @@ class ShoeCatalogUpdate(BaseModel):
         # Maximum 50 characters
         if len(v) > 50:
             raise ValueError("Shoe name must not exceed 50 characters")
+
+        return v
+
+    @field_validator("description")
+    @classmethod
+    def validate_description(cls, v):
+        if v is None:
+            return v
+
+        if not v.strip():
+            raise ValueError("Description cannot be empty")
+
+        v = v.strip()
+
+        if EMOJI_PATTERN.search(v):
+            raise ValueError("Description must not contain emojis")
+
+        if len(v) > 1000:
+            raise ValueError("Description must not exceed 1000 characters")
 
         return v
 

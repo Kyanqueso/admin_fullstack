@@ -11,6 +11,7 @@ from app.config.database import supabase
 def create_shoe_catalog(db: Session, shoe_data: ShoeCatalogCreate, image_urls: list[str]):
     shoe = ShoeCatalog(
         model_name=shoe_data.model_name,
+        description=shoe_data.description,
         price=shoe_data.price
     )
     db.add(shoe)
@@ -72,6 +73,8 @@ def update_shoe_catalog(
     # Update text fields
     if shoe_data.model_name is not None:
         shoe.model_name = shoe_data.model_name
+    if shoe_data.description is not None:
+        shoe.description = shoe_data.description
     if shoe_data.price is not None:
         shoe.price = shoe_data.price
 

@@ -44,8 +44,15 @@ let allShoes = [];
 let imagesToRemove = [];
 let newFilesArray = []; // Tracks newly-selected files before upload for better UX
 
+const descInput = document.getElementById('shoe-description');
+const descCharCount = document.getElementById('desc-char-count');
+
+descInput.addEventListener('input', () => {
+    descCharCount.textContent = `${descInput.value.length} / 1000`;
+});
+
 // Block emojis on all text inputs in real time
-[searchInput, document.getElementById('shoe-name')]
+[searchInput, document.getElementById('shoe-name'), descInput]
     .forEach(el => blockEmojis(el));
 
 // Price input - digits-only, max 7 integer digits, max 2 decimal places
@@ -211,6 +218,7 @@ function renderShoes(shoesArray) {
                 <div class="shoe-card-body">
                     <div class="shoe-card-info">
                         <p class="shoe-card-name">${highlightQuery(shoe.model_name)}</p>
+                        <p class="shoe-card-description">${escapeHtml(shoe.description || '')}</p>
                         <p class="shoe-card-price">${escapeHtml(formattedPrice)}</p>
                         <p class="shoe-card-date">Added ${escapeHtml(dateAdded)}</p>
                     </div>
@@ -372,6 +380,8 @@ function resetOverlayState() {
     overlayClose.disabled = false;
     existingImagesContainer.classList.add('d-none');
     existingImagesDiv.innerHTML = '';
+    descInput.value = '';
+    descCharCount.textContent = '0 / 1000';
     imagesToRemove = [];
     newFilesArray = []; // Clear new-file state and revoke blob URLs
     revokeNewPreviews();
@@ -646,6 +656,8 @@ function openOverlay(type, shoeData = {}) {
         overlayForm.classList.remove('d-none');
         overlayForm.shoeName.value = shoeData.model_name || '';
         overlayForm.shoePrice.value = shoeData.price || '';
+        descInput.value = shoeData.description || '';
+        descCharCount.textContent = `${descInput.value.length} / 1000`;
         overlayConfirm.className = 'btn btn-green';
         overlayConfirm.textContent = 'Save';
         renderExistingImages(shoeData.images || []);
@@ -872,6 +884,17 @@ overlayConfirm.addEventListener('click', async () => {
                 throw new Error('Price must be 1 or greater');
             }
 
+            const trimmedDesc = descInput.value.trim();
+            if (!trimmedDesc) {
+                throw new Error('Description is required');
+            }
+            if (emojiRegex.test(trimmedDesc)) {
+                throw new Error('Description must not contain emojis');
+            }
+            if (trimmedDesc.length > 1000) {
+                throw new Error('Description must be 1000 characters or fewer');
+            }
+
             // Issue 3: use newFilesArray (not imageInput.files)
             if (newFilesArray.length === 0) {
                 throw new Error('Please select at least 1 image');
@@ -884,6 +907,7 @@ overlayConfirm.addEventListener('click', async () => {
 
             const formData = new FormData();
             formData.append('model_name', trimmedName);
+            formData.append('description', trimmedDesc);
             formData.append('price', price);
             for (const file of newFilesArray) {
                 formData.append('images', file);
@@ -922,6 +946,17 @@ overlayConfirm.addEventListener('click', async () => {
                 throw new Error('Price must be 1 or greater');
             }
 
+            const trimmedDesc = descInput.value.trim();
+            if (!trimmedDesc) {
+                throw new Error('Description is required');
+            }
+            if (emojiRegex.test(trimmedDesc)) {
+                throw new Error('Description must not contain emojis');
+            }
+            if (trimmedDesc.length > 1000) {
+                throw new Error('Description must be 1000 characters or fewer');
+            }
+
             const remainingExisting = existingImagesDiv.querySelectorAll('.existing-image-item').length;
             const newCount = newFilesArray.length; // Issue 3: use newFilesArray
 
@@ -936,6 +971,7 @@ overlayConfirm.addEventListener('click', async () => {
 
             const formData = new FormData();
             formData.append('model_name', trimmedName);
+            formData.append('description', trimmedDesc);
             formData.append('price', price);
 
             const orderedIds = [...existingImagesDiv.querySelectorAll('.existing-image-item')]

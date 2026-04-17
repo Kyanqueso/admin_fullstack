@@ -22,6 +22,7 @@ export default defineConfig({
         complete_orders: resolve(__dirname, 'src/views/companies/complete_orders/complete_orders.html'),
         orders: resolve(__dirname, 'src/views/companies/orders/orders.html'),
         payments: resolve(__dirname, 'src/views/companies/payments/payments.html'),
+        admin_accounts: resolve(__dirname, 'src/views/admin_accounts/admin_accounts.html'),
       },
     },
   },

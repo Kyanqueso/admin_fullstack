@@ -130,6 +130,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentTab = 'active';
   let isPermanentDelete = false;
   let formIsDirty = false;
+  let currentPage = 1;
+  let itemsPerPage = 20;
+  let currentFilteredData = [];
 
   /* ===============================
      LIVE INPUT BLOCKING
@@ -497,7 +500,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       allClients = clients;
 
-      renderClientRows(sortClients(allClients, sortSelect.value));
+      applySearchAndSort();
 
     } catch (error) {
       console.error("Failed to load clients:", error);
@@ -582,21 +585,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /* ===============================
-     LIVE SEARCH
-  =============================== */
-  searchInput.addEventListener("input", () => {
-    const query = searchInput.value.toLowerCase().trim();
-    let filtered = allClients.filter(client =>
-      `${client.first_name} ${client.last_name}`.toLowerCase().includes(query)
-    );
-
-    const sortValue = sortSelect.value;
-    filtered = sortClients(filtered, sortValue);
-
-    renderClientRows(filtered);
-  });
-
-  /* ===============================
      SORT FUNCTION
   =============================== */
   function sortClients(clientsArray, sortValue) {
@@ -619,17 +607,82 @@ document.addEventListener("DOMContentLoaded", () => {
     return arr;
   }
 
-  sortSelect.addEventListener("change", () => {
-    const sortValue = sortSelect.value;
+  /* ===============================
+     SEARCH & SORT
+  =============================== */
+  function applySearchAndSort() {
     const query = searchInput.value.toLowerCase().trim();
-
+    const sortValue = sortSelect.value;
     let filtered = allClients.filter(client =>
       `${client.first_name} ${client.last_name}`.toLowerCase().includes(query)
     );
-
     filtered = sortClients(filtered, sortValue);
-    renderClientRows(filtered);
-  });
+    currentFilteredData = filtered;
+    currentPage = 1;
+    renderPage();
+  }
+
+  function renderPage() {
+    const start = (currentPage - 1) * itemsPerPage;
+    renderClientRows(currentFilteredData.slice(start, start + itemsPerPage));
+    renderPagination(currentFilteredData.length);
+  }
+
+  function renderPagination(total) {
+    const container = document.getElementById('pagination-container');
+    if (!container) return;
+    const totalPages = Math.max(1, Math.ceil(total / itemsPerPage));
+
+    function pageRange(curr, tot) {
+      if (tot <= 7) return Array.from({ length: tot }, (_, i) => i + 1);
+      if (curr <= 4) return [1, 2, 3, 4, 5, '...', tot];
+      if (curr >= tot - 3) return [1, '...', tot - 4, tot - 3, tot - 2, tot - 1, tot];
+      return [1, '...', curr - 1, curr, curr + 1, '...', tot];
+    }
+
+    const btns = pageRange(currentPage, totalPages).map(p =>
+      p === '...'
+        ? `<span class="px-1 align-self-center text-muted">…</span>`
+        : `<button class="btn btn-sm ${p === currentPage ? 'btn-dark' : 'btn-outline-secondary'} page-btn" data-page="${p}">${p}</button>`
+    ).join('');
+
+    const opts = [20, 50, 100].map(n =>
+      `<option value="${n}"${n === itemsPerPage ? ' selected' : ''}>${n} per page</option>`
+    ).join('');
+
+    container.innerHTML = `
+      <div class="d-flex align-items-center justify-content-between mt-3 mb-2 flex-wrap gap-2">
+        <select class="form-select form-select-sm" id="per-page-select" style="width:auto;">${opts}</select>
+        <div class="d-flex align-items-center gap-1 flex-wrap">
+          <button class="btn btn-sm btn-outline-secondary" id="prev-page-btn"${currentPage === 1 ? ' disabled' : ''}>‹</button>
+          ${btns}
+          <button class="btn btn-sm btn-outline-secondary" id="next-page-btn"${currentPage === totalPages ? ' disabled' : ''}>›</button>
+        </div>
+        <small class="text-muted">${total} total</small>
+      </div>
+    `;
+
+    document.getElementById('per-page-select').addEventListener('change', e => {
+      itemsPerPage = parseInt(e.target.value);
+      currentPage = 1;
+      renderPage();
+    });
+    document.getElementById('prev-page-btn').addEventListener('click', () => {
+      if (currentPage > 1) { currentPage--; renderPage(); }
+    });
+    document.getElementById('next-page-btn').addEventListener('click', () => {
+      if (currentPage < totalPages) { currentPage++; renderPage(); }
+    });
+    container.querySelectorAll('.page-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentPage = parseInt(btn.dataset.page);
+        renderPage();
+      });
+    });
+  }
+
+  searchInput.addEventListener("input", applySearchAndSort);
+  sortSelect.addEventListener("change", applySearchAndSort);
 
   /* ===============================
      ADD CLIENT

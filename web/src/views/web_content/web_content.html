@@ -18,6 +18,7 @@
                 <a class="header-nav-link" href="../analytics/analytics.html">Analytics</a>
                 <a class="header-nav-link" href="../companies/companies.html">Clients</a>
                 <a class="header-nav-link active">Website Content</a>
+                <a class="header-nav-link" href="../admin_accounts/admin_accounts.html">Admin Accounts</a>
             </nav>
             <button id="logout-btn" class="header-logout">Logout</button>
         </div>
@@ -79,6 +80,10 @@
 
                 <label class="form-label text-black">Price</label>
                 <input type="text" inputmode="decimal" id="shoe-price" name="shoePrice" class="form-control mb-2" placeholder="Price (e.g. 1999.99)" maxlength="10" required>
+
+                <label class="form-label text-black">Description</label>
+                <textarea id="shoe-description" name="shoeDescription" class="form-control mb-1" placeholder="Describe this shoe (materials, style, occasion...)" maxlength="1000" rows="3" required></textarea>
+                <div class="text-end mb-3"><small id="desc-char-count" class="text-muted">0 / 1000</small></div>
 
                 <!-- Existing images shown during edit -->
                 <div id="existing-images-container" class="d-none mb-2">

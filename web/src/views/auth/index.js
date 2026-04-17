@@ -287,7 +287,13 @@ sendCodeBtn.addEventListener('click', async () => {
             options: { shouldCreateUser: false },
         });
 
-        if (error) throw new Error(error.message);
+        if (error) {
+            const msg = error.message.toLowerCase();
+            if (msg.includes('signups not allowed') || msg.includes('signup') || msg.includes('not allowed')) {
+                throw new Error("No account found with that email address.");
+            }
+            throw new Error(error.message);
+        }
 
         showModalSuccess("Code sent! Check your email.");
         stepEmail.classList.add('d-none');
@@ -367,8 +373,8 @@ updatePasswordBtn.addEventListener('click', async () => {
         return;
     }
 
-    if (newPassword.length < 6) {
-        showModalError("Password must be at least 6 characters.");
+    if (newPassword.length < 8) {
+        showModalError("Password must be at least 8 characters.");
         return;
     }
 

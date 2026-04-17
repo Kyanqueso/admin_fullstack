@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="../../css/global.css">
+    <link rel="stylesheet" href="../../assets/bootstrap/bootstrap.min.css">
+
+    <title>Admin Accounts</title>
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-inner">
+            <span class="header-brand">Theresa Shoes</span>
+            <nav class="header-nav">
+                <a class="header-nav-link" href="../analytics/analytics.html">Analytics</a>
+                <a class="header-nav-link" href="../companies/companies.html">Clients</a>
+                <a class="header-nav-link" href="../web_content/web_content.html">Website Content</a>
+                <a class="header-nav-link active">Admin Accounts</a>
+            </nav>
+            <button id="logout-btn" class="header-logout">Logout</button>
+        </div>
+    </header>
+
+    <div class="w-88 mx-auto mt-5 mb-4">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <h1 class="fw-bold mb-0">Admin Accounts</h1>
+            <button id="add-admin-btn" class="btn btn-green px-4 py-2">+ Add Admin</button>
+        </div>
+
+        <div id="page-error" class="alert alert-danger d-none mb-3 py-2 px-3" role="alert"></div>
+
+        <div id="admin-table-container">
+            <!-- Table injected here -->
+        </div>
+    </div>
+
+    <!-- Add Admin Overlay -->
+    <div id="add-overlay" class="overlay d-none">
+        <div class="overlay-content p-4 position-relative" style="max-width:460px; max-height:90vh; overflow-y:auto;">
+            <button id="add-overlay-close" class="overlay-close btn p-3 position-absolute top-0 end-0">
+                <img src="../../assets/icons/x-solid.svg" alt="Close" width="24" height="24">
+            </button>
+
+            <h2 class="text-start fw-bold mb-3">Add Admin Account</h2>
+
+            <form id="add-admin-form" class="text-start">
+                <div class="row g-2 mb-2">
+                    <div class="col-6">
+                        <label class="form-label text-black">First Name</label>
+                        <input type="text" id="add-first-name" class="form-control" maxlength="30" placeholder="First name" required>
+                        <small id="err-first-name" class="text-danger d-none"></small>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label text-black">Last Name</label>
+                        <input type="text" id="add-last-name" class="form-control" maxlength="30" placeholder="Last name" required>
+                        <small id="err-last-name" class="text-danger d-none"></small>
+                    </div>
+                </div>
+
+                <label class="form-label text-black">Email</label>
+                <input type="email" id="add-email" class="form-control" placeholder="admin@example.com" required>
+                <small id="err-email" class="text-danger d-none mb-2 d-block"></small>
+
+                <label class="form-label text-black">Password</label>
+                <input type="password" id="add-password" class="form-control mb-2" placeholder="Minimum 8 characters" required>
+
+                <label class="form-label text-black">Confirm Password</label>
+                <input type="password" id="add-confirm-password" class="form-control mb-2" placeholder="Re-enter password" required>
+            </form>
+
+            <div id="add-overlay-error" class="alert alert-danger d-none mt-3 mb-0 py-2 px-3" role="alert"></div>
+
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <button id="add-overlay-cancel" class="btn btn-secondary">Cancel</button>
+                <button id="add-overlay-confirm" class="btn btn-green">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Remove Admin Overlay -->
+    <div id="remove-overlay" class="overlay d-none">
+        <div class="overlay-content p-4 position-relative">
+            <button id="remove-overlay-close" class="overlay-close btn p-3 position-absolute top-0 end-0">
+                <img src="../../assets/icons/x-solid.svg" alt="Close" width="24" height="24">
+            </button>
+
+            <h5 class="fw-bold mb-2">Remove Admin?</h5>
+            <p id="remove-overlay-name" class="mb-1"></p>
+            <p class="text-muted mb-4" style="font-size:0.85rem">This cannot be undone. They will immediately lose all access.</p>
+
+            <div id="remove-overlay-error" class="alert alert-danger d-none mb-3 py-2 px-3" role="alert"></div>
+
+            <div class="d-flex justify-content-center gap-3">
+                <button id="remove-overlay-cancel" class="btn btn-secondary px-4">Cancel</button>
+                <button id="remove-overlay-confirm" class="btn btn-danger px-4">Remove</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Confirmation Overlay -->
+    <div id="logout-overlay" class="overlay d-none">
+        <div class="overlay-content p-4 position-relative">
+            <button id="logout-overlay-close" class="overlay-close btn p-3 position-absolute top-0 end-0">
+                <img src="../../assets/icons/x-solid.svg" alt="Close" width="24" height="24">
+            </button>
+            <h5 class="mb-4">Do you want to log out?</h5>
+            <div class="d-flex justify-content-center gap-3">
+                <button id="logout-no" class="btn btn-secondary px-4">No</button>
+                <button id="logout-yes" class="btn btn-danger px-4">Yes</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="admin_accounts.js"></script>
+    <script src="../../assets/bootstrap/bootstrap.bundle.min.js"></script>
+</body>
