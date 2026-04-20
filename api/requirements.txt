@@ -10,3 +10,4 @@ alembic
 supabase
 pyjwt
 Pillow
+openpyxl

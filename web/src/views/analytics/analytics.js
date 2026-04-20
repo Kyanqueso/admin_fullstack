@@ -188,8 +188,8 @@ function createSalesChart(breakdownData) {
     // Update the "Total Sales" value in the chart card header
     document.getElementById('total-sales-value').textContent = formatCurrencyToThousandPhp(totalSales);
 
-    // Update the year label on Card 2
-    document.getElementById('annual-sales-year').textContent = `Year ${breakdownData.year_number}`;
+    // Update the date range label on Card 2
+    document.getElementById('annual-sales-year').textContent = `Jan ${breakdownData.year_number} – Dec ${breakdownData.year_number}`;
 
     // Create new Chart.js chart
     salesChart = new Chart(ctx, {
@@ -392,6 +392,45 @@ document.getElementById('uncollected-search').addEventListener('input', () => {
 
 document.getElementById('uncollected-sort').addEventListener('change', () => {
     renderUncollectedTable(getFilteredAndSortedData());
+});
+
+// Download Report button
+document.getElementById('download-report-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('download-report-btn');
+    btn.disabled = true;
+    btn.textContent = 'Downloading...';
+
+    try {
+        const token = localStorage.getItem('access_token');
+        const response = await fetch(`${FAST_API_URL}/analytics/download-report`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.status === 401 || response.status === 403) {
+            window.location.href = "../auth/index.html";
+            return;
+        }
+
+        if (!response.ok) throw new Error('Failed to download report');
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const today = new Date().toISOString().slice(0, 10);
+        a.href = url;
+        a.download = `TheresaShoes_Report_${today}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('Error downloading report:', error);
+        alert('Failed to download report. Please try again.');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Download Report';
+    }
 });
 
 // Run initAnalytics when DOM is fully loaded
