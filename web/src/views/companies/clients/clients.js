@@ -1,5 +1,6 @@
 import pencilIcon from '../../../assets/icons/pencil-dark.svg';
 import trashIcon from '../../../assets/icons/trashcan-black.svg';
+import archiveIcon from '../../../assets/icons/archive.svg';
 import { getFromCache, saveToCache, clearCache } from '../../../js/apiCache.js';
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -161,6 +162,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Allow digits and a leading + (for +63 format)
+  function blockContactInvalidChars(el) {
+    el.addEventListener('input', () => {
+      const before = el.value;
+      const after = before.replace(/[^\d+]/g, '');
+      if (before !== after) el.value = after;
+    });
+  }
+
   // Strip emoji and characters not valid in an address
   function blockAddressInvalidChars(el) {
     el.addEventListener('input', () => {
@@ -318,17 +328,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // CONTACT
+    const cleanedContact = contact.replace(/\s/g, "");
+    const validContact = /^(\+639\d{9}|09\d{9})$/.test(cleanedContact);
     if (!contact) {
       showFieldError(contactInput, "Contact number is required");
       valid = false;
     } else if (hasEmoji(contact)) {
       showFieldError(contactInput, "No emoji allowed");
       valid = false;
-    } else if (!isNumbersOnly(contact)) {
-      showFieldError(contactInput, "Numbers only");
-      valid = false;
-    } else if (contact.length !== 11) {
-      showFieldError(contactInput, "Must be 11 digits");
+    } else if (!validContact) {
+      showFieldError(contactInput, "Must be +639XXXXXXXXX or 09XXXXXXXXX");
       valid = false;
     }
 
@@ -409,12 +418,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (addFirstName) blockNonNameChars(addFirstName);
   if (addLastName)  blockNonNameChars(addLastName);
-  if (addViber)     blockNonDigits(addViber);
+  if (addViber)     blockContactInvalidChars(addViber);
   if (addAddress)   blockAddressInvalidChars(addAddress);
 
   blockNonNameChars(editFirstName);
   blockNonNameChars(editLastName);
-  blockNonDigits(editViber);
+  blockContactInvalidChars(editViber);
   blockAddressInvalidChars(editAddress);
   blockEmojiOnly(notesTextarea);
 
@@ -436,7 +445,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       if (ths[4]) ths[4].textContent = 'Notes';
       if (ths[5]) ths[5].textContent = 'Edit';
-      if (ths[6]) ths[6].textContent = 'Delete';
+      if (ths[6]) ths[6].textContent = 'Archive';
     }
 
     // Show/hide Add button
@@ -541,8 +550,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (currentTab === 'archive') {
       tr.innerHTML = `
-        <td>${escapeHtml(client.first_name)}</td>
         <td>${escapeHtml(client.last_name)}</td>
+        <td>${escapeHtml(client.first_name)}</td>
         <td>${escapeHtml(client.address)}</td>
         <td>${escapeHtml(client.viber_number) || "-"}</td>
         <td>-</td>
@@ -559,8 +568,8 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
     } else {
       tr.innerHTML = `
-        <td>${escapeHtml(client.first_name)}</td>
         <td>${escapeHtml(client.last_name)}</td>
+        <td>${escapeHtml(client.first_name)}</td>
         <td>${escapeHtml(client.address)}</td>
         <td>${escapeHtml(client.viber_number) || "-"}</td>
         <td>
@@ -575,7 +584,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </td>
         <td>
           <button class="btn btn-sm delete-btn">
-            <img src="${trashIcon}" width="18">
+            <img src="${archiveIcon}" width="18">
           </button>
         </td>
       `;
@@ -828,7 +837,7 @@ document.addEventListener("DOMContentLoaded", () => {
       selectedClientId = rowToDelete.dataset.id;
       isPermanentDelete = false;
       document.querySelector("#deleteClientOverlay h5").innerHTML =
-        "Are you sure you want to<br>delete this client?";
+        "Are you sure you want to<br>archive this client?";
       deleteOverlay.classList.remove("d-none");
     }
   });

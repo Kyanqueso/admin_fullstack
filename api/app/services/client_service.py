@@ -13,14 +13,13 @@ def create_client(db: Session, client_data: ClientCreate):
         raise ValueError("Company not found or is archived.")
 
     existing = db.query(Client).filter(
-        Client.first_name == client_data.first_name,
-        Client.last_name == client_data.last_name,
-        Client.company_id == client_data.company_id,
-        Client.isDeleted == False
+        Client.first_name.ilike(client_data.first_name.strip()),
+        Client.last_name.ilike(client_data.last_name.strip()),
+        Client.company_id == client_data.company_id
     ).first()
 
     if existing:
-        raise ValueError("Client already exists")
+        raise ValueError("A client with this name already exists in this company")
 
     client = Client(**client_data.model_dump())
     db.add(client)
@@ -86,7 +85,21 @@ def get_clients(
 def update_client(db: Session, client_id: int, client_data: ClientUpdate):
     client = get_client(db, client_id)
 
-    for key, value in client_data.model_dump(exclude_unset=True).items():
+    update_data = client_data.model_dump(exclude_unset=True)
+
+    new_first = update_data.get("first_name", client.first_name)
+    new_last = update_data.get("last_name", client.last_name)
+
+    conflict = db.query(Client).filter(
+        Client.first_name.ilike(new_first.strip()),
+        Client.last_name.ilike(new_last.strip()),
+        Client.company_id == client.company_id,
+        Client.id != client_id
+    ).first()
+    if conflict:
+        raise ValueError("A client with this name already exists in this company")
+
+    for key, value in update_data.items():
         setattr(client, key, value)
 
     db.commit()
@@ -105,13 +118,13 @@ def restore_client(db: Session, client_id: int):
         raise ValueError("Archived client not found")
 
     duplicate = db.query(Client).filter(
-        Client.first_name == client.first_name,
-        Client.last_name == client.last_name,
+        Client.first_name.ilike(client.first_name),
+        Client.last_name.ilike(client.last_name),
         Client.company_id == client.company_id,
         Client.isDeleted == False
     ).first()
     if duplicate:
-        raise ValueError("An active client with this name already exists.")
+        raise ValueError("An active client with this name already exists in this company")
 
     for order in client.client_orders:
         if order.payment_summary:

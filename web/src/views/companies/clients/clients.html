@@ -61,13 +61,13 @@
         <table class="table align-middle text-center">
             <thead class="table-header">
                 <tr>
-                    <th>First Name</th>
                     <th>Last Name</th>
+                    <th>First Name</th>
                     <th>Address</th>
                     <th>Viber</th>
                     <th>Notes</th>
                     <th>Edit</th>
-                    <th>Delete</th>
+                    <th>Archive</th>
                 </tr>
             </thead>
 
@@ -91,13 +91,13 @@
 
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <label class="form-label">First Name</label>
-                        <input type="text" class="form-control" id="addFirstName" placeholder="Juan" maxlength="50">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" class="form-control" id="addLastName" placeholder="Dela Cruz" maxlength="50">
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label">Last Name</label>
-                        <input type="text" class="form-control" id="addLastName" placeholder="Dela Cruz" maxlength="50">
+                        <label class="form-label">First Name</label>
+                        <input type="text" class="form-control" id="addFirstName" placeholder="Juan" maxlength="50">
                     </div>
                 </div>
 
@@ -109,7 +109,7 @@
 
                     <div class="col-md-6">
                         <label class="form-label">Viber</label>
-                        <input type="text" class="form-control" id="addViber" placeholder="09... (must be 11 digits)" maxlength="11" inputmode="numeric">
+                        <input type="text" class="form-control" id="addViber" placeholder="09XXXXXXXXX or +639XXXXXXXXX" maxlength="13" inputmode="tel">
                     </div>
                 </div>
 
@@ -162,12 +162,12 @@
             <form>
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <label class="form-label">First Name</label>
-                        <input type="text" class="form-control" id="editFirstName" maxlength="50">
-                    </div>
-                    <div class="col-md-6">
                         <label class="form-label">Last Name</label>
                         <input type="text" class="form-control" id="editLastName" maxlength="50">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">First Name</label>
+                        <input type="text" class="form-control" id="editFirstName" maxlength="50">
                     </div>
                 </div>
 
@@ -178,7 +178,7 @@
 
                 <div class="mb-4">
                     <label class="form-label">Viber</label>
-                    <input type="text" class="form-control" id="editViber" maxlength="11" inputmode="numeric">
+                    <input type="text" class="form-control" id="editViber" maxlength="13" inputmode="tel">
                 </div>
 
                 <div class="d-flex gap-3">
@@ -199,7 +199,7 @@
             <button class="overlay-close" id="closeDeleteOverlay">✕</button>
 
             <h5 class="mb-4">
-                Are you sure you want to<br>delete this client?
+                Are you sure you want to<br>archive this client?
             </h5>
 
             <div class="d-flex justify-content-center gap-3">

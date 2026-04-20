@@ -5,12 +5,11 @@ from app.schemas.company import CompanyCreate, CompanyUpdate
 
 def create_company(db: Session, company_data: CompanyCreate):
     existing = db.query(Company).filter(
-        Company.name.ilike(company_data.name.strip()),
-        Company.isDeleted == False
+        Company.name.ilike(company_data.name.strip())
     ).first()
 
     if existing:
-        raise ValueError("Company already exists")
+        raise ValueError("A company with this name already exists")
 
     company = Company(**company_data.model_dump())
     db.add(company)
@@ -62,7 +61,17 @@ def update_company(db: Session, company_id: int, company_data: CompanyUpdate):
     if not company:
         return None
 
-    for key, value in company_data.model_dump(exclude_unset=True).items():
+    update_data = company_data.model_dump(exclude_unset=True)
+
+    if "name" in update_data:
+        conflict = db.query(Company).filter(
+            Company.name.ilike(update_data["name"].strip()),
+            Company.id != company_id
+        ).first()
+        if conflict:
+            raise ValueError("A company with this name already exists")
+
+    for key, value in update_data.items():
         setattr(company, key, value)
 
     db.commit()
@@ -79,6 +88,13 @@ def restore_company(db: Session, company_id: int):
 
     if not company:
         raise ValueError("Archived company not found")
+
+    conflict = db.query(Company).filter(
+        Company.name.ilike(company.name),
+        Company.isDeleted == False
+    ).first()
+    if conflict:
+        raise ValueError("An active company with this name already exists")
 
     for client in company.clients:
         for order in client.client_orders:

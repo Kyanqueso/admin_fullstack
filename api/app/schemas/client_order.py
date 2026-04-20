@@ -37,8 +37,8 @@ def _no_emoji(value: str, field_name: str) -> str:
 
 
 def _validate_size(v: Decimal) -> Decimal:
-    if v < Decimal("-1") or v > Decimal("10"):
-        raise ValueError("Size must be between -1 and 10.")
+    if v < Decimal("-1") or v > Decimal("12"):
+        raise ValueError("Size must be between -1 and 12.")
     # Decimal must end in .0 or .5
     remainder = v % Decimal("0.5")
     if remainder != 0:

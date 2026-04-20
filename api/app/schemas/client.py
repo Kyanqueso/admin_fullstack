@@ -54,11 +54,11 @@ class ClientCreate(BaseModel):
         if v.startswith("+63"):
             v = "0" + v[3:]
 
-        if not re.match(r'^[0-9]+$', v):
-            raise ValueError("Contact must be numbers only")
+        if not re.match(r'^[0-9]{11}$', v):
+            raise ValueError("Contact must be 11 digits (e.g. 09171234567)")
 
-        if len(v) != 11:
-            raise ValueError("Contact must be 11 digits")
+        if not v.startswith("09"):
+            raise ValueError("Contact number must start with 09 (e.g. 09171234567)")
 
         return v
 
@@ -138,10 +138,10 @@ class ClientUpdate(BaseModel):
         if v.startswith("+63"):
             v = "0" + v[3:]
 
-        if not re.match(r'^[0-9]+$', v):
-            raise ValueError("Contact must be numbers only")
+        if not re.match(r'^[0-9]{11}$', v):
+            raise ValueError("Contact must be 11 digits (e.g. 09171234567)")
 
-        if len(v) != 11:
-            raise ValueError("Contact must be 11 digits")
+        if not v.startswith("09"):
+            raise ValueError("Contact number must start with 09 (e.g. 09171234567)")
 
         return v

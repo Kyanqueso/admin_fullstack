@@ -1,4 +1,5 @@
 import { clearCache } from '../../js/apiCache.js';
+import archiveIcon from '../../assets/icons/archive.svg';
 
 /* ===============================
    CONFIG
@@ -297,7 +298,7 @@ function renderCompanyCard(company) {
 
         <div class="position-absolute top-0 end-0 p-1 d-flex gap-2">
           <button class="btn btn-sm btn-success edit-company" data-id="${company.id}">✎</button>
-          <button class="btn btn-sm btn-danger delete-company" data-id="${company.id}">🗑</button>
+          <button class="btn btn-sm btn-danger delete-company" data-id="${company.id}"><img src="${archiveIcon}" width="18" style="filter: brightness(0) invert(1);"></button>
         </div>
 
         <div class="card-body d-flex justify-content-center align-items-center text-center">
@@ -445,7 +446,7 @@ document.addEventListener("click", async (e) => {
     selectedCompanyId = deleteBtn.dataset.id;
     isPermanentDelete = false;
     document.querySelector("#deleteCompanyOverlay h5").innerHTML =
-      "Are you sure you want to<br>delete this company?";
+      "Are you sure you want to<br>archive this company?";
     deleteOverlay.classList.remove("d-none");
     return;
   }
@@ -780,7 +781,7 @@ document.getElementById("closeDeleteCompany").onclick =
     deleteOverlay.classList.add("d-none");
     isPermanentDelete = false;
     document.querySelector("#deleteCompanyOverlay h5").innerHTML =
-      "Are you sure you want to<br>delete this company?";
+      "Are you sure you want to<br>archive this company?";
     const errEl = document.getElementById('deleteCompanyError');
     if (errEl) errEl.classList.add('d-none');
   };

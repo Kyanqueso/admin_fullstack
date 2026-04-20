@@ -1,5 +1,6 @@
 import pencilIcon from '../../../assets/icons/pencil-dark.svg';
 import trashIcon from '../../../assets/icons/trashcan-black.svg';
+import archiveIcon from '../../../assets/icons/archive.svg';
 import { getFromCache, saveToCache, clearCache } from '../../../js/apiCache.js';
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -317,8 +318,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       showFieldError(sizeEl, "Size is required.");
       valid = false;
 
-    } else if (sizeNum < -1 || sizeNum > 10) {
-      showFieldError(sizeEl, "Size must be between -1 and 10.");
+    } else if (sizeNum < -1 || sizeNum > 12) {
+      showFieldError(sizeEl, "Size must be between -1 and 12.");
       valid = false;
 
     } else if ((sizeNum * 10) % 5 !== 0) {
@@ -432,7 +433,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (ths[16]) ths[16].textContent = 'Delete';
     } else {
       if (ths[15]) ths[15].textContent = 'Edit';
-      if (ths[16]) ths[16].textContent = 'Delete';
+      if (ths[16]) ths[16].textContent = 'Archive';
     }
 
     // Show/hide Add button
@@ -623,7 +624,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           </td>
           <td>
             <button class="btn btn-sm delete-btn" data-id="${order.id}">
-              <img src="${trashIcon}" width="18">
+              <img src="${archiveIcon}" width="18">
             </button>
           </td>
         `;
@@ -925,7 +926,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       selectedOrderId = deleteBtn.dataset.id;
       isPermanentDelete = false;
       document.querySelector("#deleteOrderOverlay h5").textContent =
-        "Are you sure you want to delete this order?";
+        "Are you sure you want to archive this order?";
       deleteOverlay.classList.remove("d-none");
       return;
     }

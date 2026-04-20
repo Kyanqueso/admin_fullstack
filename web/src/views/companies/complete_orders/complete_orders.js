@@ -1,4 +1,5 @@
 import trashIcon from '../../../assets/icons/trashcan-black.svg';
+import archiveIcon from '../../../assets/icons/archive.svg';
 import { getFromCache, saveToCache, clearCache } from '../../../js/apiCache.js';
 
 const FAST_API_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
@@ -213,7 +214,7 @@ function setTabUI(tab) {
     if (ths[17]) ths[17].textContent = 'Delete';
   } else {
     if (ths[16]) ths[16].textContent = 'Payment History';
-    if (ths[17]) ths[17].textContent = '';
+    if (ths[17]) ths[17].textContent = 'Archive';
   }
 }
 
@@ -260,7 +261,7 @@ function renderOrders(orders) {
         </td>
         <td>
           <button class="btn btn-sm archive-order-btn" data-id="${order.id}" title="Archive">
-            <img src="${trashIcon}" width="18">
+            <img src="${archiveIcon}" width="18">
           </button>
         </td>`;
     }
