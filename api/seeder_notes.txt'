@@ -1,0 +1,4 @@
+python seed.py small    # 5 companies,  25 clients,  ~50–75 orders
+python seed.py medium   # 15 companies, 100 clients, ~200–300 orders
+python seed.py large    # 30 companies, 250 clients, ~750–1250 orders
+python seed.py clear    # wipe all companies/clients/orders/payments (admins + shoe catalog untouched)

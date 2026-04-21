@@ -3,8 +3,9 @@
 Database seeder for Theresa Shoes.
 
 Usage (run from the api/ directory):
-    python seed.py small    # 5 companies, 25 clients, ~50-75 orders
-    python seed.py large    # 15 companies, 100 clients, ~200-300 orders
+    python seed.py small    # 5 companies,  25 clients,  ~50-75 orders
+    python seed.py medium   # 15 companies, 100 clients, ~200-300 orders
+    python seed.py large    # 30 companies, 250 clients, ~750-1250 orders
     python seed.py clear    # remove all companies/clients/orders/payments (keeps admins + shoe_catalog)
 """
 
@@ -35,6 +36,10 @@ FIRST_NAMES = [
     "Evelyn", "Ronaldo", "Corazon", "Arnel", "Sheila",
     "Renato", "Jocelyn", "Virgilio", "Nenita", "Rodel",
     "Ligaya", "Dindo", "Meriam", "Efren", "Cecille",
+    "Luzviminda", "Natividad", "Alfredo", "Herminia", "Domingo",
+    "Pacita", "Florencio", "Milagros", "Wilfredo", "Erlinda",
+    "Victorino", "Remedios", "Alejandro", "Felicitas", "Simplicio",
+    "Carmelita", "Abelardo", "Glorifica", "Deogracias", "Visitacion",
 ]
 
 LAST_NAMES = [
@@ -44,6 +49,9 @@ LAST_NAMES = [
     "Uy", "Lim", "Tan", "Sy", "Dizon", "Padilla", "Soriano",
     "Magno", "Cunanan", "Manalo", "Salazar", "Aguilar", "Ocampo",
     "Domingo", "Pascual", "Tolentino", "Valdez", "Villafuerte",
+    "Macaraeg", "Buenaventura", "Evangelista", "Macapagal", "Roxas",
+    "Lacson", "Enrile", "Osmena", "Laurel", "Magsaysay",
+    "Quezon", "Bonifacio", "Mabini", "Rizal", "del Pilar",
 ]
 
 COMPANY_BASES = [
@@ -51,13 +59,16 @@ COMPANY_BASES = [
     "Aquino", "Bautista", "Mendoza", "Flores", "Torres",
     "Lim", "Tan", "Uy", "Castro", "Magno", "Soriano",
     "Padilla", "Aguilar", "Salazar", "Ocampo",
+    "Macaraeg", "Buenaventura", "Evangelista", "Macapagal", "Roxas",
+    "Lacson", "Enrile", "Osmena", "Laurel", "Magsaysay",
 ]
 
 COMPANY_SUFFIXES = [
     "Enterprises", "Trading Co.", "General Merchandise",
     "Footwear", "Fashion House", "Boutique",
     "Supply & Distribution", "Collections", "Shoe Store",
-    "& Associates",
+    "& Associates", "Industries", "Wholesale", "International",
+    "Marketing", "Export & Import",
 ]
 
 STREETS = [
@@ -154,8 +165,12 @@ def two_decimal(value: Decimal) -> Decimal:
 # ─────────────────────────────────────────────────────────────────
 
 def seed(size: str):
-    num_companies = 5  if size == "small" else 15
-    num_clients   = 25 if size == "small" else 100
+    if size == "small":
+        num_companies, num_clients, orders_range = 5,  25,  (1, 3)
+    elif size == "medium":
+        num_companies, num_clients, orders_range = 15, 100, (1, 3)
+    else:  # large
+        num_companies, num_clients, orders_range = 30, 250, (2, 5)
 
     db = SessionLocal()
     try:
@@ -203,7 +218,7 @@ def seed(size: str):
         order_count = summary_count = txn_count = 0
 
         for client in clients:
-            num_orders = random.randint(1, 3)
+            num_orders = random.randint(*orders_range)
 
             for _ in range(num_orders):
                 price = random_price()
@@ -367,9 +382,9 @@ def clear():
 # ─────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    valid = ("small", "large", "clear")
+    valid = ("small", "medium", "large", "clear")
     if len(sys.argv) != 2 or sys.argv[1] not in valid:
-        print("Usage: python seed.py [small | large | clear]")
+        print("Usage: python seed.py [small | medium | large | clear]")
         sys.exit(1)
 
     cmd = sys.argv[1]
