@@ -67,6 +67,8 @@ function applySearchAndSort() {
   else if (sortValue === "za") result.sort((a, b) => (clientsMap[b.client_id] || "").localeCompare(clientsMap[a.client_id] || ""));
   else if (sortValue === "recent") result.sort((a, b) => b.id - a.id);
   else if (sortValue === "oldest") result.sort((a, b) => a.id - b.id);
+  else if (sortValue === "newest-date") result.sort((a, b) => new Date(b.dateCompleted) - new Date(a.dateCompleted));
+  else if (sortValue === "oldest-date") result.sort((a, b) => new Date(a.dateCompleted) - new Date(b.dateCompleted));
   currentFilteredData = result;
   currentPage = 1;
   renderPage();

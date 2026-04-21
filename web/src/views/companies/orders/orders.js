@@ -429,11 +429,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Update table headers for last 2 columns
     const ths = document.querySelectorAll('thead th');
     if (tab === 'archive') {
-      if (ths[15]) ths[15].textContent = 'Restore';
-      if (ths[16]) ths[16].textContent = 'Delete';
+      if (ths[16]) ths[16].textContent = 'Restore';
+      if (ths[17]) ths[17].textContent = 'Delete';
     } else {
-      if (ths[15]) ths[15].textContent = 'Edit';
-      if (ths[16]) ths[16].textContent = 'Archive';
+      if (ths[16]) ths[16].textContent = 'Edit';
+      if (ths[17]) ths[17].textContent = 'Archive';
     }
 
     // Show/hide Add button
@@ -633,6 +633,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       row.innerHTML = `
         <td>${order.id}</td>
         <td>${escapeHtml(clientMap[order.client_id] || String(order.client_id))}</td>
+        <td>${order.order_date ? new Date(order.order_date).toLocaleDateString('en-PH') : '—'}</td>
         <td>${escapeHtml(order.model)}</td>
         <td>${Number(order.size).toFixed(1)}</td>
         <td>${escapeHtml(order.material)}</td>
@@ -672,6 +673,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       result.sort((a, b) => b.id - a.id);
     } else if (sortValue === "oldest") {
       result.sort((a, b) => a.id - b.id);
+    } else if (sortValue === "newest-date") {
+      result.sort((a, b) => new Date(b.order_date) - new Date(a.order_date));
+    } else if (sortValue === "oldest-date") {
+      result.sort((a, b) => new Date(a.order_date) - new Date(b.order_date));
     }
 
     currentFilteredData = result;

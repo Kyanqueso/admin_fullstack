@@ -342,6 +342,14 @@ function applySearchAndSort() {
     result.sort((a, b) =>
       (ordersMap[a.client_order_id]?.id || 0) - (ordersMap[b.client_order_id]?.id || 0)
     );
+  } else if (sortValue === "newest-date") {
+    result.sort((a, b) =>
+      new Date(ordersMap[b.client_order_id]?.order_date || 0) - new Date(ordersMap[a.client_order_id]?.order_date || 0)
+    );
+  } else if (sortValue === "oldest-date") {
+    result.sort((a, b) =>
+      new Date(ordersMap[a.client_order_id]?.order_date || 0) - new Date(ordersMap[b.client_order_id]?.order_date || 0)
+    );
   }
 
   currentFilteredData = result;

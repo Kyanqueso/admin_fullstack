@@ -27,6 +27,7 @@ class UncollectedBalanceItem(BaseModel):
     name: str
     contact_number: str
     order_date: datetime
+    quantity: int
     price: Decimal
     first_pay: Decimal
     second_pay: Decimal

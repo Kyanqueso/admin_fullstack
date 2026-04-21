@@ -69,17 +69,17 @@ def update_client_order(db: Session, client_order_id: int, client_order_data: Cl
     if not client_order:
         raise ValueError(f"Client order with ID {client_order_id} not found.")
 
-    # Enforce completed orders cannot be edited without first removing payment transactions that mark them as completed. 
-    # This prevents accidental changes to finalized orders.
-    if client_order.isCompleted:
-        raise ValueError("Cannot edit a completed order. Remove a payment transaction first.")
-
     update_data = client_order_data.model_dump(exclude_unset=True)
 
     if not update_data:
         raise ValueError("No fields provided for update.")
 
     price_or_quantity_changed = "price" in update_data or "quantity" in update_data
+
+    # Block spec changes on completed orders, but allow price/quantity edits
+    # (which will trigger recalculation and uncomplete the order if needed).
+    if client_order.isCompleted and not price_or_quantity_changed:
+        raise ValueError("Cannot edit a completed order. Remove a payment transaction first.")
 
     # Check if the order total would be reduced below the amount already paid 
     # if price or quantity is being updated. Allow small rounding differences up to 1 cent.

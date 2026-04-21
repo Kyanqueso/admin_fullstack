@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import func, extract
+from sqlalchemy import func, extract, case
 from app.schemas.analytics import AnalyticsRead, MonthSales, AnnualSalesBreakdownRead
 from app.db.models import PaymentSummary, PaymentTransaction, ClientOrder, Company, Client
 from decimal import Decimal
@@ -15,6 +15,7 @@ def get_analytics(db: Session):
     current_month = current_date.month
     current_year = current_date.year
 
+    # Query 1: total uncollected balance
     total_balance = db.query(func.sum(PaymentSummary.remaining_balance)).join(
         ClientOrder, PaymentSummary.client_order_id == ClientOrder.id
     ).filter(
@@ -22,33 +23,31 @@ def get_analytics(db: Session):
         ClientOrder.isDeleted == False
     ).scalar() or Decimal(0)
 
-    total_completed_order = db.query(func.count(ClientOrder.id)).filter(
-        ClientOrder.isCompleted == True,
-        ClientOrder.isDeleted == False
-    ).scalar() or 0
+    # Query 2: completed + pending counts in one pass
+    order_counts = db.query(
+        func.sum(case((ClientOrder.isCompleted == True, 1), else_=0)).label("completed"),
+        func.sum(case((ClientOrder.isCompleted == False, 1), else_=0)).label("pending"),
+    ).filter(ClientOrder.isDeleted == False).one()
 
-    total_pending_order = db.query(func.count(ClientOrder.id)).filter(
-        ClientOrder.isCompleted == False,
-        ClientOrder.isDeleted == False
-    ).scalar() or 0
-
-    monthly_sales = db.query(func.sum(PaymentTransaction.paid_amount)).filter(
-        extract("month", PaymentTransaction.payment_date) == current_month,
+    # Query 3: monthly + annual sales in one pass
+    sales = db.query(
+        func.sum(case(
+            (extract("month", PaymentTransaction.payment_date) == current_month,
+             PaymentTransaction.paid_amount),
+            else_=Decimal(0)
+        )).label("monthly"),
+        func.sum(PaymentTransaction.paid_amount).label("annual"),
+    ).filter(
         extract("year", PaymentTransaction.payment_date) == current_year,
         PaymentTransaction.isDeleted == False
-    ).scalar() or Decimal(0)
-
-    annual_sales = db.query(func.sum(PaymentTransaction.paid_amount)).filter(
-        extract("year", PaymentTransaction.payment_date) == current_year,
-        PaymentTransaction.isDeleted == False
-    ).scalar() or Decimal(0)
+    ).one()
 
     return AnalyticsRead(
         total_balance=total_balance,
-        total_completed_order=total_completed_order,
-        total_pending_order=total_pending_order,
-        monthly_sales=monthly_sales,
-        annual_sales=annual_sales
+        total_completed_order=int(order_counts.completed or 0),
+        total_pending_order=int(order_counts.pending or 0),
+        monthly_sales=sales.monthly or Decimal(0),
+        annual_sales=sales.annual or Decimal(0),
     )
 
 
@@ -60,20 +59,28 @@ def get_annual_sales_breakdown(db: Session, year_number: int = None):
         "January", "February", "March", "April", "May", "June",
         "July", "August", "September", "October", "November", "December"
     ]
-    monthly_data = []
 
-    for month_number in range(1, 13):
-        month_sales = db.query(func.sum(PaymentTransaction.paid_amount)).filter(
-            extract("month", PaymentTransaction.payment_date) == month_number,
+    # Single GROUP BY query instead of 12 separate queries
+    month_col = extract("month", PaymentTransaction.payment_date).label("month")
+    results = (
+        db.query(month_col, func.sum(PaymentTransaction.paid_amount).label("sales"))
+        .filter(
             extract("year", PaymentTransaction.payment_date) == year_number,
             PaymentTransaction.isDeleted == False
-        ).scalar() or Decimal(0)
+        )
+        .group_by(month_col)
+        .all()
+    )
+    sales_by_month = {int(row.month): row.sales for row in results}
 
-        monthly_data.append(MonthSales(
-            month_number=month_number,
-            month_name=month_names[month_number - 1],
-            sales=month_sales
-        ))
+    monthly_data = [
+        MonthSales(
+            month_number=m,
+            month_name=month_names[m - 1],
+            sales=sales_by_month.get(m, Decimal(0))
+        )
+        for m in range(1, 13)
+    ]
 
     return AnnualSalesBreakdownRead(year_number=year_number, monthly_data=monthly_data)
 
@@ -81,37 +88,65 @@ def get_annual_sales_breakdown(db: Session, year_number: int = None):
 def get_uncollected_balance(db: Session):
     from app.schemas.analytics import UncollectedBalanceItem
 
-    summaries = (
-        db.query(PaymentSummary)
+    # Query 1: all summary/order/client/company data in one join — no lazy loading
+    rows = (
+        db.query(
+            PaymentSummary.id,
+            PaymentSummary.remaining_balance,
+            ClientOrder.order_date,
+            ClientOrder.quantity,
+            ClientOrder.price,
+            Client.first_name,
+            Client.last_name,
+            Client.viber_number,
+            Company.name,
+        )
         .join(ClientOrder, PaymentSummary.client_order_id == ClientOrder.id)
+        .join(Client, ClientOrder.client_id == Client.id)
+        .join(Company, Client.company_id == Company.id)
         .filter(
             PaymentSummary.remaining_balance > 0,
-            ClientOrder.isDeleted == False
+            PaymentSummary.isDeleted == False,
+            ClientOrder.isDeleted == False,
         )
         .all()
     )
 
+    if not rows:
+        return []
+
+    # Query 2: fetch all relevant transactions in one query, build lookup dict
+    summary_ids = [r[0] for r in rows]
+    txns = (
+        db.query(
+            PaymentTransaction.payment_summary_id,
+            PaymentTransaction.payment_number,
+            PaymentTransaction.paid_amount,
+        )
+        .filter(
+            PaymentTransaction.payment_summary_id.in_(summary_ids),
+            PaymentTransaction.isDeleted == False,
+        )
+        .all()
+    )
+    pay_map: dict[int, dict[int, Decimal]] = {}
+    for t_sid, t_num, t_amount in txns:
+        pay_map.setdefault(t_sid, {})[t_num] = t_amount
+
     items = []
-    for ps in summaries:
-        order = ps.client_order
-        client = order.client
-        company = client.company
-
-        pays = {}
-        for tx in ps.payment_transactions:
-            if not tx.isDeleted:
-                pays[tx.payment_number] = tx.paid_amount
-
+    for sid, balance, order_date, quantity, price, first, last, viber, company_name in rows:
+        pays = pay_map.get(sid, {})
         items.append(UncollectedBalanceItem(
-            company=company.name,
-            name=f"{client.first_name} {client.last_name}",
-            contact_number=client.viber_number,
-            order_date=order.order_date,
-            price=order.price,
+            company=company_name,
+            name=f"{first} {last}",
+            contact_number=viber,
+            order_date=order_date,
+            quantity=quantity,
+            price=price,
             first_pay=pays.get(1, Decimal(0)),
             second_pay=pays.get(2, Decimal(0)),
             third_pay=pays.get(3, Decimal(0)),
-            balance=ps.remaining_balance
+            balance=balance,
         ))
 
     return items
@@ -129,14 +164,18 @@ def _style_header_row(ws, headers: list[str], fill_color: str = "550000"):
     ws.row_dimensions[1].height = 20
 
 
-def _auto_fit_columns(ws):
-    for col in ws.columns:
-        max_len = 0
-        col_letter = get_column_letter(col[0].column)
-        for cell in col:
-            if cell.value is not None:
-                max_len = max(max_len, len(str(cell.value)))
-        ws.column_dimensions[col_letter].width = min(max_len + 4, 50)
+
+def _write_sheet(ws, headers: list[str], rows):
+    """Write header + rows to a sheet and auto-fit columns in a single pass."""
+    _style_header_row(ws, headers)
+    col_widths = [len(h) for h in headers]
+    for row in rows:
+        ws.append(row)
+        for i, val in enumerate(row):
+            if val is not None:
+                col_widths[i] = min(max(col_widths[i], len(str(val))), 50)
+    for i, w in enumerate(col_widths, 1):
+        ws.column_dimensions[get_column_letter(i)].width = w + 4
 
 
 def generate_full_report(db: Session) -> bytes:
@@ -144,80 +183,92 @@ def generate_full_report(db: Session) -> bytes:
     wb.remove(wb.active)
 
     # --- Sheet 1: Companies ---
-    ws_companies = wb.create_sheet("Companies")
-    headers_companies = ["ID", "Name", "Address"]
-    _style_header_row(ws_companies, headers_companies)
-    companies = db.query(Company).filter(Company.isDeleted == False).order_by(Company.id).all()
-    for c in companies:
-        ws_companies.append([c.id, c.name, c.address or ""])
-    _auto_fit_columns(ws_companies)
+    company_rows = [
+        [c_id, name, addr or ""]
+        for c_id, name, addr in (
+            db.query(Company.id, Company.name, Company.address)
+            .filter(Company.isDeleted == False)
+            .order_by(Company.id)
+            .all()
+        )
+    ]
+    _write_sheet(wb.create_sheet("Companies"), ["ID", "Name", "Address"], company_rows)
 
     # --- Sheet 2: Clients ---
-    ws_clients = wb.create_sheet("Clients")
-    headers_clients = ["ID", "Company", "First Name", "Last Name", "Address", "Viber Number", "Notes"]
-    _style_header_row(ws_clients, headers_clients)
-    clients = (
-        db.query(Client)
-        .join(Company, Client.company_id == Company.id)
-        .filter(Client.isDeleted == False, Company.isDeleted == False)
-        .order_by(Client.id)
-        .all()
+    client_rows = [
+        [c_id, company_name, first, last, addr or "", viber, notes or ""]
+        for c_id, company_name, first, last, addr, viber, notes in (
+            db.query(
+                Client.id, Company.name,
+                Client.first_name, Client.last_name,
+                Client.address, Client.viber_number, Client.notes
+            )
+            .join(Company, Client.company_id == Company.id)
+            .filter(Client.isDeleted == False, Company.isDeleted == False)
+            .order_by(Client.id)
+            .all()
+        )
+    ]
+    _write_sheet(
+        wb.create_sheet("Clients"),
+        ["ID", "Company", "First Name", "Last Name", "Address", "Viber Number", "Notes"],
+        client_rows
     )
-    for cl in clients:
-        ws_clients.append([
-            cl.id,
-            cl.company.name,
-            cl.first_name,
-            cl.last_name,
-            cl.address or "",
-            cl.viber_number,
-            cl.notes or ""
-        ])
-    _auto_fit_columns(ws_clients)
 
     # --- Sheet 3: All Orders ---
-    ws_orders = wb.create_sheet("All Orders")
-    headers_orders = [
-        "Order ID", "Company", "Client Name", "Order Date",
-        "Model", "Size", "Material", "Color", "Mold",
-        "Heel Size", "Heel Type", "Platform", "Slingback", "Buckle",
-        "Quantity", "Price", "Status", "Date Completed"
-    ]
-    _style_header_row(ws_orders, headers_orders)
-    all_orders = (
-        db.query(ClientOrder)
+    order_cols = (
+        db.query(
+            ClientOrder.id, Company.name,
+            Client.first_name, Client.last_name,
+            ClientOrder.order_date, ClientOrder.model,
+            ClientOrder.size, ClientOrder.material, ClientOrder.color, ClientOrder.mold,
+            ClientOrder.heel_size, ClientOrder.heel_type,
+            ClientOrder.has_platform, ClientOrder.has_slingback, ClientOrder.has_buckle,
+            ClientOrder.quantity, ClientOrder.price,
+            ClientOrder.isCompleted, ClientOrder.dateCompleted
+        )
         .join(Client, ClientOrder.client_id == Client.id)
         .join(Company, Client.company_id == Company.id)
         .filter(ClientOrder.isDeleted == False)
         .order_by(ClientOrder.order_date.desc())
         .all()
     )
-    for o in all_orders:
-        client_name = f"{o.client.first_name} {o.client.last_name}"
-        company_name = o.client.company.name
-        order_date = o.order_date.strftime("%Y-%m-%d") if o.order_date else ""
-        date_completed = o.dateCompleted.strftime("%Y-%m-%d") if o.dateCompleted else ""
-        status = "Completed" if o.isCompleted else "Pending"
-        ws_orders.append([
-            o.id, company_name, client_name, order_date,
-            o.model, float(o.size), o.material, o.color, o.mold,
-            o.heel_size, o.heel_type,
-            "Yes" if o.has_platform else "No",
-            "Yes" if o.has_slingback else "No",
-            "Yes" if o.has_buckle else "No",
-            o.quantity, float(o.price), status, date_completed
-        ])
-    _auto_fit_columns(ws_orders)
+    order_rows = [
+        [
+            o_id, co_name, f"{first} {last}",
+            od.strftime("%Y-%m-%d") if od else "",
+            model, float(size), material, color, mold,
+            heel_size, heel_type,
+            "Yes" if platform else "No",
+            "Yes" if slingback else "No",
+            "Yes" if buckle else "No",
+            qty, float(price),
+            "Completed" if completed else "Pending",
+            dc.strftime("%Y-%m-%d") if dc else ""
+        ]
+        for o_id, co_name, first, last, od, model, size, material, color, mold,
+            heel_size, heel_type, platform, slingback, buckle, qty, price, completed, dc
+        in order_cols
+    ]
+    _write_sheet(
+        wb.create_sheet("All Orders"),
+        [
+            "Order ID", "Company", "Client Name", "Order Date",
+            "Model", "Size", "Material", "Color", "Mold",
+            "Heel Size", "Heel Type", "Platform", "Slingback", "Buckle",
+            "Quantity", "Price", "Status", "Date Completed"
+        ],
+        order_rows
+    )
 
     # --- Sheet 4: Payments ---
-    ws_payments = wb.create_sheet("Payments")
-    headers_payments = [
-        "Payment ID", "Order ID", "Company", "Client Name",
-        "Payment #", "Paid Amount", "Payment Date"
-    ]
-    _style_header_row(ws_payments, headers_payments)
-    transactions = (
-        db.query(PaymentTransaction)
+    txn_cols = (
+        db.query(
+            PaymentTransaction.id, ClientOrder.id,
+            Company.name, Client.first_name, Client.last_name,
+            PaymentTransaction.payment_number,
+            PaymentTransaction.paid_amount, PaymentTransaction.payment_date
+        )
         .join(PaymentSummary, PaymentTransaction.payment_summary_id == PaymentSummary.id)
         .join(ClientOrder, PaymentSummary.client_order_id == ClientOrder.id)
         .join(Client, ClientOrder.client_id == Client.id)
@@ -226,50 +277,63 @@ def generate_full_report(db: Session) -> bytes:
         .order_by(PaymentTransaction.payment_date.desc())
         .all()
     )
-    for tx in transactions:
-        order = tx.payment_summary.client_order
-        client = order.client
-        client_name = f"{client.first_name} {client.last_name}"
-        company_name = client.company.name
-        pay_date = tx.payment_date.strftime("%Y-%m-%d") if tx.payment_date else ""
-        ws_payments.append([
-            tx.id, order.id, company_name, client_name,
-            tx.payment_number, float(tx.paid_amount), pay_date
-        ])
-    _auto_fit_columns(ws_payments)
+    txn_rows = [
+        [
+            tx_id, ord_id, co_name, f"{first} {last}",
+            pay_num, float(amount),
+            pd.strftime("%Y-%m-%d") if pd else ""
+        ]
+        for tx_id, ord_id, co_name, first, last, pay_num, amount, pd in txn_cols
+    ]
+    _write_sheet(
+        wb.create_sheet("Payments"),
+        ["Payment ID", "Order ID", "Company", "Client Name", "Payment #", "Paid Amount", "Payment Date"],
+        txn_rows
+    )
 
     # --- Sheet 5: Completed Orders ---
-    ws_completed = wb.create_sheet("Completed Orders")
-    headers_completed = [
-        "Order ID", "Company", "Client Name", "Order Date",
-        "Model", "Size", "Material", "Color", "Mold",
-        "Heel Size", "Heel Type", "Platform", "Slingback", "Buckle",
-        "Quantity", "Price", "Date Completed"
-    ]
-    _style_header_row(ws_completed, headers_completed)
-    completed_orders = (
-        db.query(ClientOrder)
+    completed_cols = (
+        db.query(
+            ClientOrder.id, Company.name,
+            Client.first_name, Client.last_name,
+            ClientOrder.order_date, ClientOrder.model,
+            ClientOrder.size, ClientOrder.material, ClientOrder.color, ClientOrder.mold,
+            ClientOrder.heel_size, ClientOrder.heel_type,
+            ClientOrder.has_platform, ClientOrder.has_slingback, ClientOrder.has_buckle,
+            ClientOrder.quantity, ClientOrder.price, ClientOrder.dateCompleted
+        )
         .join(Client, ClientOrder.client_id == Client.id)
         .join(Company, Client.company_id == Company.id)
         .filter(ClientOrder.isDeleted == False, ClientOrder.isCompleted == True)
         .order_by(ClientOrder.dateCompleted.desc())
         .all()
     )
-    for o in completed_orders:
-        client_name = f"{o.client.first_name} {o.client.last_name}"
-        company_name = o.client.company.name
-        order_date = o.order_date.strftime("%Y-%m-%d") if o.order_date else ""
-        date_completed = o.dateCompleted.strftime("%Y-%m-%d") if o.dateCompleted else ""
-        ws_completed.append([
-            o.id, company_name, client_name, order_date,
-            o.model, float(o.size), o.material, o.color, o.mold,
-            o.heel_size, o.heel_type,
-            "Yes" if o.has_platform else "No",
-            "Yes" if o.has_slingback else "No",
-            "Yes" if o.has_buckle else "No",
-            o.quantity, float(o.price), date_completed
-        ])
-    _auto_fit_columns(ws_completed)
+    completed_rows = [
+        [
+            o_id, co_name, f"{first} {last}",
+            od.strftime("%Y-%m-%d") if od else "",
+            model, float(size), material, color, mold,
+            heel_size, heel_type,
+            "Yes" if platform else "No",
+            "Yes" if slingback else "No",
+            "Yes" if buckle else "No",
+            qty, float(price),
+            dc.strftime("%Y-%m-%d") if dc else ""
+        ]
+        for o_id, co_name, first, last, od, model, size, material, color, mold,
+            heel_size, heel_type, platform, slingback, buckle, qty, price, dc
+        in completed_cols
+    ]
+    _write_sheet(
+        wb.create_sheet("Completed Orders"),
+        [
+            "Order ID", "Company", "Client Name", "Order Date",
+            "Model", "Size", "Material", "Color", "Mold",
+            "Heel Size", "Heel Type", "Platform", "Slingback", "Buckle",
+            "Quantity", "Price", "Date Completed"
+        ],
+        completed_rows
+    )
 
     buffer = io.BytesIO()
     wb.save(buffer)

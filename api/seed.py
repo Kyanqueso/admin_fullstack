@@ -227,45 +227,24 @@ def seed(size: str):
 
                 order_dt = past_datetime(400)
 
-                # Status distribution: 50% active, 30% completed, 20% archived
+                # Archive distribution: ~20% of orders are archived
                 roll = random.random()
-                is_completed = roll > 0.50
-                is_deleted   = (roll <= 0.20)   # ~20 % archived (not completed)
-
-                date_completed = None
-                if is_completed:
-                    offset = timedelta(days=random.randint(14, 120))
-                    dt = order_dt + offset
-                    now = datetime.now(timezone.utc)
-                    date_completed = dt if dt < now else now
-
-                order = ClientOrder(
-                    client_id    = client.id,
-                    order_date   = order_dt,
-                    model        = random.choice(STYLES),
-                    size         = random.choice(SIZES),
-                    material     = random.choice(MATERIALS),
-                    color        = random.choice(COLORS),
-                    mold         = random.choice(MOLD_TYPES),
-                    heel_size    = random.choice(HEEL_SIZES),
-                    heel_type    = random.choice(HEEL_TYPES),
-                    has_platform = random.random() < 0.3,
-                    has_slingback= random.random() < 0.3,
-                    has_buckle   = random.random() < 0.3,
-                    quantity     = qty,
-                    price        = price,
-                    isCompleted  = is_completed,
-                    dateCompleted= date_completed,
-                    isDeleted    = is_deleted,
-                    is_zero_balance = is_completed,   # completed = fully paid
-                )
-                db.add(order)
-                db.flush()
-                order_count += 1
+                is_deleted = (roll <= 0.20)
 
                 # ── Payment amounts ──
-                if is_completed:
-                    # Fully paid — 1 or 2 transactions that sum to total
+                pay_roll = random.random()
+                if pay_roll < 0.30:
+                    # Unpaid
+                    paid = Decimal("0.00")
+                    remaining = total
+                    txn_amounts = []
+                elif pay_roll < 0.60:
+                    # Partial — one payment
+                    paid = two_decimal(total * Decimal(str(round(random.uniform(0.2, 0.8), 2))))
+                    remaining = two_decimal(total - paid)
+                    txn_amounts = [paid]
+                else:
+                    # Fully paid — 1 or 2 transactions
                     paid = total
                     remaining = Decimal("0.00")
                     if random.random() < 0.5:
@@ -273,28 +252,39 @@ def seed(size: str):
                     else:
                         split = two_decimal(total * Decimal(str(round(random.uniform(0.3, 0.7), 2))))
                         txn_amounts = [split, two_decimal(total - split)]
-                else:
-                    pay_roll = random.random()
-                    if pay_roll < 0.30:
-                        # Unpaid
-                        paid = Decimal("0.00")
-                        txn_amounts = []
-                    elif pay_roll < 0.70:
-                        # Partial — one payment
-                        paid = two_decimal(total * Decimal(str(round(random.uniform(0.2, 0.8), 2))))
-                        txn_amounts = [paid]
-                    else:
-                        # Fully paid — 1 or 2 payments
-                        paid = total
-                        if random.random() < 0.5:
-                            txn_amounts = [total]
-                        else:
-                            split = two_decimal(total * Decimal(str(round(random.uniform(0.3, 0.7), 2))))
-                            txn_amounts = [split, two_decimal(total - split)]
-                    remaining = two_decimal(total - paid)
 
-                if is_completed:
-                    remaining = Decimal("0.00")
+                # Completion flags derived from remaining balance, not from roll
+                is_fully_paid = remaining == Decimal("0.00")
+                date_completed = None
+                if is_fully_paid:
+                    offset = timedelta(days=random.randint(7, 90))
+                    dt = order_dt + offset
+                    now = datetime.now(timezone.utc)
+                    date_completed = dt if dt < now else now
+
+                order = ClientOrder(
+                    client_id       = client.id,
+                    order_date      = order_dt,
+                    model           = random.choice(STYLES),
+                    size            = random.choice(SIZES),
+                    material        = random.choice(MATERIALS),
+                    color           = random.choice(COLORS),
+                    mold            = random.choice(MOLD_TYPES),
+                    heel_size       = random.choice(HEEL_SIZES),
+                    heel_type       = random.choice(HEEL_TYPES),
+                    has_platform    = random.random() < 0.3,
+                    has_slingback   = random.random() < 0.3,
+                    has_buckle      = random.random() < 0.3,
+                    quantity        = qty,
+                    price           = price,
+                    isCompleted     = is_fully_paid,
+                    dateCompleted   = date_completed,
+                    isDeleted       = is_deleted,
+                    is_zero_balance = is_fully_paid,
+                )
+                db.add(order)
+                db.flush()
+                order_count += 1
 
                 summary = PaymentSummary(
                     client_order_id  = order.id,

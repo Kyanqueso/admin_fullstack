@@ -348,7 +348,7 @@ function renderUncollectedTable(data) {
     const tbody = document.getElementById('uncollected-table-body');
 
     if (!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">No uncollected balances found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted">No uncollected balances found.</td></tr>';
         return;
     }
 
@@ -358,7 +358,9 @@ function renderUncollectedTable(data) {
             <td>${escapeHtml(item.name)}</td>
             <td>${escapeHtml(item.contact_number)}</td>
             <td>${new Date(item.order_date).toLocaleDateString('en-PH')}</td>
+            <td>${item.quantity}</td>
             <td>${formatCurrencyToPhp(item.price)}</td>
+            <td>${formatCurrencyToPhp(item.quantity * item.price)}</td>
             <td>${formatCurrencyToPhp(item.first_pay)}</td>
             <td>${formatCurrencyToPhp(item.second_pay)}</td>
             <td>${formatCurrencyToPhp(item.third_pay)}</td>

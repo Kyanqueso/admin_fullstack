@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.db.models import Company
+from app.db.models import Company, Client, Person, ClientOrder, PaymentSummary, PaymentTransaction
 from app.schemas.company import CompanyCreate, CompanyUpdate
 
 
@@ -96,14 +96,38 @@ def restore_company(db: Session, company_id: int):
     if conflict:
         raise ValueError("An active company with this name already exists")
 
-    for client in company.clients:
-        for order in client.client_orders:
-            if order.payment_summary:
-                for tx in order.payment_summary.payment_transactions:
-                    tx.isDeleted = False
-                order.payment_summary.isDeleted = False
-            order.isDeleted = False
-        client.isDeleted = False
+    client_ids = [
+        r for (r,) in db.query(Client.id).filter(Client.company_id == company_id).all()
+    ]
+
+    if client_ids:
+        order_ids = [
+            r for (r,) in db.query(ClientOrder.id)
+            .filter(ClientOrder.client_id.in_(client_ids)).all()
+        ]
+
+        if order_ids:
+            summary_ids = [
+                r for (r,) in db.query(PaymentSummary.id)
+                .filter(PaymentSummary.client_order_id.in_(order_ids)).all()
+            ]
+
+            if summary_ids:
+                db.query(PaymentTransaction).filter(
+                    PaymentTransaction.payment_summary_id.in_(summary_ids)
+                ).update({"isDeleted": False}, synchronize_session=False)
+
+            db.query(PaymentSummary).filter(
+                PaymentSummary.client_order_id.in_(order_ids)
+            ).update({"isDeleted": False}, synchronize_session=False)
+
+            db.query(ClientOrder).filter(
+                ClientOrder.client_id.in_(client_ids)
+            ).update({"isDeleted": False}, synchronize_session=False)
+
+        db.query(Person).filter(
+            Person.id.in_(client_ids)
+        ).update({"isDeleted": False}, synchronize_session=False)
 
     company.isDeleted = False
     db.commit()
@@ -145,14 +169,40 @@ def delete_company(db: Session, company_id: int):
     if not company:
         return None
 
-    for client in company.clients:
-        for order in client.client_orders:
-            if order.payment_summary:
-                for tx in order.payment_summary.payment_transactions:
-                    tx.isDeleted = True
-                order.payment_summary.isDeleted = True
-            order.isDeleted = True
-        client.isDeleted = True
+    # Collect IDs in bulk — one query per level, no ORM object loading
+    client_ids = [
+        r for (r,) in db.query(Client.id).filter(Client.company_id == company_id).all()
+    ]
+
+    if client_ids:
+        order_ids = [
+            r for (r,) in db.query(ClientOrder.id)
+            .filter(ClientOrder.client_id.in_(client_ids)).all()
+        ]
+
+        if order_ids:
+            summary_ids = [
+                r for (r,) in db.query(PaymentSummary.id)
+                .filter(PaymentSummary.client_order_id.in_(order_ids)).all()
+            ]
+
+            if summary_ids:
+                db.query(PaymentTransaction).filter(
+                    PaymentTransaction.payment_summary_id.in_(summary_ids)
+                ).update({"isDeleted": True}, synchronize_session=False)
+
+            db.query(PaymentSummary).filter(
+                PaymentSummary.client_order_id.in_(order_ids)
+            ).update({"isDeleted": True}, synchronize_session=False)
+
+            db.query(ClientOrder).filter(
+                ClientOrder.client_id.in_(client_ids)
+            ).update({"isDeleted": True}, synchronize_session=False)
+
+        # isDeleted lives on persons table (joined-table inheritance)
+        db.query(Person).filter(
+            Person.id.in_(client_ids)
+        ).update({"isDeleted": True}, synchronize_session=False)
 
     company.isDeleted = True
     db.commit()
