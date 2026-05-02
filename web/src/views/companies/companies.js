@@ -15,7 +15,7 @@ document.getElementById('logout-overlay-close').addEventListener('click', () => 
 document.getElementById('logout-no').addEventListener('click', () => logoutOverlay.classList.add('d-none'));
 document.getElementById('logout-yes').addEventListener('click', () => {
   localStorage.clear();
-  window.location.href = "/403.html";
+  window.location.href = "/src/views/auth/index.html";
 });
 
 console.log("Companies API URL:", FAST_API_URL);
