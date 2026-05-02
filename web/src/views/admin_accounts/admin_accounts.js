@@ -23,7 +23,7 @@ function getAuthHeaders() {
     const token = localStorage.getItem('access_token');
     if (!token || token === 'null' || token === 'undefined') {
         localStorage.removeItem('access_token');
-        window.location.href = '../auth/index.html';
+        window.location.href = '/403.html';
         throw new Error('Missing access token');
     }
     return { 'Authorization': `Bearer ${token}` };
@@ -34,7 +34,7 @@ async function apiFetch(url, options = {}) {
     const response = await fetch(url, { ...options, headers });
     if (response.status === 401 || response.status === 403) {
         localStorage.removeItem('access_token');
-        window.location.href = '../auth/index.html';
+        window.location.href = '/403.html';
         throw new Error('Unauthorized');
     }
     return response;
@@ -410,7 +410,7 @@ document.getElementById('logout-overlay-close').addEventListener('click', () => 
 document.getElementById('logout-no').addEventListener('click', () => logoutOverlay.classList.add('d-none'));
 document.getElementById('logout-yes').addEventListener('click', () => {
     localStorage.clear();
-    window.location.href = '../auth/index.html';
+    window.location.href = '/403.html';
 });
 
 /* ===============================

@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 from supabase import create_client, Client
 
 # Load environment variables
@@ -27,12 +28,13 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # Service-role client — required for auth admin operations (list/create/delete users)
 supabase_admin: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-# Create the engine
+# NullPool: each request opens/closes its own connection.
+# Required for Lambda — multiple containers each holding a SQLAlchemy pool
+# would exhaust Supabase's Postgres connection limit.
+# DATABASE_URL must point to Supabase's Transaction Mode pooler (port 6543, not 5432).
 engine = create_engine(
     DATABASE_URL,
-    pool_pre_ping=True,  # Good for handling dropped connections
-    pool_size=10,  
-    max_overflow=20
+    poolclass=NullPool,
 )
 
 SessionLocal = sessionmaker(

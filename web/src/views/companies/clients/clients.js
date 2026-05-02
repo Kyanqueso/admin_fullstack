@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!token || token === "null" || token === "undefined") {
       localStorage.removeItem("access_token");
-      window.location.href = "../auth/index.html";
+      window.location.href = "/403.html";
       throw new Error("Missing access token");
     }
 
@@ -45,7 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // AUTH ERROR
     if (response.status === 401 || response.status === 403) {
       localStorage.removeItem("access_token");
-      window.location.href = "../auth/index.html";
+      window.location.href = "/403.html";
       throw new Error("Unauthorized");
     }
 

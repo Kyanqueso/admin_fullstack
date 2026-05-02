@@ -22,7 +22,7 @@ EMOJI_PATTERN = re.compile(
 
 # Allowed materials and heel/mold types — must match dropdown options
 VALID_MATERIALS = {"Helga", "Tanya", "Snake", "Patent"}
-VALID_HEEL_TYPES = {"Cuban", "Putol", "Wedge", "Cone", "Contessa"}
+VALID_HEEL_TYPES = {"Cone", "Cuban", "Flat", "Pointed", "Rounded", "Squared", "Wedge", "Contessa"}
 VALID_MOLD_TYPES = {"None", "Ferage", "Milani", "Liz", "Square"}
 VALID_HEEL_SIZES = {f"h{i}" for i in range(1, 11)}
 

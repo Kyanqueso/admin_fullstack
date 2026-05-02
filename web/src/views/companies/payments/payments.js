@@ -42,7 +42,7 @@ function getAccessToken() {
   const token = localStorage.getItem("access_token");
   if (!token || token === "null" || token === "undefined") {
     localStorage.removeItem("access_token");
-    window.location.href = "../../auth/index.html";
+    window.location.href = "/403.html";
     throw new Error("Missing access token");
   }
   return token;
@@ -61,7 +61,7 @@ async function apiFetch(url, options = {}) {
 
   if (response.status === 401 || response.status === 403) {
     localStorage.removeItem("access_token");
-    window.location.href = "../../auth/index.html";
+    window.location.href = "/403.html";
     throw new Error("Unauthorized");
   }
 

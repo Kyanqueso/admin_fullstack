@@ -3,7 +3,7 @@ import { resolve } from 'path';
 
 export default defineConfig({
 
-  base: './', 
+  base: '/',
 
   build: {
     // Clear the dist folder before every build 

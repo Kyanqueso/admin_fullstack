@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const token = localStorage.getItem("access_token");
     if (!token || token === "null" || token === "undefined") {
       localStorage.removeItem("access_token");
-      window.location.href = "../../auth/index.html";
+      window.location.href = "/403.html";
       throw new Error("Missing access token");
     }
     return token;
@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (response.status === 401 || response.status === 403) {
       localStorage.removeItem("access_token");
-      window.location.href = "../../auth/index.html";
+      window.location.href = "/403.html";
       throw new Error("Unauthorized");
     }
 

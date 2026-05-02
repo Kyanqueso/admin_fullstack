@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from app.config.database import engine
@@ -22,13 +23,18 @@ app = FastAPI(
     version="2.0.0"
 )
 
-origins = [
+_default_origins = [
     "http://localhost",
     "http://localhost:5173",
     "http://localhost:3000",
     "http://127.0.0.1:5173",
     "http://127.0.0.1:3000",
 ]
+
+# ALLOWED_ORIGINS env var: comma-separated list of extra origins (e.g. your Vercel URL).
+# Example: ALLOWED_ORIGINS=https://theresa-shoes.vercel.app
+_extra = os.getenv("ALLOWED_ORIGINS", "")
+origins = _default_origins + [o.strip() for o in _extra.split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,

@@ -53,7 +53,7 @@ async function fetchAnalytics() {
         });
 
         if (response.status === 401 || response.status === 403) {
-             window.location.href = "../auth/index.html";
+             window.location.href = "/403.html";
              return;
         }
 
@@ -92,7 +92,7 @@ async function fetchAnnualBreakdown(year = null) {
         if (!response.ok) {
             if (response.status === 401 || response.status === 403) {
                 console.error("Auth failed for annual breakdown");
-                window.location.href = "../auth/index.html";
+                window.location.href = "/403.html";
             }
             throw new Error('Failed to fetch annual breakdown data');
         }
@@ -123,7 +123,7 @@ async function fetchUncollectedBalances() {
         });
 
         if (response.status === 401 || response.status === 403) {
-            window.location.href = "../auth/index.html";
+            window.location.href = "/403.html";
             return;
         }
 
@@ -323,7 +323,7 @@ document.getElementById('logout-overlay-close').addEventListener('click', () => 
 document.getElementById('logout-no').addEventListener('click', () => logoutOverlay.classList.add('d-none'));
 document.getElementById('logout-yes').addEventListener('click', () => {
     localStorage.clear();
-    window.location.href = "../auth/index.html";
+    window.location.href = "/403.html";
 });
 
 // Uncollected Balance Popup Overlay
@@ -410,7 +410,7 @@ document.getElementById('download-report-btn').addEventListener('click', async (
         });
 
         if (response.status === 401 || response.status === 403) {
-            window.location.href = "../auth/index.html";
+            window.location.href = "/403.html";
             return;
         }
 
