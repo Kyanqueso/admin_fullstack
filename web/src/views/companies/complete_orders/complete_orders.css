@@ -1,0 +1,144 @@
+.table-header th {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+/*default tab color */
+.client-tabs .tab-btn {
+  background-color: var(--color-accent);
+  color: #000;
+  border: 1px solid #ccc;
+}
+
+/* when Selected tab */
+.client-tabs .tab-btn.active {
+  background-color: var(--color-primary);
+  color: beige;
+  border-color: var(--color-primary);
+}
+
+/* ADDED: Overlay styles (mirrors payments.css overlay) */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  animation: overlayFadeIn 0.2s ease;
+}
+
+.overlay-content {
+  background-color: var(--color-accent);
+  border-radius: 16px;
+  max-width: 480px;
+  width: 95%;
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.28),
+    0 8px 16px rgba(0, 0, 0, 0.16);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  animation: overlaySlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.overlay-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.overlay-close:hover {
+  cursor: pointer;
+}
+
+/* ADDED: Customer info summary box */
+.transaction-summary {
+  background: #fff;
+  border: 1px solid #000;
+  border-radius: 6px;
+  padding: 14px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  text-align: left;
+}
+
+.transaction-summary strong {
+  font-weight: 600;
+}
+
+.transaction-summary .balance {
+  color: #0a8f3c;
+}
+
+/* ADDED: Transaction table header */
+.transaction-table thead th {
+  background-color: var(--color-primary);
+  color: #fff;
+  text-align: center;
+  border: none;
+}
+
+.transaction-table tbody td {
+  text-align: center;
+  border: 1px solid #ddd;
+}
+
+/* ADDED: Close button */
+.transaction-close-btn {
+  background-color: var(--color-primary);
+  color: #fff;
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.transaction-close-btn:hover,
+.transaction-close-btn:focus,
+.transaction-close-btn:active {
+  background-color: var(--color-primary) !important;
+  border-color: transparent !important;
+  filter: none !important;
+  cursor: pointer;
+}
+
+/* ADDED: Overlay animation */
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes overlaySlideUp {
+  from { transform: translateY(24px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.table-header th {
+  background-color: #6b1d2c; /* your red */
+  color: white;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Fix last column alignment */
+.action-col {
+  width: 50px;
+  text-align: center;
+}
+
+/* ADDED: Utility */
+.d-none {
+  display: none !important;
+}

@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="../../../assets/bootstrap/bootstrap.min.css">
+    <link rel="stylesheet" href="../../../css/global.css">
+    <link rel="stylesheet" href="orders.css">
+
+    <title>Orders</title>
+</head>
+
+<body class="px-4">
+
+    <div class="client-tabs-bar">
+        <div class="client-tabs-inner">
+            <a href="../companies.html" class="client-tab-back">
+                <img src="../../../assets/icons/back-btn.svg" alt="Back" width="14" height="14">
+                Back
+            </a>
+            <div class="client-tab-links">
+                <a href="../clients/clients.html" class="client-tab-link">Client List</a>
+                <a href="../orders/orders.html" class="client-tab-link active">Current Orders</a>
+                <a href="../payments/payments.html" class="client-tab-link">Payments</a>
+                <a href="../complete_orders/complete_orders.html" class="client-tab-link">Completed Orders</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page Title -->
+    <h2 class="mb-5 mt-2" id="companyTitle">Client Order List</h2>
+
+    <!-- Search / Sort / Tabs / Add -->
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+        <div class="input-group" style="max-width: 320px;">
+            <span class="input-group-text"><img src="../../../assets/icons/search.svg" alt="search" width="20" height="20"></span>
+            <input type="text" class="form-control" placeholder="Search name" id="searchOrders">
+        </div>
+        <select class="form-select" style="max-width: 160px;" id="sortOrders">
+            <option value="az" selected>A–Z (Client)</option>
+            <option value="za">Z–A (Client)</option>
+            <option value="recent">Recently Added</option>
+            <option value="oldest">Oldest First</option>
+            <option value="newest-date">Newest Order Date</option>
+            <option value="oldest-date">Oldest Order Date</option>
+        </select>
+        <div class="d-flex gap-2">
+            <button class="btn btn-dark btn-sm" id="activeTabBtn">Active</button>
+            <button class="btn btn-outline-secondary btn-sm" id="archiveTabBtn">Archive</button>
+        </div>
+        <button class="btn btn-outline-dark add-order-btn ms-auto" id="openOverlay">
+            + Add New Order
+        </button>
+    </div>
+
+
+
+    <!-- Table -->
+    <div class="table-responsive">
+        <table class="table align-middle text-center">
+            <thead class="table-header">
+                <tr>
+                    <th>Order ID</th>
+                    <th>Client Name</th>
+                    <th>Order Date</th>
+                    <th>Style</th>
+                    <th>Size</th>
+                    <th>Material</th>
+                    <th>Color</th>
+                    <th>Heel Type</th>
+                    <th>Heel Height</th>
+                    <th>Mold Type</th>
+                    <th>Buckle</th>
+                    <th>Slingback</th>
+                    <th>Flatform</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Total</th>
+                    <th>Edit</th>
+                    <th>Archive</th>
+                </tr>
+            </thead>
+
+            <tbody id="ordersTableBody">
+            </tbody>
+        </table>
+    </div>
+    <div id="pagination-container"></div>
+
+    <!-- JS -->
+    <script type="module" src="orders.js"></script>
+    <script src="../../../assets/bootstrap/bootstrap.bundle.min.js"></script>
+
+    <!-- Add Order Overlay -->
+    <div class="overlay d-none" id="addOrderOverlay">
+
+        <div class="overlay-content p-4">
+
+            <button class="overlay-close" id="closeAddOrder">✕</button>
+
+            <h5 class="mb-3">Add New Order</h5>
+
+            <form class="w-100" id="addOrderForm">
+
+                <!-- Customer (searchable) -->
+                <div class="mb-3 position-relative">
+                    <label class="form-label">Customer Name</label>
+                    <input type="text" class="form-control" id="addCustomerSearch"
+                        placeholder="Type to search customer..." autocomplete="off">
+                    <div id="addCustomerDropdown"
+                        style="display:none;position:absolute;z-index:1050;background:#fff;border:1px solid #dee2e6;border-radius:6px;max-height:180px;overflow-y:auto;width:100%;box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+                    </div>
+                    <input type="hidden" id="addCustomerId">
+                </div>
+
+                <!-- Style / Size / Material / Color -->
+                <div class="row gx-2 gy-3 mb-3">
+                    <div class="col-6 col-md-3">
+                        <label class="form-label">Style</label>
+                        <input class="form-control" placeholder="Enter Style" id="addStyle" maxlength="50">
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label">Size</label>
+                        <input class="form-control" placeholder="Enter Size" id="addSize">
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label">Material</label>
+                        <select class="form-select" id="addMaterial">
+                            <option value="" selected disabled hidden>Select Material</option>
+                            <option>Helga</option>
+                            <option>Tanya</option>
+                            <option>Snake</option>
+                            <option>Patent</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label">Color</label>
+                        <input class="form-control" placeholder="Enter Color Code" id="addColor" maxlength="32">
+                    </div>
+                </div>
+
+                <!-- Heel -->
+                <div class="row gx-2 gy-3 mb-3">
+                    <div class="col-4">
+                        <label class="form-label">Heel Type</label>
+                        <select class="form-select" id="addHeelType">
+                            <option value="" selected disabled hidden>Select Heel</option>
+                            <option>Cone</option>
+                            <option>Cuban</option>
+                            <option>Flat</option>
+                            <option>Pointed</option>
+                            <option>Rounded</option>
+                            <option>Squared</option>
+                            <option>Wedge</option>
+                            <option>Contessa</option>
+                        </select>
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label">Heel Height</label>
+                        <select class="form-select" id="addHeelSize">
+                        <option value="" selected disabled hidden>Select Heel Height</option>
+                        <option>h1</option>
+                        <option>h2</option>
+                        <option>h3</option>
+                        <option>h4</option>
+                        <option>h5</option>
+                        <option>h6</option>
+                        <option>h7</option>
+                        <option>h8</option>
+                        <option>h9</option>
+                        <option>h10</option>
+                        </select>
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label">Mold Type</label>
+                        <select class="form-select" id="addMoldType">
+                            <option value="" selected disabled hidden>Select Mold</option>
+                            <option>None</option>
+                            <option>Ferage</option>
+                            <option>Milani</option>
+                            <option>Liz</option>
+                            <option>Square</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Options -->
+                <div class="row mb-3">
+                    <div class="col options-group">
+                        <label class="form-label d-block">Buckle</label>
+                        <div class="option-radios">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="addBuckle" value="true">
+                                <label class="form-check-label">Yes</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="addBuckle" value="false" checked>
+                                <label class="form-check-label">No</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col options-group">
+                        <label class="form-label d-block">Sling Back</label>
+                        <div class="option-radios">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="addSling" value="true">
+                                <label class="form-check-label">Yes</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="addSling" value="false" checked>
+                                <label class="form-check-label">No</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col options-group">
+                        <label class="form-label d-block">Flatform</label>
+                        <div class="option-radios">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="addPlatform" value="true">
+                                <label class="form-check-label">Yes</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="addPlatform" value="false" checked>
+                                <label class="form-check-label">No</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quantity / Price -->
+                <div class="row gx-2 mb-4">
+                    <div class="col-6">
+                        <label class="form-label">Quantity</label>
+                        <input class="form-control" value="1" id="addQuantity">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Price</label>
+                        <input class="form-control" placeholder="Enter Price" id="addPrice">
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="d-flex gap-3 mt-3">
+                    <button type="button" class="btn btn-danger w-50" id="cancelAddOrder">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-green w-50">
+                        Confirm
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+    <!-- EDIT ORDER OVERLAY -->
+    <div class="overlay d-none" id="editOrderOverlay">
+        <div class="overlay-content p-4">
+
+            <button class="overlay-close" id="closeEditOrder">✕</button>
+            <h5 class="mb-3">Edit Existing Order</h5>
+
+            <form class="w-100" id="editOrderForm">
+
+                <!-- Customer (DISABLED – Option A) -->
+                <div class="mb-3">
+                    <label class="form-label">Customer Name</label>
+                    <select class="form-select" required id="editCustomerId" disabled>
+                        <option value="" selected disabled hidden>Select Customer</option>
+                    </select>
+                </div>
+
+                <!-- Model / Size / Material / Color -->
+                <div class="row gx-2 gy-3 mb-3">
+                    <div class="col-6 col-md-3">
+                        <label class="form-label">Style</label>
+                        <input class="form-control" id="editModel" maxlength="50">
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label">Size</label>
+                        <input class="form-control" id="editSize">
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label">Material</label>
+                        <select class="form-select" id="editMaterial">
+                            <option value="" selected disabled hidden>Select Material</option>
+                            <option value="Helga">Helga</option>
+                            <option value="Tanya">Tanya</option>
+                            <option value="Snake">Snake</option>
+                            <option value="Patent">Patent</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label">Color</label>
+                        <input class="form-control" id="editColor" maxlength="32">
+                    </div>
+                </div>
+
+                <!-- Heel Section -->
+                <div class="row gx-2 gy-3 mb-3">
+                    <div class="col-4">
+                        <label class="form-label">Heel Type</label>
+                        <select class="form-select" id="editHeelType">
+                            <option value="" selected disabled hidden>Select Heel</option>
+                            <option value="Cone">Cone</option>
+                            <option value="Cuban">Cuban</option>
+                            <option value="Flat">Flat</option>
+                            <option value="Pointed">Pointed</option>
+                            <option value="Rounded">Rounded</option>
+                            <option value="Squared">Squared</option>
+                            <option value="Wedge">Wedge</option>
+                            <option value="Contessa">Contessa</option>
+                        </select>
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label">Heel Height</label>
+                        <select class="form-select" id="editHeelSize">
+                        <option value="" selected disabled hidden>Select Heel Height</option>
+                        <option value="h1">h1</option>
+                        <option value="h2">h2</option>
+                        <option value="h3">h3</option>
+                        <option value="h4">h4</option>
+                        <option value="h5">h5</option>
+                        <option value="h6">h6</option>
+                        <option value="h7">h7</option>
+                        <option value="h8">h8</option>
+                        <option value="h9">h9</option>
+                        <option value="h10">h10</option>
+                        </select>
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label">Mold Type</label>
+                        <select class="form-select" id="editMold">
+                            <option value="" selected disabled hidden>Select Mold</option>
+                            <option value="None">None</option>
+                            <option value="Ferage">Ferage</option>
+                            <option value="Milani">Milani</option>
+                            <option value="Liz">Liz</option>
+                            <option value="Square">Square</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- OPTIONS -->
+                <div class="row mb-4">
+
+                    <!-- Buckle -->
+                    <div class="col options-group">
+                        <label class="form-label d-block">Buckle</label>
+                        <div class="option-radios">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="editBuckle" value="true">
+                                <label class="form-check-label">Yes</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="editBuckle" value="false">
+                                <label class="form-check-label">No</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sling Back -->
+                    <div class="col options-group">
+                        <label class="form-label d-block">Sling Back</label>
+                        <div class="option-radios">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="editSlingback" value="true">
+                                <label class="form-check-label">Yes</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="editSlingback" value="false">
+                                <label class="form-check-label">No</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Flatform -->
+                    <div class="col options-group">
+                        <label class="form-label d-block">Flatform</label>
+                        <div class="option-radios">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="editPlatform" value="true">
+                                <label class="form-check-label">Yes</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="editPlatform" value="false">
+                                <label class="form-check-label">No</label>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- Quantity / Price -->
+                <div class="row gx-2 mb-4">
+                    <div class="col-6">
+                        <label class="form-label">Quantity</label>
+                        <input class="form-control" id="editQuantity">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Price</label>
+                        <input class="form-control" id="editPrice">
+                    </div>
+                </div>
+                <!-- BUTTONS -->
+                <div class="d-flex gap-3">
+                    <button type="button" class="btn btn-danger w-50" id="cancelEditOrder">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-green w-50">
+                        Update
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Order Overlay -->
+    <div class="overlay d-none" id="deleteOrderOverlay">
+
+        <div class="overlay-content p-4 text-center">
+
+            <button class="overlay-close" id="closeDeleteOrder">✕</button>
+
+            <h5 class="mb-4">Are you sure you want to archive this order?</h5>
+
+            <div class="d-flex justify-content-center gap-3">
+                <button type="button" class="btn btn-danger" id="cancelDeleteOrder">
+                    No
+                </button>
+                <button type="button" class="btn btn-green" id="confirmDeleteOrder">
+                    Yes
+                </button>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Restore Order Overlay -->
+    <div class="overlay d-none" id="restoreOrderOverlay">
+        <div class="overlay-content p-4 text-center" style="max-width: 320px;">
+            <button class="overlay-close" id="closeRestoreOrder">✕</button>
+            <h5 class="mb-4">Restore this order?</h5>
+            <div id="restoreOrderError" class="alert alert-danger d-none mb-3 py-2 px-3" role="alert"></div>
+            <div class="d-flex justify-content-center gap-3">
+                <button type="button" class="btn btn-danger px-4" id="cancelRestoreOrder">No</button>
+                <button type="button" class="btn btn-green px-4" id="confirmRestoreOrder">Yes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Refresh Warning Overlay -->
+    <div id="refresh-warning-overlay" class="overlay d-none">
+        <div class="overlay-content p-4 position-relative">
+            <h5 class="mb-2 text-center fw-bold">Unsaved Changes</h5>
+            <p class="text-center text-muted mb-4">You have unsaved changes. Refresh anyway?<br>Your progress will be lost.</p>
+            <div class="d-flex justify-content-center gap-3">
+                <button id="refresh-stay" class="btn btn-secondary px-4">Stay</button>
+                <button id="refresh-leave" class="btn btn-danger px-4">Refresh</button>
+            </div>
+        </div>
+    </div>
+
+
+</body>
+
+</html>

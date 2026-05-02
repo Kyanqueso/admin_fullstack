@@ -18,11 +18,12 @@ __pycache__/
 *.pyd
 .pytest_cache/
 
-# Firebase service account key
-serviceAccountKey.json
-
 # Node modules
 node_modules/
 
 # IDE files
 .idea/
+
+/.github
+
+/web/dist

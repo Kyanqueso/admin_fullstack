@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="../../css/global.css">
+  <link rel="stylesheet" href="companies.css">
+  <link rel="stylesheet" href="../../assets/bootstrap/bootstrap.min.css">
+
+  <title>Companies</title>
+</head>
+
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <span class="header-brand">Theresa Shoes</span>
+      <nav class="header-nav">
+        <a class="header-nav-link" href="../analytics/analytics.html">Analytics</a>
+        <a class="header-nav-link active">Clients</a>
+        <a class="header-nav-link" href="../web_content/web_content.html">Website Content</a>
+        <a class="header-nav-link" href="../admin_accounts/admin_accounts.html">Admin Accounts</a>
+      </nav>
+      <button id="logout-btn" class="header-logout">Logout</button>
+    </div>
+  </header>
+
+  <main class="container py-4 mt-5">
+
+    <h1 class="fw-bold mb-3">Companies</h1>
+
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+      <div class="input-group" style="max-width: 320px;">
+        <span class="input-group-text">
+          <img src="../../assets/icons/search.svg" width="20">
+        </span>
+        <input type="text" id="searchInput" class="form-control" placeholder="Search companies">
+      </div>
+      <select id="sortSelect" class="form-select" style="max-width: 160px;">
+        <option value="az" selected>A–Z (Name)</option>
+        <option value="za">Z–A (Name)</option>
+        <option value="recent">Recently Added</option>
+        <option value="oldest">Oldest First</option>
+      </select>
+      <div class="d-flex gap-2">
+        <button class="btn btn-dark btn-sm" id="activeTabBtn">Active</button>
+        <button class="btn btn-outline-secondary btn-sm" id="archiveTabBtn">Archive</button>
+      </div>
+    </div>
+
+    <!-- LOADING -->
+    <div id="dashboard-loader" class="d-flex flex-column align-items-center justify-content-center"
+      style="min-height: 50vh;">
+      <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mt-2 text-muted fw-bold">Loading Companies...</p>
+    </div>
+
+    <!-- GRID -->
+    <div id="companyGrid" class="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-3"></div>
+    <div id="pagination-container"></div>
+
+  </main>
+
+  <!-- ================= OVERLAYS ================= -->
+
+  <!-- ADD COMPANY -->
+  <div class="overlay d-none" id="addCompanyOverlay">
+    <div class="overlay-content p-4">
+      <button class="overlay-close" id="closeAddCompany">✕</button>
+
+      <h5 class="mb-3">Add New Company</h5>
+
+      <form id="addCompanyForm" novalidate>
+        <div class="mb-3">
+          <label class="form-label">Company Name</label>
+          <input type="text" class="form-control" id="addCompanyName" required maxlength="50">
+        </div>
+
+        <div class="d-flex gap-3">
+          <button type="button" class="btn btn-danger w-50" id="cancelAddCompany">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-green w-50">
+            Confirm
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- EDIT COMPANY -->
+  <div class="overlay d-none" id="editCompanyOverlay">
+    <div class="overlay-content p-4">
+      <button class="overlay-close" id="closeEditCompany">✕</button>
+
+      <h4 class="mb-4">Edit Existing Company</h4>
+
+      <form id="editCompanyForm" novalidate>
+        <div class="mb-3">
+          <label class="form-label">Company Name</label>
+          <input type="text" class="form-control" id="editCompanyName" required maxlength="50">
+        </div>
+
+        <div class="d-flex gap-3">
+          <button type="button" class="btn btn-danger w-50" id="cancelEditCompany">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-green w-50">
+            Update
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DELETE COMPANY -->
+  <div class="overlay d-none" id="deleteCompanyOverlay">
+    <div class="overlay-content p-4 text-center">
+      <button class="overlay-close" id="closeDeleteCompany">✕</button>
+
+      <h5 class="mb-4">
+        Are you sure you want to<br>
+        archive this company?
+      </h5>
+
+      <div id="deleteCompanyError" class="alert alert-danger d-none mb-3 py-2 px-3" role="alert"></div>
+
+      <div class="d-flex gap-3 justify-content-center">
+        <button class="btn btn-danger px-4" id="cancelDeleteCompany">
+          No
+        </button>
+        <button class="btn btn-green px-4" id="confirmDeleteCompany">
+          Yes
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Logout Confirmation Overlay -->
+  <div id="logout-overlay" class="overlay d-none">
+    <div class="overlay-content p-4 position-relative">
+      <button id="logout-overlay-close" class="overlay-close btn p-3 position-absolute top-0 end-0">
+        <img src="../../assets/icons/x-solid.svg" alt="Close" width="24" height="24">
+      </button>
+      <h5 class="mb-4 text-center">Do you want to log out?</h5>
+      <div class="d-flex justify-content-center gap-3">
+        <button id="logout-no" class="btn btn-secondary px-4">No</button>
+        <button id="logout-yes" class="btn btn-danger px-4">Yes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DELETE COMPANY — add error area -->
+  <!-- (error div injected dynamically by JS) -->
+
+  <!-- RESTORE COMPANY -->
+  <div class="overlay d-none" id="restoreCompanyOverlay">
+    <div class="overlay-content p-4 text-center" style="max-width: 320px;">
+      <button class="overlay-close" id="closeRestoreCompany">✕</button>
+      <h5 class="mb-4">Restore this company?</h5>
+      <div id="restoreCompanyError" class="alert alert-danger d-none mb-3 py-2 px-3" role="alert"></div>
+      <div class="d-flex justify-content-center gap-3">
+        <button class="btn btn-danger px-4" id="cancelRestoreCompany">No</button>
+        <button class="btn btn-green px-4" id="confirmRestoreCompany">Yes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Refresh Warning Overlay -->
+  <div id="refresh-warning-overlay" class="overlay d-none">
+    <div class="overlay-content p-4 position-relative">
+      <h5 class="mb-2 text-center fw-bold">Unsaved Changes</h5>
+      <p class="text-center text-muted mb-4">You have unsaved changes. Refresh anyway?<br>Your progress will be lost.</p>
+      <div class="d-flex justify-content-center gap-3">
+        <button id="refresh-stay" class="btn btn-secondary px-4">Stay</button>
+        <button id="refresh-leave" class="btn btn-danger px-4">Refresh</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="companies.js"></script>
+  <script src="../../assets/bootstrap/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>

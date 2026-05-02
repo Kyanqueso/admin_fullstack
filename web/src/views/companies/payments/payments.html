@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Import CSS Files and Local Bootstrap-->
+    <link rel="stylesheet" href="../../../assets/bootstrap/bootstrap.min.css">
+    <link rel="stylesheet" href="../../../css/global.css">
+    <link rel="stylesheet" href="payments.css">
+
+    <title>Client Payment List</title>
+</head>
+
+<body class="px-4">
+
+    <div class="client-tabs-bar">
+        <div class="client-tabs-inner">
+            <a href="../companies.html" class="client-tab-back">
+                <img src="../../../assets/icons/back-btn.svg" alt="Back" width="14" height="14">
+                Back
+            </a>
+            <div class="client-tab-links">
+                <a href="../clients/clients.html" class="client-tab-link">Client List</a>
+                <a href="../orders/orders.html" class="client-tab-link">Current Orders</a>
+                <a href="../payments/payments.html" class="client-tab-link active">Payments</a>
+                <a href="../complete_orders/complete_orders.html" class="client-tab-link">Completed Orders</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page Title -->
+    <h2 class="mb-5 mt-2" id="companyTitle">Client Payment List</h2>
+
+    <!-- Search / Sort / Tabs -->
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+        <div class="input-group" style="max-width: 320px;">
+            <span class="input-group-text">
+                <img src="../../../assets/icons/search.svg" width="20">
+            </span>
+            <input type="text" class="form-control" placeholder="Search name">
+        </div>
+        <select class="form-select" style="max-width: 160px;">
+            <option value="az" selected>A–Z (Client)</option>
+            <option value="za">Z–A (Client)</option>
+            <option value="recent">Recently Added</option>
+            <option value="oldest">Oldest First</option>
+            <option value="newest-date">Newest Order Date</option>
+            <option value="oldest-date">Oldest Order Date</option>
+        </select>
+        <div class="d-flex gap-2">
+            <button class="btn btn-dark btn-sm" id="activeTabBtn">Active</button>
+            <button class="btn btn-outline-secondary btn-sm" id="archiveTabBtn">Archive</button>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-responsive">
+        <table class="table align-middle text-center">
+
+            <thead class="table-header">
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Total Amount</th>
+                    <th>Date of Order</th>
+                    <th>Balance</th>
+                    <th>Balance Cleared Date</th>
+                    <th>Transaction History</th>
+                    <th>Edit</th>
+                </tr>
+            </thead>
+
+            <tbody id="paymentsTableBody">
+                <!-- Dynamically rendered by JS -->
+            </tbody>
+
+        </table>
+    </div>
+    <div id="pagination-container"></div>
+
+    <!-- ============================= -->
+    <!-- Transaction History Overlay -->
+    <!-- ============================= -->
+    <div class="overlay d-none" id="transactionHistoryOverlay">
+        <div class="overlay-content p-4">
+
+            <button class="overlay-close" id="closeTransactionOverlay">✕</button>
+
+            <h5 class="mb-3">Transaction History</h5>
+
+            <!-- Dynamic Summary -->
+            <div class="transaction-summary">
+                <div><strong>Customer:</strong> <span id="historyCustomerName"></span></div>
+                <div><strong>Total Price:</strong> <span id="historyTotalPrice"></span></div>
+                <div class="balance">
+                    <strong>Balance:</strong> <span id="historyBalance"></span>
+                </div>
+            </div>
+
+            <table class="table transaction-table mt-3">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Payment Amount</th>
+                        <th>Payment Date</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTransactionsBody">
+                    <!-- Rendered dynamically -->
+                </tbody>
+            </table>
+
+            <button class="btn transaction-close-btn mt-3" id="closeTransactionBtn">
+                Close
+            </button>
+
+        </div>
+    </div>
+
+
+    <!-- ============================= -->
+    <!-- Edit Transaction Overlay -->
+    <!-- ============================= -->
+    <div class="overlay d-none" id="editTransactionOverlay">
+        <div class="overlay-content p-4">
+
+            <button class="overlay-close" id="closeEditTransaction">✕</button>
+
+            <h5 class="mb-3">Edit Transaction History</h5>
+
+            <!-- Dynamic Summary -->
+            <div class="transaction-summary mb-3">
+                <div><strong>Customer:</strong> <span id="editCustomerName"></span></div>
+                <div><strong>Total Price:</strong> <span id="editTotalPrice"></span></div>
+                <div class="balance">
+                    <strong>Current Balance:</strong> <span id="editCurrentBalance"></span>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <strong>Transactions</strong>
+                <button class="btn btn-green btn-sm" id="addTransactionBtn">
+                    + Add Transaction
+                </button>
+            </div>
+
+            <!-- Empty container (NO HARDCODE) -->
+            <div id="transactionsContainer"></div>
+
+            <!-- Inline error message -->
+            <div id="editErrorMsg" class="alert alert-danger d-none mt-3 mb-0 py-2 px-3" role="alert"></div>
+
+            <div class="d-flex gap-3 mt-3">
+                <button class="btn btn-danger w-50" id="cancelEditTransaction">
+                    Cancel
+                </button>
+                <button class="btn btn-green w-50" id="saveTransactionsBtn">
+                    Save Changes
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Refresh Warning Overlay -->
+    <div id="refresh-warning-overlay" class="overlay d-none">
+        <div class="overlay-content p-4 position-relative">
+            <h5 class="mb-2 text-center fw-bold">Unsaved Changes</h5>
+            <p class="text-center text-muted mb-4">You have unsaved changes. Refresh anyway?<br>Your progress will be lost.</p>
+            <div class="d-flex justify-content-center gap-3">
+                <button id="refresh-stay" class="btn btn-secondary px-4">Stay</button>
+                <button id="refresh-leave" class="btn btn-danger px-4">Refresh</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="payments.js"></script>
+    <script src="../../../assets/bootstrap/bootstrap.bundle.min.js"></script>
+
+</body>

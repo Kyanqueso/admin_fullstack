@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>403 — Access Denied</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .card {
+      text-align: center;
+      padding: 3rem 2.5rem;
+      max-width: 400px;
+      width: 90%;
+      background: #EFE9E1;
+      border-radius: 16px;
+      box-shadow: 0 24px 48px rgba(0,0,0,0.14), 0 8px 16px rgba(0,0,0,0.08);
+    }
+    .code {
+      font-size: 5rem;
+      font-weight: 900;
+      color: #5D1C34;
+      line-height: 1;
+    }
+    h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #11100F;
+      margin: 0.75rem 0 0.5rem;
+    }
+    p {
+      font-size: 0.95rem;
+      color: #666;
+      margin-bottom: 2rem;
+    }
+    a {
+      display: inline-block;
+      padding: 0.65rem 1.75rem;
+      background: #5D1C34;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      transition: opacity 0.15s ease;
+    }
+    a:hover { opacity: 0.85; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="code">403</div>
+    <h1>Access Denied</h1>
+    <p>You need to be logged in to access this page.</p>
+    <a href="/src/views/auth/index.html">Go to Login</a>
+  </div>
+</body>
+</html>

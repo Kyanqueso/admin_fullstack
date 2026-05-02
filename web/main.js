@@ -1,97 +1,105 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const { spawn } = require('child_process');
 
 let mainWindow;
-let apiProcess; // This variable will hold our Python process
+const isDev = process.env.NODE_ENV === 'development';
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
 
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
+// Replace with your actual Supabase project URL
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://dohhnithtdwtwkfwccag.supabase.co';
 
 function createWindow() {
-  // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     webPreferences: {
-      // Preload script is critical for security/communication
       preload: path.join(__dirname, 'preload.js'),
-      env: {
-        BACKEND_URL: process.env.BACKEND_URL
-      }, 
-      nodeIntegration: false, // Keep this false for security
-      contextIsolation: true  // Keep this true for security
-    }
+      contextIsolation: true,
+    },
   });
 
-  // Load your main HTML file
-  mainWindow.loadFile(path.join(__dirname, 'src/views/auth/index.html'));
-  
-  // Optional: Open DevTools for debugging
-  // mainWindow.webContents.openDevTools();
+  if (isDev) {
+    mainWindow.loadURL('http://localhost:5173/views/auth/index.html');
+    mainWindow.webContents.openDevTools();
+  } else {
+    mainWindow.loadFile(path.join(__dirname, 'dist', 'src/views/auth/index.html'));
+  }
 }
 
-function startPythonBackend() {
-    const apiPath = path.join(__dirname, '../api');
-    
-    // Wrap paths in double quotes to handle spaces in folder names
-    const venvUvicorn = path.join(apiPath, 'venv', 'Scripts', 'uvicorn.exe');
-    const quotedUvicorn = `"${venvUvicorn}"`;
-
-    const backendUrl = process.env.BACKEND_URL || "http://localhost:8000";
-    const port = backendUrl.split(':').pop();
-
-    console.log(`Starting Python Backend from: ${quotedUvicorn}`);
-
-    // Command: uvicorn app.main:app --port 8000 --reload
-    apiProcess = spawn(quotedUvicorn, ['app.main:app', '--reload', '--port', port], {
-        cwd: apiPath,
-        shell: true,
-        windowsVerbatimArguments: true // Crucial for keeping the quotes intact on Windows
+// ========== GOOGLE OAUTH POPUP ==========
+ipcMain.handle('google-oauth', async () => {
+  return new Promise((resolve, reject) => {
+    const authWindow = new BrowserWindow({
+      width: 500,
+      height: 700,
+      parent: mainWindow,
+      modal: true,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+      },
     });
 
-    apiProcess.stdout.on('data', (data) => {
-        console.log(`API [STDOUT]: ${data}`);
+    // Clear session cookies to force fresh login (allows account switching)
+    authWindow.webContents.session.clearStorageData({
+      storages: ['cookies']
+    }).then(() => {
+      console.log('Cleared auth cookies - forcing fresh Google login');
     });
 
-    apiProcess.stderr.on('data', (data) => {
-        console.error(`API [STDERR]: ${data}`);
+    // Build the Google OAuth URL through Supabase
+    // Add prompt=select_account to force Google to show account picker
+    const redirectTo = `${SUPABASE_URL}/auth/v1/callback`;
+    const authUrl = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}&prompt=select_account`;
+
+    authWindow.loadURL(authUrl);
+
+    // Listen for redirects to catch the callback with tokens
+    authWindow.webContents.on('will-redirect', (event, url) => {
+      handleCallback(url, authWindow, resolve);
     });
 
-    apiProcess.on('error', (err) => {
-        console.error('Failed to start Python process:', err);
+    authWindow.webContents.on('will-navigate', (event, url) => {
+      handleCallback(url, authWindow, resolve);
     });
+
+    authWindow.on('closed', () => {
+      resolve(null); // User closed the window without completing
+    });
+  });
+});
+
+function handleCallback(url, authWindow, resolve) {
+  try {
+    // Check if this is the callback URL with tokens
+    if (url.includes('access_token') || url.includes('#access_token')) {
+      // Extract tokens from the URL hash fragment
+      const urlObj = new URL(url);
+      const hash = urlObj.hash.substring(1); // Remove the #
+      const params = new URLSearchParams(hash);
+
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
+
+      if (accessToken) {
+        authWindow.close();
+        resolve({ access_token: accessToken, refresh_token: refreshToken });
+        return;
+      }
+    }
+  } catch (err) {
+    console.error('Error parsing OAuth callback:', err);
+  }
 }
-
-// --- APP LIFECYCLE ---
 
 app.whenReady().then(() => {
-  startPythonBackend(); // Start Python first
-  createWindow();       // Then open the UI
+  createWindow();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
 
-// Quit when all windows are closed.
 app.on('window-all-closed', () => {
-    if (apiProcess) {
-        console.log("Terminating backend tree...");
-        // Ensure to stop the family of processes
-        if (process.platform === 'win32') {
-            const { execSync } = require('child_process');
-            try {
-                // Use execSync to block the exit until the kill is confirmed
-                execSync(`taskkill /pid ${apiProcess.pid} /f /t`);
-            } catch (e) {
-                console.error("Process already closed or access denied");
-            }
-        } else {
-            apiProcess.kill();
-        }
-    }
-
-    if (process.platform !== 'darwin') {
-        app.quit();
-    }
+  if (process.platform !== 'darwin') app.quit();
 });

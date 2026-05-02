@@ -1,37 +1,65 @@
-from fastapi import FastAPI
-from app.config.sqlite_config import engine, Base
-from app.auth.admin_auth import seed_admin
+import os
+from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from app.config.database import engine
+from app.config.auth import get_current_user
 
-from app.api.local.company import router as company_router
-from app.api.local.client import router as client_router
-from app.api.local.client_order import router as client_order_router
-from app.api.local.payment_summary import router as payment_summary_router
-from app.api.local.payment_transaction import router as payment_transaction_router
-from app.api.local.analytics import router as analytics_router
+from app.db.base import Base
 
-from app.api.firebase.shoe_catalog import router as shoe_catalog_router
-from app.api.firebase.admin import router as admin_router
+from app.api.company_router import router as company_router
+from app.api.client_router import router as client_router
+from app.api.client_order_router import router as client_order_router
+from app.api.payment_summary_router import router as payment_summary_router
+from app.api.payment_transaction_router import router as payment_transaction_router
+from app.api.analytics_router import router as analytics_router
+from app.api.shoe_management_router import router as shoe_management_router
+from app.api.admin_management_router import router as admin_management_router
+from app.api.test_routes import router as test_router
 
-app = FastAPI(title="Theresa Shoes FastAPI Backend")
 
-# Create tables AFTER models are imported
-Base.metadata.create_all(bind=engine)
+app = FastAPI(
+    title="Theresa Shoes API",
+    description="Backend API for Theresa Shoes inventory and payment management",
+    version="2.0.0"
+)
 
-# Create admin user if not exists
-seed_admin()
+_default_origins = [
+    "http://localhost",
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:3000",
+]
+
+# ALLOWED_ORIGINS env var: comma-separated list of extra origins (e.g. your Vercel URL).
+# Example: ALLOWED_ORIGINS=https://theresa-shoes.vercel.app
+_extra = os.getenv("ALLOWED_ORIGINS", "")
+origins = _default_origins + [o.strip() for o in _extra.split(",") if o.strip()]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def root():
-    return {"status": "running"}
+    return {"message": "Theresa Shoes API is running"}
 
-# Sqlite
-app.include_router(company_router)
-app.include_router(client_router)
-app.include_router(client_order_router)
-app.include_router(payment_summary_router)
-app.include_router(payment_transaction_router)
-app.include_router(analytics_router)
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
 
-# Firebase
-app.include_router(admin_router)
-app.include_router(shoe_catalog_router)
+# Requires authentication
+app.include_router(company_router, dependencies=[Depends(get_current_user)])
+app.include_router(client_router, dependencies=[Depends(get_current_user)])
+app.include_router(client_order_router, dependencies=[Depends(get_current_user)])
+app.include_router(payment_summary_router, dependencies=[Depends(get_current_user)])
+app.include_router(payment_transaction_router, dependencies=[Depends(get_current_user)])
+app.include_router(analytics_router, dependencies=[Depends(get_current_user)])
+# Does not require authentication
+app.include_router(shoe_management_router)
+app.include_router(admin_management_router, dependencies=[Depends(get_current_user)])
+app.include_router(test_router)

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="../../../assets/bootstrap/bootstrap.min.css">
+    <link rel="stylesheet" href="../../../css/global.css">
+    <link rel="stylesheet" href="clients.css">
+
+    <title>Client Page</title>
+</head>
+
+<body class="px-4">
+
+    <div class="client-tabs-bar">
+        <div class="client-tabs-inner">
+            <a href="../companies.html" class="client-tab-back">
+                <img src="../../../assets/icons/back-btn.svg" alt="Back" width="14" height="14">
+                Back
+            </a>
+            <div class="client-tab-links">
+                <a href="../clients/clients.html" class="client-tab-link active">Client List</a>
+                <a href="../orders/orders.html" class="client-tab-link">Current Orders</a>
+                <a href="../payments/payments.html" class="client-tab-link">Payments</a>
+                <a href="../complete_orders/complete_orders.html" class="client-tab-link">Completed Orders</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page Title -->
+    <h2 class="mb-5 mt-2" id="companyTitle">Client List</h2>
+
+    <!-- Search / Sort / Tabs / Add -->
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+        <div class="input-group" style="max-width: 320px;">
+            <span class="input-group-text">
+                <img src="../../../assets/icons/search.svg" width="20">
+            </span>
+            <input type="text" class="form-control" placeholder="Search name">
+        </div>
+        <select class="form-select" style="max-width: 160px;">
+            <option value="az" selected>A–Z (First Name)</option>
+            <option value="za">Z–A (First Name)</option>
+            <option value="recent">Recently Added</option>
+            <option value="oldest">Oldest First</option>
+        </select>
+        <div class="d-flex gap-2">
+            <button class="btn btn-dark btn-sm" id="activeTabBtn">Active</button>
+            <button class="btn btn-outline-secondary btn-sm" id="archiveTabBtn">Archive</button>
+        </div>
+        <button class="btn btn-outline-dark ms-auto" id="openOverlay">
+            + Add New Client
+        </button>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-responsive">
+        <table class="table align-middle text-center">
+            <thead class="table-header">
+                <tr>
+                    <th>Last Name</th>
+                    <th>First Name</th>
+                    <th>Address</th>
+                    <th>Viber</th>
+                    <th>Notes</th>
+                    <th>Edit</th>
+                    <th>Archive</th>
+                </tr>
+            </thead>
+
+            <!--  EMPTY TBODY (JS FILLS THIS) -->
+            <tbody>
+                <!-- JS will populate clients here -->
+            </tbody>
+
+        </table>
+    </div>
+    <div id="pagination-container"></div>
+
+    <!-- ADD CLIENT OVERLAY -->
+    <div class="overlay d-none" id="addClientOverlay">
+        <div class="overlay-content p-4">
+            <button class="overlay-close" id="closeOverlay">✕</button>
+
+            <h5 class="mb-3">Add New Client</h5>
+
+            <form id="overlay-form">
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" class="form-control" id="addLastName" placeholder="Dela Cruz" maxlength="50">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">First Name</label>
+                        <input type="text" class="form-control" id="addFirstName" placeholder="Juan" maxlength="50">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Address</label>
+                        <input type="text" class="form-control" placeholder="123 Main Street" maxlength="100">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Viber</label>
+                        <input type="text" class="form-control" id="addViber" placeholder="09XXXXXXXXX or +639XXXXXXXXX" maxlength="13" inputmode="tel">
+                    </div>
+                </div>
+
+                <!-- Buttons INSIDE form and overlay-content -->
+                <div class="row mt-4">
+                    <div class="col-6">
+                        <button type="button" class="btn btn-danger w-100" id="cancelOverlay">
+                            Cancel
+                        </button>
+                    </div>
+
+                    <div class="col-6">
+                        <button type="submit" class="btn btn-green w-100">
+                            Confirm
+                        </button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+
+    <!-- NOTES OVERLAY -->
+    <div class="overlay d-none" id="clientNotesOverlay">
+        <div class="overlay-content p-4">
+            <button class="overlay-close" id="closeNotesOverlay">✕</button>
+
+            <h5 class="mb-3">Client Notes</h5>
+
+            <form>
+                <textarea class="form-control mb-4" rows="7" placeholder="Enter client notes here..." maxlength="500"></textarea>
+
+                <div class="text-center">
+                    <button type="submit" class="btn btn-green px-4">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- EDIT CLIENT OVERLAY -->
+    <div class="overlay d-none" id="editClientOverlay">
+        <div class="overlay-content p-4">
+            <button class="overlay-close" id="closeEditOverlay">✕</button>
+
+            <h5 class="mb-3">Update Existing Client</h5>
+
+            <form>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" class="form-control" id="editLastName" maxlength="50">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">First Name</label>
+                        <input type="text" class="form-control" id="editFirstName" maxlength="50">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Address</label>
+                    <input type="text" class="form-control" id="editAddress" maxlength="100">
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">Viber</label>
+                    <input type="text" class="form-control" id="editViber" maxlength="13" inputmode="tel">
+                </div>
+
+                <div class="d-flex gap-3">
+                    <button type="button" class="btn btn-danger w-50" id="cancelEditOverlay">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-green w-50">
+                        Update
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- DELETE CLIENT OVERLAY -->
+    <div class="overlay d-none" id="deleteClientOverlay">
+        <div class="overlay-content p-4 text-center">
+            <button class="overlay-close" id="closeDeleteOverlay">✕</button>
+
+            <h5 class="mb-4">
+                Are you sure you want to<br>archive this client?
+            </h5>
+
+            <div class="d-flex justify-content-center gap-3">
+                <button class="btn btn-danger px-4" id="cancelDelete">No</button>
+                <button class="btn btn-green px-4" id="confirmDelete">Yes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RESTORE CLIENT CONFIRMATION OVERLAY -->
+    <div class="overlay d-none" id="restoreClientOverlay">
+        <div class="overlay-content p-4 text-center" style="max-width: 320px;">
+            <button class="overlay-close" id="closeRestoreClient">✕</button>
+            <h5 class="mb-4">Restore this client?</h5>
+            <div id="restoreClientError" class="alert alert-danger d-none mb-3 py-2 px-3" role="alert"></div>
+            <div class="d-flex justify-content-center gap-3">
+                <button class="btn btn-danger px-4" id="cancelRestoreClient">No</button>
+                <button class="btn btn-green px-4" id="confirmRestoreClient">Yes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RESTORE ERROR OVERLAY -->
+    <div class="overlay d-none" id="restoreErrorOverlay">
+        <div class="overlay-content p-4 text-center" style="max-width: 380px;">
+            <button class="overlay-close" id="closeRestoreError">✕</button>
+            <h5 class="mb-3">Cannot Restore</h5>
+            <p id="restoreErrorMessage" class="text-muted mb-4"></p>
+            <button class="btn btn-dark px-4" id="dismissRestoreError">OK</button>
+        </div>
+    </div>
+
+    <!-- Refresh Warning Overlay -->
+    <div id="refresh-warning-overlay" class="overlay d-none">
+        <div class="overlay-content p-4 position-relative">
+            <h5 class="mb-2 text-center fw-bold">Unsaved Changes</h5>
+            <p class="text-center text-muted mb-4">You have unsaved changes. Refresh anyway?<br>Your progress will be lost.</p>
+            <div class="d-flex justify-content-center gap-3">
+                <button id="refresh-stay" class="btn btn-secondary px-4">Stay</button>
+                <button id="refresh-leave" class="btn btn-danger px-4">Refresh</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS -->
+    <script type="module" src="clients.js"></script>
+    <script src="../../../assets/bootstrap/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>

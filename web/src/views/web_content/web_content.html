@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Import CSS Files and Local Bootstrap-->
+    <link rel="stylesheet" href="../../css/global.css">
+    <link rel="stylesheet" href="web_content.css">
+    <link rel="stylesheet" href="../../assets/bootstrap/bootstrap.min.css">
+
+    <title>Website Content Management Page</title>
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-inner">
+            <span class="header-brand">Theresa Shoes</span>
+            <nav class="header-nav">
+                <a class="header-nav-link" href="../analytics/analytics.html">Analytics</a>
+                <a class="header-nav-link" href="../companies/companies.html">Clients</a>
+                <a class="header-nav-link active">Website Content</a>
+                <a class="header-nav-link" href="../admin_accounts/admin_accounts.html">Admin Accounts</a>
+            </nav>
+            <button id="logout-btn" class="header-logout">Logout</button>
+        </div>
+    </header>
+
+    <div class="d-flex flex-column flex-sm-row align-items-center justify-content-between w-88 mx-auto mt-5 mb-4 gap-3">
+        <h1 id="scm" class="mb-0 fw-bold">Shoe Collection Management</h1>
+        <button id="add-shoe-btn" class="btn px-lg-4 py-2 add-edit-shoe">
+            <img src="../../assets/icons/plus.svg" alt="Add" width="20" height="20">
+            Add New Shoe
+        </button>
+    </div>
+    
+    <div class="mx-5 row align-items-end mb-4">
+        <div class="col-12 col-md-4 mb-2">
+            <label class="form-label invisible">Search</label>
+            <div class="input-group">
+                <span class="input-group-text">
+                    <img src="../../assets/icons/search.svg" width="20">
+                </span>
+                <input type="text" class="form-control" placeholder="Search Shoe Name" maxlength="100">
+            </div>
+        </div>
+
+        <div class="col-12 col-md-2 mb-2">
+            <select class="form-select mt-2">
+                <option value="az" selected>A–Z (Name)</option>
+                <option value="za">Z–A (Name)</option>
+                <option value="recent">Recently Added</option>
+                <option value="oldest">Oldest First</option>
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="page-error-msg" class="alert alert-danger d-none mx-5 mb-2 py-2 px-3" role="alert"></div>
+
+    <div class="container my-4">
+        <div id="shoe-grid" class="row g-4">
+            <!-- Cards will be injected here -->
+        </div>
+    </div>
+
+    <!--Overlay Section-->
+    <div id="shoe-overlay" class="overlay d-none">
+        <div class="overlay-content p-4 position-relative">
+            <button id="overlay-close" class="overlay-close btn p-3 mb-4 position-absolute top-0 end-0">
+                <img src="../../assets/icons/x-solid.svg" alt="Close" width="24" height="24">
+            </button>
+
+            <h2 id="overlay-title" class="text-start">Title</h2>
+            <p id="overlay-message" class="text-start">Message goes here...</p>
+
+            <!-- Form for Add/Edit -->
+            <form id="overlay-form" class="d-none mt-3">
+                <label class="form-label text-black">Shoe Name</label>
+                <input type="text" id="shoe-name" name="shoeName" class="form-control mb-2" placeholder="Shoe Name" maxlength="50" required>
+
+                <label class="form-label text-black">Price</label>
+                <input type="text" inputmode="decimal" id="shoe-price" name="shoePrice" class="form-control mb-2" placeholder="Price (e.g. 1999.99)" maxlength="10" required>
+
+                <label class="form-label text-black">Description</label>
+                <textarea id="shoe-description" name="shoeDescription" class="form-control mb-1" placeholder="Describe this shoe (materials, style, occasion...)" maxlength="1000" rows="3" required></textarea>
+                <div class="text-end mb-3"><small id="desc-char-count" class="text-muted">0 / 1000</small></div>
+
+                <!-- Existing images shown during edit -->
+                <div id="existing-images-container" class="d-none mb-2">
+                    <label class="form-label text-black">Current Images <span class="text-muted fw-normal" style="font-size:0.8rem">(drag to reorder · first = main photo)</span></label>
+                    <div id="existing-images" class="d-flex flex-wrap gap-2"></div>
+                </div>
+
+                <label id="image-upload-label" class="form-label text-black">Upload Images (1-5 required)</label>
+                <input type="file" id="shoe-images" name="shoeImages" class="form-control mb-2" accept="image/*" multiple>
+                <!-- Preview panel for newly-selected files (before upload) -->
+                <div id="new-images-preview" class="d-flex flex-wrap gap-2 d-none"></div>
+            </form>
+
+            <!-- Inline error message -->
+            <div id="overlay-error-msg" class="alert alert-danger d-none mt-3 mb-0 py-2 px-3" role="alert"></div>
+
+            <!-- Buttons -->
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <button id="overlay-cancel" class="btn btn-secondary">Cancel</button>
+                <button id="overlay-confirm" class="btn btn-green">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Refresh Warning Overlay -->
+    <div id="refresh-warning-overlay" class="overlay d-none">
+        <div class="overlay-content p-4 position-relative">
+            <h5 class="mb-2 text-center fw-bold">Unsaved Changes</h5>
+            <p class="text-center text-muted mb-4">You have unsaved changes. Refresh anyway?<br>Your progress will be lost.</p>
+            <div class="d-flex justify-content-center gap-3">
+                <button id="refresh-stay" class="btn btn-secondary px-4">Stay</button>
+                <button id="refresh-leave" class="btn btn-danger px-4">Refresh</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Confirmation Overlay -->
+    <div id="logout-overlay" class="overlay d-none">
+        <div class="overlay-content p-4 position-relative">
+            <button id="logout-overlay-close" class="overlay-close btn p-3 position-absolute top-0 end-0">
+                <img src="../../assets/icons/x-solid.svg" alt="Close" width="24" height="24">
+            </button>
+            <h5 class="mb-4 text-center">Do you want to log out?</h5>
+            <div class="d-flex justify-content-center gap-3">
+                <button id="logout-no" class="btn btn-secondary px-4">No</button>
+                <button id="logout-yes" class="btn btn-danger px-4">Yes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call web_content.js and bootstrap bundle.js -->
+    <script type="module" src="web_content.js"></script>
+    <script src="../../assets/bootstrap/bootstrap.bundle.min.js"></script>
+</body>

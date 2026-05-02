@@ -1,0 +1,129 @@
+
+#loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #ffffff; /* Opaque white background */
+    z-index: 9999; /* Ensure it sits on top of everything */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.5s ease; /* Smooth fade out effect */
+}
+
+/* Utility class to hide the loader */
+.loader-hidden {
+    opacity: 0;
+    pointer-events: none; /* Allows clicking through after it fades */
+}
+
+/* Medium screens (tablets) */
+@media (max-width: 768px) {
+    #scm{
+        font-size: 1.55rem;
+    }
+    .add-edit-shoe {
+        font-size: 1rem;
+    }
+}
+
+/* Small screens (phones) */
+@media (max-width: 480px) {
+    #scm{
+        font-size: 1.25rem;
+        text-align: center;
+    }
+    .add-edit-shoe {
+        font-size: 0.88rem;
+        text-align: center;
+    }
+}
+
+.analytics-card {
+    border-radius: 8px;
+    background-color: var(--color-accent);
+}
+
+.chart-card {
+    background-color: var(--color-white);
+}
+
+.total-sales-amount {
+    font-size: 1.5rem;
+    color: var(--color-black);
+}
+
+.sales-chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+.summary-card {
+    min-height: 110px;
+}
+
+.trend-icon {
+    font-size: 1rem;
+    color: var(--color-btn-green);
+}
+
+.card-label {
+    font-size: 1rem;
+    color: var(--color-black);
+}
+
+.card-subtitle {
+    font-size: 0.8rem;
+    color: #888888;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.card-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-black);
+}
+
+/* Uncollected Balance */
+.overlay-wide {
+    max-width: 900px;
+    width: 95%;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    border-radius: 16px;
+}
+
+.overlay-table-scroll {
+    overflow-y: auto;
+    flex: 1;
+    max-height: 65vh;
+}
+
+.overlay-table-scroll table th,
+.overlay-table-scroll table td {
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.overlay-table-scroll table thead th {
+    background-color: var(--color-primary) !important;
+    color: var(--color-white) !important;
+    font-weight: 700 !important;
+}
+
+@media (max-width: 768px) {
+    .overlay-wide {
+        width: 98%;
+        max-height: 90vh;
+    }
+
+    .overlay-table-scroll table th,
+    .overlay-table-scroll table td {
+        font-size: 0.75rem;
+    }
+}

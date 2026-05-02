@@ -1,19 +1,83 @@
 <!DOCTYPE html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- Import CSS Files and Local Bootstrap-->
-    <link rel="stylesheet" href="../../css/global.css">
-    <link rel="stylesheet" href="index.css">
-    <link rel="stylesheet" href="../../assets/bootstrap/bootstrap.min.css">
-
-    <title>Login Page</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../../css/global.css">
+  <link rel="stylesheet" href="index.css">
+  <link rel="stylesheet" href="../../assets/bootstrap/bootstrap.min.css">
+  <title>Login Page</title>
 </head>
 <body>
-    <h1 class="text-center">Hello World!</h1>
+  <h1 class="text-center my-5">Theresa Shoes Admin Portal</h1>
+  <form id="login-form" class="p-4 border rounded box-drop-shadow mx-auto mb-5" style="background-color: var(--color-accent);">
+    <h3 class="mt-2 mb-4 fw-bold text-center">Login</h3>
+    
+    <div id="error-alert" class="alert alert-danger d-none" role="alert"></div>
+    <div id="success-alert" class="alert alert-success d-none" role="alert"></div>
 
-    <!-- Call index.js and bootstrap bundle.js -->
-    <script src="index.js"></script>
-    <script src="../../assets/bootstrap/bootstrap.bundle.min.js"></script>
+    <div class="mb-3">
+      <label for="email" class="form-label">Email</label>
+      <input type="email" class="form-control" id="email" placeholder="Enter email" maxlength="100">
+    </div>
+
+    <div class="mb-4">
+      <label for="password" class="form-label">Password</label>
+      <input type="password" class="form-control" id="password" placeholder="Enter password" maxlength="100">
+    </div>
+
+    <a href="#" id="forgot-password-link" class="d-block mb-3 text-decoration-none">Forgot Password?</a>
+    
+    <button id="login-btn" type="submit" class="btn btn-primary w-100 fw-bold">Login</button>
+
+    <!-- Google sign-in disabled for now
+    <div class="text-center my-3 text-muted">— or —</div>
+
+    <button id="google-btn" type="button" class="btn btn-dark w-100">
+      <img id="google-icon" src="../../assets/icons/google-icon.svg" width="16" height="16">
+      Sign in with Google
+    </button>
+    -->
+  </form>
+  
+  <!-- Forgot Password Modal -->
+  <div id="forgotPasswordModal" class="custom-modal">
+    <div class="custom-modal-overlay"></div>
+    <div class="custom-modal-content" style="background-color: var(--color-accent);">
+      <div class="custom-modal-header">
+        <h5 class="fw-bold">Reset Password</h5>
+        <button type="button" class="custom-close-btn" id="closeModalBtn">&times;</button>
+      </div>
+      <div class="custom-modal-body">
+        <div id="modal-error" class="alert alert-danger d-none" role="alert"></div>
+        <div id="modal-success" class="alert alert-success d-none" role="alert"></div>
+
+        <!-- Step 1: Enter email -->
+        <div id="step-email">
+          <p>Enter your email to receive a reset code.</p>
+          <input type="email" class="form-control mb-3" id="reset-email" placeholder="Enter email" maxlength="100">
+          <button id="send-code-btn" type="button" class="btn btn-primary w-100 fw-bold">Send Code</button>
+        </div>
+
+        <!-- Step 2: Enter OTP code -->
+        <div id="step-otp" class="d-none">
+          <p>Enter the 8-digit code sent to your email.</p>
+          <input type="text" class="form-control mb-3" id="otp-code" placeholder="Enter 8-digit code" maxlength="8" inputmode="numeric" pattern="[0-9]{8}" autocomplete="one-time-code">
+          <button id="verify-code-btn" type="button" class="btn btn-primary w-100 fw-bold">Verify Code</button>
+        </div>
+
+        <!-- Step 3: Set new password -->
+        <div id="step-password" class="d-none">
+          <p>Enter your new password.</p>
+          <input type="password" class="form-control mb-3" id="new-password" placeholder="New password" maxlength="100">
+          <input type="password" class="form-control mb-3" id="confirm-password" placeholder="Confirm password" maxlength="100">
+          <button id="update-password-btn" type="button" class="btn btn-primary w-100 fw-bold">Update Password</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="../../assets/bootstrap/bootstrap.bundle.min.js"></script>
+  <script type="module" src="index.js"></script>
 </body>
+</html>

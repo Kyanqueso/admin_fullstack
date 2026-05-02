@@ -1,10 +1,10 @@
-# Main Branch
+# Development Branch
 
-**Notice:** This is the **main branch (skeleton)** of the project.  
+**Notice:** This is the **development branch** of the project.
 
-- It contains the **basic structure** of the project.  
-- **Do not make direct changes** here, no matter what.  
-- All real development happens in the **development branch**.  
+- All active development happens here. 
+- **Do not make direct changes** here, ONLY VIA PULL REQUEST.  
+- This branch represents the **latest collective effort** of the team  
 
 ## Workflow
 

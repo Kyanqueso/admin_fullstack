@@ -1,0 +1,194 @@
+@media(max-width: 468px){
+    .small-width{
+        width: 70%;
+    }
+}
+
+.company-card{
+    background-color: var(--color-accent) !important;
+}
+
+.company-card {
+  background-color: #f4ede4; /* same beige tone you used */
+  border-radius: 12px;
+  border: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  
+}
+
+.company-name {
+  display: block;           
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  width: 100%;
+}
+
+
+
+
+
+.company-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+}
+
+/* ======================
+   TABLE
+====================== */
+.table-header th {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+/* ======================
+   TABS
+====================== */
+.client-tabs .tab-btn {
+  background-color: var(--color-accent);
+  color: #000;
+  border: 1px solid #ccc;
+}
+
+.client-tabs .tab-btn.active {
+  background-color: var(--color-primary);
+  color: beige;
+  border-color: var(--color-primary);
+}
+
+/* ======================
+   BUTTONS
+====================== */
+.view-notes {
+  background-color: var(--color-accent);
+}
+
+/* ======================
+   OVERLAY / MODAL
+====================== */
+.overlay {
+  position: fixed;
+  inset: 0;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  background-color: rgba(0, 0, 0, 0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  animation: overlayFadeIn 0.2s ease;
+}
+
+.overlay-content {
+  background-color: var(--color-accent);
+  border-radius: 16px;
+  max-width: 700px;
+  width: 90%;
+  position: relative;
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.28),
+    0 8px 16px rgba(0, 0, 0, 0.16);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  animation: overlaySlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.overlay-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.overlay-close:hover {
+  background-color: rgba(0, 0, 0, 0.08);
+  transform: scale(1.1);
+}
+
+/* ======================
+   FORMS
+====================== */
+#overlay-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.overlay-content h5 {
+  text-align: left;
+}
+
+.overlay-content textarea {
+  width: 100%;
+  resize: none;
+  border-radius: 6px;
+  text-align: justify;
+}
+
+.overlay-content .form-label {
+  text-align: left;
+  width: 100%;
+  display: block;
+}
+
+
+
+/* ======================
+   UTILITIES
+====================== */
+.d-none {
+  display: none !important;
+}
+
+/* Narrow refresh warning dialog */
+#refresh-warning-overlay .overlay-content {
+  max-width: 420px;
+}
+
+/* Narrow logout confirmation dialog */
+#logout-overlay .overlay-content {
+  max-width: 420px;
+}
+
+/* Small delete modal like payment */
+#deleteCompanyOverlay .overlay-content {
+  max-width: 350px !important;
+  padding: 20px;
+}
+
+#deleteCompanyOverlay h5 {
+  text-align: center;
+}
+
+#deleteCompanyOverlay .btn {
+  padding: 10px 28px;
+  min-width: 130px;
+}
+
+/* EMPTY STATE FIX */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.empty-add-card {
+  width: 200px;
+  height: 120px;
+  border: 2px dashed #ccc;
+  border-radius: 12px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.empty-add-card:hover {
+  border-color: var(--color-primary);
+  background-color: rgba(0,0,0,0.0);
+}
