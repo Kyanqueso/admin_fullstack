@@ -1,6 +1,6 @@
 {
   "outputDirectory": "dist",
-  "rewrites": [
-    { "source": "/", "destination": "/src/views/auth/index.html" }
+  "redirects": [
+    { "source": "/", "destination": "/src/views/auth/index.html", "permanent": false }
   ]
 }
