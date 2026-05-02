@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Read(//c/c/Users/kyan so/OneDrive/Documents/**)",
-      "Read(//c/Users/kyan so/.claude/projects/c--Users-kyan-so-OneDrive-Documents-admin-fullstack/memory/**)"
-    ]
-  }
-}
