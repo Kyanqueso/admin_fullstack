@@ -6,6 +6,10 @@ import { getFromCache, saveToCache, clearCache } from '../../js/apiCache.js';
 
 const FAST_API_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
 
+window.addEventListener('pageshow', () => {
+    if (!localStorage.getItem('access_token')) window.location.href = '/403.html';
+});
+
 // SQLAlchemy uses parameterized queries so SQL injection via shoe
 // name is not possible at the DB level. 
 const ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];

@@ -3,6 +3,10 @@ import trashIcon from '../../../assets/icons/trashcan-black.svg';
 import archiveIcon from '../../../assets/icons/archive.svg';
 import { getFromCache, saveToCache, clearCache } from '../../../js/apiCache.js';
 
+window.addEventListener('pageshow', () => {
+    if (!localStorage.getItem('access_token')) window.location.href = '/403.html';
+});
+
 document.addEventListener("DOMContentLoaded", async () => {
 
   /* ===============================

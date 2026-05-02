@@ -5,6 +5,10 @@ import { getFromCache, saveToCache, clearCache } from '../../../js/apiCache.js';
 const FAST_API_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
 const COMPANY_ID = localStorage.getItem("activeCompanyId");
 
+window.addEventListener('pageshow', () => {
+    if (!localStorage.getItem('access_token')) window.location.href = '/403.html';
+});
+
 let clientsMap = {};
 let summariesByOrderId = {};
 let allOrders = [];

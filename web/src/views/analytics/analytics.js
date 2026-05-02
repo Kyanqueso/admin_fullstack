@@ -2,6 +2,10 @@ import { getFromCache, saveToCache } from '../../js/apiCache.js';
 
 const FAST_API_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
 
+window.addEventListener('pageshow', () => {
+    if (!localStorage.getItem('access_token')) window.location.href = '/403.html';
+});
+
 function escapeHtml(str) {
     if (!str) return '';
     return String(str)

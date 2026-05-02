@@ -6,6 +6,10 @@ import archiveIcon from '../../assets/icons/archive.svg';
 =============================== */
 const FAST_API_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
 
+window.addEventListener('pageshow', () => {
+    if (!localStorage.getItem('access_token')) window.location.href = '/403.html';
+});
+
 /* ===============================
    LOGOUT
 =============================== */
