@@ -17,6 +17,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from dotenv import load_dotenv
 load_dotenv()
 
+from sqlalchemy import text
 from app.config.database import SessionLocal
 from app.db.models import (
     Company, Person, Client, ClientOrder,
@@ -333,30 +334,35 @@ def clear():
     try:
         print("\n[clear] Clearing seeded data...")
 
-        # Delete in FK-safe order
-        txn_count = db.query(PaymentTransaction).delete(synchronize_session=False)
-        print(f"[clear]   {txn_count} payment transactions deleted")
+        # Count first (TRUNCATE doesn't return row counts)
+        txn_count  = db.query(PaymentTransaction).count()
+        sum_count  = db.query(PaymentSummary).count()
+        ord_count  = db.query(ClientOrder).count()
+        cli_count  = db.query(Client).count()
+        comp_count = db.query(Company).count()
 
-        sum_count = db.query(PaymentSummary).delete(synchronize_session=False)
-        print(f"[clear]   {sum_count} payment summaries deleted")
+        # Truncate in FK-safe order and reset sequences to 1
+        db.execute(text("TRUNCATE TABLE payment_transactions RESTART IDENTITY CASCADE"))
+        db.execute(text("TRUNCATE TABLE payment_summaries RESTART IDENTITY CASCADE"))
+        db.execute(text("TRUNCATE TABLE client_orders RESTART IDENTITY CASCADE"))
+        db.execute(text("TRUNCATE TABLE clients RESTART IDENTITY CASCADE"))
 
-        ord_count = db.query(ClientOrder).delete(synchronize_session=False)
-        print(f"[clear]   {ord_count} orders deleted")
+        # persons is shared with admins — only delete client rows, then
+        # reset the sequence to just above the highest remaining admin ID
+        db.execute(text("DELETE FROM persons WHERE role = 'client'"))
+        db.execute(text(
+            "SELECT setval(pg_get_serial_sequence('persons', 'id'), "
+            "COALESCE((SELECT MAX(id) FROM persons), 0), true)"
+        ))
 
-        # Clients: joined-table inheritance — delete clients table then orphaned persons rows
-        client_ids = [row.id for row in db.query(Client.id).all()]
-        cli_count  = db.query(Client).delete(synchronize_session=False)
-        if client_ids:
-            db.query(Person).filter(
-                Person.id.in_(client_ids),
-                Person.role == "client"
-            ).delete(synchronize_session=False)
-        print(f"[clear]   {cli_count} clients deleted")
-
-        comp_count = db.query(Company).delete(synchronize_session=False)
-        print(f"[clear]   {comp_count} companies deleted")
+        db.execute(text("TRUNCATE TABLE companies RESTART IDENTITY CASCADE"))
 
         db.commit()
+        print(f"[clear]   {txn_count} payment transactions deleted")
+        print(f"[clear]   {sum_count} payment summaries deleted")
+        print(f"[clear]   {ord_count} orders deleted")
+        print(f"[clear]   {cli_count} clients deleted")
+        print(f"[clear]   {comp_count} companies deleted")
         print("[clear] Done. Admins and shoe catalog are untouched.\n")
 
     except Exception as exc:
