@@ -107,7 +107,7 @@ CITIES = [
 # ── Shoe specs (per user requirements) ──
 STYLES      = [f"Style{i}" for i in range(1, 21)]          # Style1 … Style20
 MATERIALS   = ["Helga", "Tanya", "Patent", "SnakeSkin"]
-HEEL_TYPES  = ["cuban", "putol", "wedge", "cone", "contessa"]
+HEEL_TYPES  = ["Cone", "Cuban", "Flat", "Pointed", "Rounded", "Squared", "Wedge"]
 MOLD_TYPES  = ["milani", "ferage", "liz", "square"]
 HEEL_SIZES  = ['1"', '1.5"', '2"', '2.5"', '3"', '3.5"', '4"']
 COLORS      = ["Black", "White", "Nude", "Red", "Navy", "Brown", "Beige", "Pink", "Gold", "Silver"]
